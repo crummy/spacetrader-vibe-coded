@@ -1,0 +1,17 @@
+{
+  "name": "spacetrader-ts",
+  "version": "1.0.0",
+  "description": "TypeScript port of the Palm Pilot game Space Trader",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --experimental-strip-types index.ts",
+    "test": "node --experimental-strip-types --test"
+  },
+  "keywords": ["spacetrader", "typescript", "game", "palm-pilot"],
+  "author": "",
+  "license": "GPL-2.0",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
