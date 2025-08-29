@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --experimental-strip-types index.ts",
-    "test": "node --experimental-strip-types --test"
+    "test": "node --experimental-strip-types --test '**/*.test.ts'"
   },
   "keywords": ["spacetrader", "typescript", "game", "palm-pilot"],
   "author": "",

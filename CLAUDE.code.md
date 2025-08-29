@@ -19,7 +19,8 @@ This file contains coding conventions and development practices for the Space Tr
 ## Module System
 
 - **Import Style**: Use modern ESM imports exclusively
-- **File Extensions**: Use `.js` extensions in import statements even when importing TypeScript files
+- **Type Imports**: Use `import type` prefix when importing TypeScript types and interfaces
+- **File Extensions**: Use `.ts` extensions in import statements when importing TypeScript files
 - **No CommonJS**: Avoid `require()` and `module.exports` - use `import`/`export` only
 
 ## Runtime and Build
@@ -27,6 +28,8 @@ This file contains coding conventions and development practices for the Space Tr
 - **Execution**: Run TypeScript directly using `node --experimental-strip-types`
 - **No Build Step**: Take advantage of Node.js native TypeScript support to eliminate separate build processes
 - **Development Workflow**: Run and develop in the same language without transpilation
+- **TypeScript Limitations**: Node.js strip-types mode has limitations - **no enums allowed**
+- **Enum Alternative**: Use `const` objects with `as const` and type aliases instead of enums
 
 ## Code Style
 
