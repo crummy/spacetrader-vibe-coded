@@ -80,14 +80,14 @@ export const SkillType = {
 
 export type SkillType = typeof SkillType[keyof typeof SkillType];
 
-// Tech Level (0-7)
-export type TechLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+// Tech Level (0-8, where 8 is for special items)
+export type TechLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 // System Size (0-4)  
 export type SystemSize = 0 | 1 | 2 | 3 | 4;
 
 // Politics/Government (0-16)
-export type PoliticsType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
+export type PoliticsIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
 
 // Fixed-length tuple types for arrays
 export type TradeItemArray = readonly [number, number, number, number, number, number, number, number, number, number];
@@ -207,7 +207,7 @@ export interface CrewMember {
 export interface SolarSystem {
   nameIndex: number;
   techLevel: TechLevel;
-  politics: PoliticsType;
+  politics: PoliticsIndex;
   status: SystemStatus;
   x: number; // 0-150 (GALAXYWIDTH)
   y: number; // 0-110 (GALAXYHEIGHT)

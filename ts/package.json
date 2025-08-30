@@ -6,12 +6,22 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --experimental-strip-types index.ts",
-    "test": "node --experimental-strip-types --test '**/*.test.ts'"
+    "test": "node --experimental-strip-types --test '**/*.test.ts'",
+    "check": "tsc --noEmit"
   },
-  "keywords": ["spacetrader", "typescript", "game", "palm-pilot"],
+  "keywords": [
+    "spacetrader",
+    "typescript",
+    "game",
+    "palm-pilot"
+  ],
   "author": "",
   "license": "GPL-2.0",
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
   }
 }

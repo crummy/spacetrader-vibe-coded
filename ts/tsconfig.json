@@ -3,7 +3,7 @@
     "noEmit": true,
     "target": "esnext",
     "module": "nodenext",
-    "moduleResolution": "Node",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
