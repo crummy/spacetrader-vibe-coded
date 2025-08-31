@@ -176,7 +176,7 @@ export interface PoliticsType {
   bribeLevel: number; // How easily someone can be bribed (0 = unbribeable)
   drugsOK: boolean; // Drugs can be traded
   firearmsOK: boolean; // Firearms can be traded
-  wanted: TradeItem; // Trade item requested in particular in this type of government
+  wanted: TradeItem | -1; // Trade item requested in particular in this type of government (-1 = none)
 }
 
 // Ship Structure (player/opponent ships)
