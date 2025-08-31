@@ -90,7 +90,7 @@ export function createInitialState(): State {
     // Current location and travel
     warpSystem: 0, // Sol system (home)
     selectedShipType: 0, // Gnat (starting ship)
-    galacticChartSystem: 0,
+    galacticChartSystem: 0, // Initialize to current system
     
     // Trading prices - initialized to 0, will be calculated
     buyPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
@@ -131,6 +131,8 @@ export function createInitialState(): State {
     // UI state
     curForm: 0,
     trackedSystem: -1,
+    showTrackedRange: true, // From Palm OS ShowTrackedRange default
+    trackAutoOff: true, // From Palm OS TrackAutoOff default
     
     // Game objects
     ship: createEmptyShip(),

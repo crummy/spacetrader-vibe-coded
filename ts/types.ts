@@ -271,6 +271,8 @@ export interface State {
   // UI state
   curForm: number;
   trackedSystem: number;
+  showTrackedRange: boolean;
+  trackAutoOff: boolean;
   
   // Game objects
   ship: Ship;
