@@ -16,6 +16,16 @@ This file contains coding conventions and development practices for the Space Tr
 - **Commit Messages**: Write clear, descriptive commit messages that explain the "why" not just the "what"
 - **Small Commits**: Prefer smaller, focused commits over large monolithic ones
 
+### Development Workflow
+
+- **Test First**: After each significant chunk of work, run the full test suite to ensure nothing is broken
+- **Type Check**: Run TypeScript type checking to catch any type errors before committing
+- **Commit Only When Green**: Only commit changes when all tests pass and there are no type errors
+- **Commands to Run**: 
+  - `mise exec -- npm test` - Run all tests
+  - `mise exec -- npm run typecheck` (if available) or rely on IDE/editor type checking
+- **Quality Gate**: Never commit code that has failing tests or type errors
+
 ## Module System
 
 - **Import Style**: Use modern ESM imports exclusively
