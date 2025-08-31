@@ -1,2 +1,8 @@
 .DS_Store
 .claude/**
+
+# IDE and editor files
+.idea/
+
+# Dependencies  
+node_modules/
