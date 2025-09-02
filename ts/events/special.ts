@@ -58,8 +58,8 @@ export const SpecialEventType = {
 
 export type SpecialEventId = typeof SpecialEventType[keyof typeof SpecialEventType];
 
-// Special Event Definition Interface
-export interface SpecialEventDefinition {
+// Special Event Definition Interface  
+export type SpecialEventDefinition = {
   id: SpecialEventId;
   name: string;
   description: string;

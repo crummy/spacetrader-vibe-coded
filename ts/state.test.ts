@@ -23,7 +23,7 @@ test('createInitialState creates valid initial game state', () => {
   
   // Test ship structure
   assert.strictEqual(state.ship.cargo.length, MAXTRADEITEM);
-  assert.strictEqual(state.ship.fuel, 0);
+  assert.strictEqual(state.ship.fuel, 20); // Gnat ship starts with 20 fuel tanks
   assert.strictEqual(state.ship.tribbles, 0);
 });
 
@@ -37,7 +37,7 @@ test('cloneState creates independent copy', () => {
   
   // Original should be unchanged
   assert.strictEqual(original.credits, 1000);
-  assert.strictEqual(original.ship.fuel, 0);
+  assert.strictEqual(original.ship.fuel, 20); // Gnat starts with 20 fuel
   assert.strictEqual(clone.credits, 2000);
   assert.strictEqual(clone.ship.fuel, 50);
 });
