@@ -10,7 +10,7 @@ import { buyCargo, sellCargo } from '../economy/trading.ts';
 import { calculateStandardPrice } from '../economy/pricing.ts';
 import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
-import { getSystemName } from '../data/systems.ts';
+import { getSolarSystemName } from '../data/systems.ts';
 
 // Action System Types
 export type GameAction = {

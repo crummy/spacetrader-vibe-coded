@@ -7,7 +7,7 @@ import type { GameState } from '../types.ts';
 import { createInitialState } from '../state.ts';
 import { 
   // Special Event Constants and Types
-  SpecialEventType, SpecialEventDefinition,
+  SpecialEventType,
   
   // Event Management
   createSpecialEvent, hasSpecialEvent, removeSpecialEvent,
