@@ -79,6 +79,9 @@ describe('Game Engine Integration', () => {
     test('should provide available actions based on current game mode', () => {
       const engine = createGameEngine();
       
+      // Add some cargo so sell actions are available
+      engine.state.ship.cargo[0] = 5; // Add some water cargo
+      
       // Test actions when docked at planet
       engine.state.currentMode = GameMode.OnPlanet;
       const planetActions = engine.getAvailableActions();
@@ -123,12 +126,12 @@ describe('Game Engine Integration', () => {
       const result = await engine.executeAction({
         type: 'warp_to_system',
         parameters: {
-          targetSystem: 1
+          targetSystem: 16 // Use closer system (distance 18 vs fuel 20)
         }
       });
       
       assert.equal(result.success, true);
-      assert.equal(engine.state.currentSystem, 1);
+      assert.equal(engine.state.currentSystem, 16);
       assert.ok(engine.state.ship.fuel < 20); // Fuel should decrease
     });
 

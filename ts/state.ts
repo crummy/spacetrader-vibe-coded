@@ -34,6 +34,8 @@ import type {
 
 import { generateRandomSolarSystems } from './data/systems.ts';
 import { getShipType } from './data/shipTypes.ts';
+import { getTradeItem } from './data/tradeItems.ts';
+import { getPoliticalSystem } from './data/politics.ts';
 
 // Create an empty ship with default values
 export function createEmptyShip(): Ship {
@@ -81,10 +83,36 @@ export function createEmptySolarSystem(): SolarSystem {
   };
 }
 
+// Initialize trade item quantities for a system (port of Palm OS InitializeTradeitems)
+function initializeTradeItems(system: SolarSystem): void {
+  for (let i = 0; i < MAXTRADEITEM; i++) {
+    const tradeItem = getTradeItem(i);
+    const politics = getPoliticalSystem(system.politics);
+    
+    // Check restrictions (narcotics/firearms and tech level)
+    if ((i === 8 && !politics.drugsOK) || // Narcotics  
+        (i === 5 && !politics.firearmsOK) || // Firearms
+        system.techLevel < tradeItem.techProduction) {
+      system.qty[i] = 0;
+      continue;
+    }
+    
+    // Calculate quantity based on tech level and system size
+    const baseQuantity = 9 + Math.floor(Math.random() * 5); // 9-13
+    const techDiff = Math.abs(tradeItem.techTopProduction - system.techLevel);
+    const sizeBonus = 1 + system.size;
+    
+    system.qty[i] = Math.max(0, (baseQuantity - techDiff) * sizeBonus);
+  }
+}
+
 // Create initial/default game state
 export function createInitialState(): State {
   // Generate the galaxy with a fixed seed for consistent testing
   const galaxySystems = generateRandomSolarSystems(12345);
+  
+  // Initialize trade items for all systems
+  galaxySystems.forEach(system => initializeTradeItems(system));
   
   // Create starting ship with proper fuel
   const startingShip = createEmptyShip();

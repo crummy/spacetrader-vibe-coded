@@ -328,6 +328,7 @@ describe('Combat System Engine', () => {
       // Set up ship with specific equipment
       state.ship.weapon = [2, -1, -1]; // Military laser
       state.ship.shield = [1, -1, -1]; // Reflective shield
+      state.ship.shieldStrength = [100, 0, 0]; // Reflective shield power (ID 1 = 100 power)
       
       const weaponPower = calculateWeaponPower(state.ship);
       const shieldPower = calculateShieldPower(state.ship);
