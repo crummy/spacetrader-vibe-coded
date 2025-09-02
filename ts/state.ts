@@ -32,6 +32,9 @@ import type {
   WormholeArray
 } from './types.ts';
 
+import { generateRandomSolarSystems } from './data/systems.ts';
+import { getShipType } from './data/shipTypes.ts';
+
 // Create an empty ship with default values
 export function createEmptyShip(): Ship {
   return {
@@ -80,6 +83,15 @@ export function createEmptySolarSystem(): SolarSystem {
 
 // Create initial/default game state
 export function createInitialState(): State {
+  // Generate the galaxy with a fixed seed for consistent testing
+  const galaxySystems = generateRandomSolarSystems(12345);
+  
+  // Create starting ship with proper fuel
+  const startingShip = createEmptyShip();
+  const shipType = getShipType(0); // Gnat
+  startingShip.fuel = shipType.fuelTanks; // Start with full fuel
+  startingShip.hull = shipType.hullStrength; // Start with full hull
+  
   return {
     // Core player stats
     credits: 1000, // Starting credits (based on Palm original)
@@ -88,6 +100,7 @@ export function createInitialState(): State {
     nameCommander: "Commander",
     
     // Current location and travel
+    currentSystem: 0, // Sol system (home) 
     warpSystem: 0, // Sol system (home)
     selectedShipType: 0, // Gnat (starting ship)
     galacticChartSystem: 0, // Initialize to current system
@@ -135,10 +148,10 @@ export function createInitialState(): State {
     trackAutoOff: true, // From Palm OS TrackAutoOff default
     
     // Game objects
-    ship: createEmptyShip(),
+    ship: startingShip,
     opponent: createEmptyShip(),
     mercenary: Array.from({ length: MAXCREWMEMBER + 1 }, () => createEmptyCrewMember()),
-    solarSystem: Array.from({ length: MAXSOLARSYSTEM }, () => createEmptySolarSystem()),
+    solarSystem: galaxySystems,
     
     // Equipment and features
     escapePod: false,

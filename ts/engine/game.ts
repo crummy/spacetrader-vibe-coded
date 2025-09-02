@@ -6,7 +6,8 @@ import { createInitialState } from '../state.ts';
 import { GameMode } from '../types.ts';
 
 // Import all system modules
-import { buyCargo, sellCargo, calculatePrice } from '../economy/trading.ts';
+import { buyCargo, sellCargo } from '../economy/trading.ts';
+import { calculateStandardPrice } from '../economy/pricing.ts';
 import { warpToSystem, canWarpToSystem, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSystemName } from '../data/systems.ts';
