@@ -7,7 +7,7 @@ import { GameMode } from '../types.ts';
 
 // Import all system modules
 import { buyCargo, sellCargo } from '../economy/trading.ts';
-import { calculateStandardPrice } from '../economy/pricing.ts';
+import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, calculateFinalPrices } from '../economy/pricing.ts';
 import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
@@ -41,7 +41,7 @@ export type ValidationResult = {
 };
 
 // Game Engine Class
-export interface GameEngine {
+export type GameEngine = {
   state: GameState;
   executeAction: (action: GameAction) => Promise<ActionResult>;
   getAvailableActions: () => AvailableAction[];
@@ -320,7 +320,7 @@ async function executeTrackSystemAction(state: GameState, parameters: any): Prom
   
   return {
     success: true,
-    message: `Now tracking ${getSystemName(systemIndex)}`,
+    message: `Now tracking ${getSolarSystemName(systemIndex)}`,
     stateChanged: true
   };
 }
@@ -359,8 +359,9 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
   // Buy cargo actions
+  const prices = calculateFinalPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
   for (let i = 0; i < 10; i++) {
-    const price = calculatePrice(state, i, true);
+    const price = prices.buyPrices[i];
     if (price > 0) {
       actions.push({
         type: 'buy_cargo',
@@ -375,7 +376,7 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   // Sell cargo actions
   for (let i = 0; i < state.ship.cargo.length; i++) {
     if (state.ship.cargo[i] > 0) {
-      const price = calculatePrice(state, i, false);
+      const price = prices.sellPrices[i];
       actions.push({
         type: 'sell_cargo',
         name: `Sell cargo (item ${i})`,
@@ -402,7 +403,7 @@ function getSpaceActions(state: GameState): AvailableAction[] {
   // Warp to systems
   const possibleSystems: number[] = [];
   for (let i = 0; i < state.solarSystem.length; i++) {
-    if (i !== state.currentSystem && canWarpToSystem(state, i)) {
+    if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
       possibleSystems.push(i);
     }
   }
@@ -496,11 +497,10 @@ export function checkRandomEncounters(state: GameState): { hasEncounter: boolean
 
 export function updateMarkets(state: GameState): void {
   // Update trade prices based on market fluctuations
+  const prices = calculateFinalPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
   for (let i = 0; i < state.buyPrice.length; i++) {
-    const variation = 0.8 + (Math.random() * 0.4); // 80% to 120% of base price
-    const basePrice = calculatePrice(state, i, true);
-    state.buyPrice[i] = Math.floor(basePrice * variation);
-    state.sellPrice[i] = Math.floor(basePrice * variation * 0.8); // Sell price is 80% of buy price
+    state.buyPrice[i] = prices.buyPrices[i];
+    state.sellPrice[i] = prices.sellPrices[i];
   }
 }
 
@@ -594,7 +594,7 @@ export function getCurrentLocation(state: GameState): {
 } {
   return {
     systemIndex: state.currentSystem,
-    systemName: getSystemName(state.currentSystem),
+    systemName: getSolarSystemName(state.currentSystem),
     isDocked: state.currentMode === GameMode.OnPlanet
   };
 }

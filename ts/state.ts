@@ -99,6 +99,12 @@ export function createInitialState(): State {
     days: 0,
     nameCommander: "Commander",
     
+    // Commander skills (starting values from Palm OS)
+    commanderPilot: 1,
+    commanderFighter: 1, 
+    commanderTrader: 1,
+    commanderEngineer: 1,
+    
     // Current location and travel
     currentSystem: 0, // Sol system (home) 
     warpSystem: 0, // Sol system (home)

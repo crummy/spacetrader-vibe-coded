@@ -6,9 +6,10 @@ import { strict as assert } from 'node:assert';
 import type { GameState } from '../types.ts';
 import { createInitialState } from '../state.ts';
 import { GameMode } from '../types.ts';
+import type { GameEngine } from './game.ts';
 import { 
   // Core Game Engine
-  GameEngine, createGameEngine, 
+  createGameEngine, 
   
   // Action System
   executeAction, getAvailableActions, canExecuteAction,

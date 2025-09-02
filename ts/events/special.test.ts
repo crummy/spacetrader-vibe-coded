@@ -192,7 +192,7 @@ describe('Special Events System', () => {
 
     test('should execute erase record event', () => {
       const state = createInitialState();
-      state.credits = 1000;
+      state.credits = 10000; // Need 5000 for erase record
       state.currentSystem = 5;
       state.solarSystem[5].special = SpecialEventType.ERASERECORD;
       state.policeRecordScore = -200; // Criminal record
@@ -413,7 +413,7 @@ describe('Special Events System', () => {
 
     test('should integrate with reputation system', () => {
       const state = createInitialState();
-      state.credits = 2000;
+      state.credits = 10000; // Need 5000 for erase record
       state.currentSystem = 5;
       state.solarSystem[5].special = SpecialEventType.ERASERECORD;
       state.policeRecordScore = -100;

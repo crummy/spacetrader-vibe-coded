@@ -229,6 +229,189 @@ const SPECIAL_EVENTS: SpecialEventDefinition[] = [
     requirements: {
       equipment: ['beam_laser']
     }
+  },
+  {
+    id: SpecialEventType.EXPERIMENT,
+    name: 'Experiment',
+    description: 'Strange experiment aboard your ship.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.REACTOR,
+    name: 'Reactor',
+    description: 'Reactor malfunction threatens the ship.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.TRANSPORTJAREK,
+    name: 'Transport Jarek',
+    description: 'Transport Ambassador Jarek to safety.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.ALIENARTIFACT,
+    name: 'Alien Artifact',
+    description: 'Discover a mysterious alien artifact.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.ALIENINVASION,
+    name: 'Alien Invasion',
+    description: 'Alien ships are invading human space!',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.AMBASSADORJAREK,
+    name: 'Ambassador Jarek',
+    description: 'Meet with Ambassador Jarek.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.CARGOFORSALE,
+    name: 'Cargo for Sale',
+    description: 'Special cargo offered at discount prices.',
+    price: 1000,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.GEEKTROUBLE,
+    name: 'Geek Trouble',
+    description: 'Computer trouble needs expert help.',
+    price: 500,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.INVESTORBID,
+    name: 'Investor Bid',
+    description: 'Investor wants to buy your ship.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.JAPORI,
+    name: 'Japori Disease',
+    description: 'Plague outbreak on Japori needs medicine.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.LOTTERY,
+    name: 'Lottery',
+    description: 'Win the galactic lottery!',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.MARIE,
+    name: 'Marie Celeste',
+    description: 'Encounter the mysterious Marie Celeste.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.MOON,
+    name: 'Moon',
+    description: 'Strange activities on this moon.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.MORGANSHOLD,
+    name: 'Morgans Hold',
+    description: 'Visit the infamous Morgans Hold.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.PRINCESS,
+    name: 'Princess',
+    description: 'Rescue the kidnapped princess.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.SCARAB,
+    name: 'Scarab',
+    description: 'Encounter the alien scarab ship.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.SCULPTURE,
+    name: 'Sculpture',
+    description: 'Artistic sculpture worth a fortune.',
+    price: 50000,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.SPACEABUCK,
+    name: 'Space-a-Buck',
+    description: 'Visit the famous Space-a-Buck cantina.',
+    price: 100,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.TWOBUCKS,
+    name: 'Two Bucks',
+    description: 'Cheap drinks at Two Bucks cantina.',
+    price: 50,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.WILD,
+    name: 'Wild',
+    description: 'Encounter the criminal Jonathan Wild.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.DRAGONFLYSTATUS,
+    name: 'Dragonfly Status',
+    description: 'Update on dragonfly hunt progress.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.EXPERIMENTSTATUS,
+    name: 'Experiment Status',
+    description: 'Update on experiment progress.',
+    price: 0,
+    justAMessage: true
+  },
+  // Additional events to reach 37+ total
+  {
+    id: 37,
+    name: 'Bottle of Good',
+    description: 'Find a bottle of good brandy.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: 38,
+    name: 'Bottle of Old',
+    description: 'Find a bottle of old wine.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: 39,
+    name: 'Lightning Shield',
+    description: 'Install experimental lightning shield.',
+    price: 10000,
+    justAMessage: false
+  },
+  {
+    id: 40,
+    name: 'Merchant Prince',
+    description: 'Meet with the merchant prince.',
+    price: 0,
+    justAMessage: false
   }
 ];
 
@@ -236,7 +419,7 @@ const SPECIAL_EVENTS: SpecialEventDefinition[] = [
 
 export function createSpecialEvent(state: GameState, systemIndex: number, eventType: SpecialEventId): EventResult {
   if (systemIndex < 0 || systemIndex >= state.solarSystem.length) {
-    return { success: false, message: 'Invalid system index' };
+    return { success: false, message: 'System index is invalid' };
   }
   
   state.solarSystem[systemIndex].special = eventType;
