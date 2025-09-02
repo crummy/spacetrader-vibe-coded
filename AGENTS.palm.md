@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.palm.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents when working with the Palm OS source code in this repository.
 
 ## Project Overview
 

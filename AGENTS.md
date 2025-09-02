@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents when working with code in this repository.
 
 ## Project Overview
 
@@ -8,7 +8,7 @@ This repository contains the source code for Space Trader 1.2.2, a classic Palm 
 
 ## Palm Pilot Original Code
 
-The `palm/` directory contains the complete original Palm OS source code written in C with CodeWarrior for Palm. For detailed information about the Palm OS codebase, build process, and architecture, see [CLAUDE.palm.md](CLAUDE.palm.md).
+The `palm/` directory contains the complete original Palm OS source code written in C with CodeWarrior for Palm. For detailed information about the Palm OS codebase, build process, and architecture, see [AGENTS.palm.md](AGENTS.palm.md).
 
 ## Current Development
 
@@ -29,4 +29,4 @@ This is a TypeScript port of the Palm Pilot game Space Trader, currently focusin
 
 ## Development Guidelines
 
-For detailed coding conventions, development practices, and tooling requirements, see [CLAUDE.code.md](CLAUDE.code.md).
+For detailed coding conventions, development practices, and tooling requirements, see [AGENTS.code.md](AGENTS.code.md).
