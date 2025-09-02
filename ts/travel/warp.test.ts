@@ -187,11 +187,11 @@ describe('Warp System', () => {
   describe('Warp Validation', () => {
     test('should allow warp when conditions are met', () => {
       const state = createInitialState();
-      state.ship.fuel = 15; // Ensure enough fuel
       state.credits = 1000;
       state.currentSystem = 0;
       
-      const result = canWarpTo(state, 1);
+      // Use system 16 which is closer (distance 18 vs default fuel 20)
+      const result = canWarpTo(state, 16);
       assert.equal(result.canWarp, true);
     });
 
@@ -220,12 +220,12 @@ describe('Warp System', () => {
 
     test('should prevent warp when insufficient credits', () => {
       const state = createInitialState();
-      state.ship.fuel = 15;
-      state.credits = 10;
+      state.credits = 10; // Very low credits
       state.debt = 2000; // High debt means high interest
       state.currentSystem = 0;
       
-      const result = canWarpTo(state, 1);
+      // Use system 16 which is reachable with default fuel (distance 18 vs fuel 20)
+      const result = canWarpTo(state, 16);
       assert.equal(result.canWarp, false);
       assert.equal(result.reason, 'Insufficient credits');
     });
@@ -257,13 +257,13 @@ describe('Warp System', () => {
 
     test('should allow warp when Wild aboard with beam laser', () => {
       const state = createInitialState();
-      state.ship.fuel = 15;
       state.credits = 1000;
       state.wildStatus = 1; // Wild is aboard
       state.ship.weapon[0] = 1; // BEAMLASERWEAPON = 1
       state.currentSystem = 0;
       
-      const result = canWarpTo(state, 1);
+      // Use closer system 16 (distance 18 vs fuel 20)
+      const result = canWarpTo(state, 16);
       assert.equal(result.canWarp, true);
     });
   });
@@ -271,19 +271,18 @@ describe('Warp System', () => {
   describe('Warp Execution', () => {
     test('should successfully execute normal warp', () => {
       const state = createInitialState();
-      state.ship.fuel = 15; // Ensure enough fuel for any distance
       state.credits = 1000;
       state.currentSystem = 0;
       state.debt = 500; // Add some debt to create interest cost
       
       const initialFuel = state.ship.fuel;
       const initialCredits = state.credits;
-      const expectedDistance = calculateDistance(state.solarSystem[0], state.solarSystem[1]);
+      const expectedDistance = calculateDistance(state.solarSystem[0], state.solarSystem[16]);
       
-      const result = performWarp(state, 1, false);
+      const result = performWarp(state, 16, false);
       
       assert.equal(result.success, true);
-      assert.equal(state.currentSystem, 1);
+      assert.equal(state.currentSystem, 16);
       assert.equal(state.ship.fuel, initialFuel - expectedDistance); // Consumed fuel for actual distance
       assert.ok(state.credits < initialCredits); // Some costs deducted (interest on debt)
     });
@@ -306,13 +305,12 @@ describe('Warp System', () => {
 
     test('should reset shield strength after warp', () => {
       const state = createInitialState();
-      state.ship.fuel = 10;
       state.credits = 1000;
       state.currentSystem = 0;
       state.ship.shield[0] = 0; // ENERGYSHIELD = 0, power = 100
       state.ship.shieldStrength[0] = 50; // Damaged
       
-      const result = performWarp(state, 1, false);
+      const result = performWarp(state, 16, false);
       
       assert.equal(result.success, true);
       assert.equal(state.ship.shieldStrength[0], 100); // Reset to full
@@ -347,15 +345,14 @@ describe('Warp System', () => {
 
     test('should mark destination system as visited', () => {
       const state = createInitialState();
-      state.ship.fuel = 10;
       state.credits = 1000;
       state.currentSystem = 0;
-      state.solarSystem[1].visited = false;
+      state.solarSystem[16].visited = false;
       
-      const result = performWarp(state, 1, false);
+      const result = performWarp(state, 16, false);
       
       assert.equal(result.success, true);
-      assert.equal(state.solarSystem[1].visited, true);
+      assert.equal(state.solarSystem[16].visited, true);
     });
   });
 

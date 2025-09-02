@@ -7,7 +7,7 @@ import { GameMode } from '../types.ts';
 
 // Import all system modules
 import { buyCargo, sellCargo } from '../economy/trading.ts';
-import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, calculateFinalPrices } from '../economy/pricing.ts';
+import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getAllSystemPrices } from '../economy/pricing.ts';
 import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
@@ -359,9 +359,9 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
   // Buy cargo actions
-  const prices = calculateFinalPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
+  const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
   for (let i = 0; i < 10; i++) {
-    const price = prices.buyPrices[i];
+    const price = allPrices[i].buyPrice;
     if (price > 0) {
       actions.push({
         type: 'buy_cargo',
@@ -376,7 +376,7 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   // Sell cargo actions
   for (let i = 0; i < state.ship.cargo.length; i++) {
     if (state.ship.cargo[i] > 0) {
-      const price = prices.sellPrices[i];
+      const price = allPrices[i].sellPrice;
       actions.push({
         type: 'sell_cargo',
         name: `Sell cargo (item ${i})`,
@@ -497,10 +497,10 @@ export function checkRandomEncounters(state: GameState): { hasEncounter: boolean
 
 export function updateMarkets(state: GameState): void {
   // Update trade prices based on market fluctuations
-  const prices = calculateFinalPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
+  const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
   for (let i = 0; i < state.buyPrice.length; i++) {
-    state.buyPrice[i] = prices.buyPrices[i];
-    state.sellPrice[i] = prices.sellPrices[i];
+    state.buyPrice[i] = allPrices[i].buyPrice;
+    state.sellPrice[i] = allPrices[i].sellPrice;
   }
 }
 
