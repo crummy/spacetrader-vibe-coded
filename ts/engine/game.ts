@@ -1,7 +1,7 @@
 // Game Engine Integration Implementation
 // Orchestrates all game systems: economy, travel, combat, events
 
-import type { GameState, Ship } from '../types.ts';
+import type { GameState, Ship, TradeItemArray } from '../types.ts';
 import { createInitialState } from '../state.ts';
 import { GameMode } from '../types.ts';
 
@@ -94,6 +94,12 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'track_system':
         return await executeTrackSystemAction(state, action.parameters);
       
+      case 'launch_ship':
+        return await executeLaunchShipAction(state);
+      
+      case 'dock_at_planet':
+        return await executeDockAtPlanetAction(state);
+      
       case 'combat_attack':
       case 'combat_flee':
       case 'combat_surrender':
@@ -128,6 +134,10 @@ export function getAvailableActions(state: GameState): AvailableAction[] {
   switch (state.currentMode) {
     case GameMode.OnPlanet:
       actions.push(...getPlanetActions(state));
+      break;
+    
+    case GameMode.InSpace:
+      actions.push(...getSpaceActions(state));
       break;
     
     case GameMode.InCombat:
@@ -195,7 +205,7 @@ async function executeBuyCargoAction(state: GameState, parameters: any): Promise
   try {
     const currentSystem = state.solarSystem[state.currentSystem];
     const allPrices = getAllSystemPrices(currentSystem, state.commanderTrader, state.policeRecordScore);
-    const buyPrices = allPrices.map(p => p.buyPrice);
+    const buyPrices = extractBuyPrices(allPrices);
     
     const result = buyCargo(state, currentSystem, tradeItem, quantity, buyPrices);
     return {
@@ -227,7 +237,7 @@ async function executeSellCargoAction(state: GameState, parameters: any): Promis
   try {
     const currentSystem = state.solarSystem[state.currentSystem];
     const allPrices = getAllSystemPrices(currentSystem, state.commanderTrader, state.policeRecordScore);
-    const sellPrices = allPrices.map(p => p.sellPrice);
+    const sellPrices = extractSellPrices(allPrices);
     
     const result = sellCargo(state, tradeItem, quantity, sellPrices);
     return {
@@ -389,6 +399,42 @@ async function executeTrackSystemAction(state: GameState, parameters: any): Prom
   };
 }
 
+async function executeLaunchShipAction(state: GameState): Promise<ActionResult> {
+  if (state.currentMode !== GameMode.OnPlanet) {
+    return {
+      success: false,
+      message: 'Can only launch ship when docked at planet',
+      stateChanged: false
+    };
+  }
+  
+  state.currentMode = GameMode.InSpace;
+  
+  return {
+    success: true,
+    message: 'Ship launched into space',
+    stateChanged: true
+  };
+}
+
+async function executeDockAtPlanetAction(state: GameState): Promise<ActionResult> {
+  if (state.currentMode !== GameMode.InSpace) {
+    return {
+      success: false,
+      message: 'Can only dock when in space around a planet',
+      stateChanged: false
+    };
+  }
+  
+  state.currentMode = GameMode.OnPlanet;
+  
+  return {
+    success: true,
+    message: 'Docked at planet',
+    stateChanged: true
+  };
+}
+
 async function executeCombatAction(state: GameState, action: GameAction): Promise<ActionResult> {
   if (state.currentMode !== GameMode.InCombat) {
     return {
@@ -427,10 +473,17 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   const canBuyAnything = allPrices.some(p => p.buyPrice > 0 && state.credits >= p.buyPrice);
   
   if (canBuyAnything) {
+    // Find which items can be bought
+    const possibleItems = allPrices
+      .map((priceInfo, index) => ({ index, buyPrice: priceInfo.buyPrice }))
+      .filter(item => item.buyPrice > 0 && state.credits >= item.buyPrice)
+      .map(item => item.index);
+    
     actions.push({
       type: 'buy_cargo',
       name: 'Buy Cargo',
       description: 'Purchase trade goods',
+      parameters: { possibleItems },
       available: true
     });
   }
@@ -460,7 +513,24 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     });
   }
   
-  // Travel to other systems (skip intermediate space state)
+  // Note: Warp actions are handled by launching to space first
+  // This matches the original Palm OS game flow where you launch then warp
+
+  // Launch ship action (transition from planet to space)
+  actions.push({
+    type: 'launch_ship',
+    name: 'Launch Ship',
+    description: 'Launch ship and enter space',
+    available: true
+  });
+  
+  return actions;
+}
+
+function getSpaceActions(state: GameState): AvailableAction[] {
+  const actions: AvailableAction[] = [];
+  
+  // Warp to systems when in space
   const possibleSystems: number[] = [];
   for (let i = 0; i < state.solarSystem.length; i++) {
     if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
@@ -471,12 +541,28 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   if (possibleSystems.length > 0) {
     actions.push({
       type: 'warp_to_system',
-      name: 'Travel to System',
-      description: 'Travel to another solar system',
+      name: 'Warp to System',
+      description: 'Warp to another solar system',
       parameters: { possibleSystems },
       available: state.ship.fuel > 0
     });
   }
+
+  // Track system action
+  actions.push({
+    type: 'track_system',
+    name: 'Track System',
+    description: 'Set a system to track on the galactic map',
+    available: true
+  });
+
+  // Return to current planet (dock)
+  actions.push({
+    type: 'dock_at_planet',
+    name: 'Dock at Planet',
+    description: 'Return to planet surface',
+    available: true
+  });
   
   return actions;
 }
@@ -728,6 +814,26 @@ export function getCurrentShipStatus(state: GameState): {
 }
 
 // Helper Functions
+
+function extractBuyPrices(allPrices: Array<{ buyPrice: number; sellPrice: number }>): TradeItemArray {
+  if (allPrices.length !== 10) {
+    throw new Error(`Expected exactly 10 trade items, got ${allPrices.length}`);
+  }
+  return [
+    allPrices[0].buyPrice, allPrices[1].buyPrice, allPrices[2].buyPrice, allPrices[3].buyPrice, allPrices[4].buyPrice,
+    allPrices[5].buyPrice, allPrices[6].buyPrice, allPrices[7].buyPrice, allPrices[8].buyPrice, allPrices[9].buyPrice
+  ];
+}
+
+function extractSellPrices(allPrices: Array<{ buyPrice: number; sellPrice: number }>): TradeItemArray {
+  if (allPrices.length !== 10) {
+    throw new Error(`Expected exactly 10 trade items, got ${allPrices.length}`);
+  }
+  return [
+    allPrices[0].sellPrice, allPrices[1].sellPrice, allPrices[2].sellPrice, allPrices[3].sellPrice, allPrices[4].sellPrice,
+    allPrices[5].sellPrice, allPrices[6].sellPrice, allPrices[7].sellPrice, allPrices[8].sellPrice, allPrices[9].sellPrice
+  ];
+}
 
 function getReputationString(score: number): string {
   if (score >= 80) return 'Elite';

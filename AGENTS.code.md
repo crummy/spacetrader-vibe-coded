@@ -47,6 +47,10 @@ This file contains coding conventions and development practices for the Space Tr
 - **Immutability**: Favor immutable data structures and pure functions
 - **Type Safety**: Use TypeScript's type system extensively for compile-time safety
 - **Minimal Dependencies**: Prefer native Node.js capabilities over external libraries
+- **No Type Escapes**: Never use `any` type or type casting (`as`, `as unknown as`)
+  - Type casting indicates a design flaw - fix the underlying type issue instead
+  - Use proper type definitions and interfaces to maintain type safety
+  - If external APIs require type workarounds, isolate them in dedicated adapter functions
 
 ## Architecture Patterns
 
