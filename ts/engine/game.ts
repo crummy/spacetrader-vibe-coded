@@ -14,6 +14,7 @@ import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions a
 import { getSolarSystemName } from '../data/systems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
 import { EncounterType } from '../combat/engine.ts';
+import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, getAvailableEquipment, getInstialledEquipmentSellPrices } from '../economy/equipment-trading.ts';
 
 // Action System Types
 export type GameAction = {
@@ -100,6 +101,24 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'dock_at_planet':
         return await executeDockAtPlanetAction(state);
+      
+      case 'buy_weapon':
+        return await executeBuyWeaponAction(state, action.parameters);
+      
+      case 'sell_weapon':
+        return await executeSellWeaponAction(state, action.parameters);
+      
+      case 'buy_shield':
+        return await executeBuyShieldAction(state, action.parameters);
+      
+      case 'sell_shield':
+        return await executeSellShieldAction(state, action.parameters);
+      
+      case 'buy_gadget':
+        return await executeBuyGadgetAction(state, action.parameters);
+      
+      case 'sell_gadget':
+        return await executeSellGadgetAction(state, action.parameters);
       
       case 'combat_attack':
       case 'combat_flee':
@@ -436,6 +455,169 @@ async function executeDockAtPlanetAction(state: GameState): Promise<ActionResult
   };
 }
 
+// Equipment trading action handlers
+async function executeBuyWeaponAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { weaponIndex } = parameters;
+  
+  if (typeof weaponIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid weapon index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = buyWeapon(state, weaponIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Weapon purchase completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Weapon purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeSellWeaponAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { slotIndex } = parameters;
+  
+  if (typeof slotIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid weapon slot index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = sellWeapon(state, slotIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Weapon sale completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Weapon sale failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeBuyShieldAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { shieldIndex } = parameters;
+  
+  if (typeof shieldIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid shield index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = buyShield(state, shieldIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Shield purchase completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Shield purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeSellShieldAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { slotIndex } = parameters;
+  
+  if (typeof slotIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid shield slot index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = sellShield(state, slotIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Shield sale completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Shield sale failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeBuyGadgetAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { gadgetIndex } = parameters;
+  
+  if (typeof gadgetIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid gadget index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = buyGadget(state, gadgetIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Gadget purchase completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Gadget purchase failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeSellGadgetAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { slotIndex } = parameters;
+  
+  if (typeof slotIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid gadget slot index',
+      stateChanged: false
+    };
+  }
+  
+  try {
+    const result = sellGadget(state, slotIndex);
+    return {
+      success: result.success,
+      message: result.reason || 'Gadget sale completed',
+      stateChanged: result.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Gadget sale failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
 async function executeCombatAction(state: GameState, action: GameAction): Promise<ActionResult> {
   if (state.currentMode !== GameMode.InCombat) {
     return {
@@ -516,6 +698,40 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   
   // Note: Warp actions are handled by launching to space first
   // This matches the original Palm OS game flow where you launch then warp
+
+  // Equipment trading at shipyard
+  const availableEquipment = getAvailableEquipment(state);
+  const sellableEquipment = getInstialledEquipmentSellPrices(state);
+  
+  // Check if any equipment can be bought
+  const canBuyEquipment = availableEquipment.weapons.length > 0 || 
+                         availableEquipment.shields.length > 0 || 
+                         availableEquipment.gadgets.length > 0;
+  
+  if (canBuyEquipment) {
+    actions.push({
+      type: 'buy_equipment',
+      name: 'Buy Equipment',
+      description: 'Visit shipyard to buy weapons, shields, or gadgets',
+      parameters: { availableEquipment },
+      available: true
+    });
+  }
+  
+  // Check if any equipment can be sold
+  const canSellEquipment = sellableEquipment.weapons.length > 0 ||
+                          sellableEquipment.shields.length > 0 ||
+                          sellableEquipment.gadgets.length > 0;
+  
+  if (canSellEquipment) {
+    actions.push({
+      type: 'sell_equipment',
+      name: 'Sell Equipment',
+      description: 'Sell installed weapons, shields, or gadgets',
+      parameters: { sellableEquipment },
+      available: true
+    });
+  }
 
   // Launch ship action (transition from planet to space)
   actions.push({
