@@ -140,9 +140,9 @@ export function createInitialState(): State {
     galacticChartSystem: 0, // Initialize to current system
     
     // Trading prices - initialized to 0, will be calculated
-    buyPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
-    sellPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
-    buyingPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
+    buyPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    sellPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    buyingPrice: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     shipPrice: new Array(MAXSHIPTYPE).fill(0), // Will be calculated
     
     // Combat and reputation
@@ -174,6 +174,10 @@ export function createInitialState(): State {
     veryRareEncounter: 0,
     reactorStatus: 0,
     scarabStatus: 0,
+    
+    // Additional quest statuses (aliases for compatibility)
+    wildStatus: 0,
+    spacemonsterStatus: 0,
     
     // UI state
     curForm: 0,
@@ -220,7 +224,7 @@ export function createInitialState(): State {
     arrivedViaWormhole: false,   // Wormhole arrival tracking
     
     // Special items and features
-    wormhole: [0, 0, 0, 0, 0, 0] as WormholeArray,
+    wormhole: [0, 0, 0, 0, 0, 0],
     artifactOnBoard: false,
     alreadyPaidForNewspaper: false,
     

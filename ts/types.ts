@@ -97,6 +97,14 @@ export type GadgetArray = readonly [number, number, number];
 export type CrewArray = readonly [number, number, number];
 export type WormholeArray = readonly [number, number, number, number, number, number];
 
+// Mutable versions for game state
+export type MutableTradeItemArray = [number, number, number, number, number, number, number, number, number, number];
+export type MutableWeaponArray = [number, number, number];
+export type MutableShieldArray = [number, number, number];
+export type MutableGadgetArray = [number, number, number];
+export type MutableCrewArray = [number, number, number];
+export type MutableWormholeArray = [number, number, number, number, number, number];
+
 // Static Data Structures from DataTypes.h
 
 // Weapon Definition
@@ -182,12 +190,12 @@ export interface PoliticsType {
 // Ship Structure (player/opponent ships)
 export interface Ship {
   type: number; // Index into ship types array
-  cargo: TradeItemArray;
-  weapon: WeaponArray; // -1 means no weapon installed
-  shield: ShieldArray; // -1 means no shield installed
-  shieldStrength: ShieldArray;
-  gadget: GadgetArray; // -1 means no gadget installed  
-  crew: CrewArray; // -1 means no crew member
+  cargo: MutableTradeItemArray;
+  weapon: MutableWeaponArray; // -1 means no weapon installed
+  shield: MutableShieldArray; // -1 means no shield installed
+  shieldStrength: MutableShieldArray;
+  gadget: MutableGadgetArray; // -1 means no gadget installed  
+  crew: MutableCrewArray; // -1 means no crew member
   fuel: number;
   hull: number;
   tribbles: number;
@@ -227,15 +235,22 @@ export interface State {
   days: number;
   nameCommander: string;
   
+  // Commander skills
+  commanderPilot: number;
+  commanderFighter: number;
+  commanderTrader: number;
+  commanderEngineer: number;
+  
   // Current location and travel
+  currentSystem: number;
   warpSystem: number;
   selectedShipType: number;
   galacticChartSystem: number;
   
   // Trading prices
-  buyPrice: TradeItemArray;
-  sellPrice: TradeItemArray;
-  buyingPrice: TradeItemArray;
+  buyPrice: MutableTradeItemArray;
+  sellPrice: MutableTradeItemArray;
+  buyingPrice: MutableTradeItemArray;
   shipPrice: readonly number[]; // [MAXSHIPTYPE]
   
   // Combat and reputation
@@ -267,6 +282,10 @@ export interface State {
   veryRareEncounter: number;
   reactorStatus: number;
   scarabStatus: number;
+  
+  // Additional quest statuses (aliases for compatibility)
+  wildStatus: number;
+  spacemonsterStatus: number;
   
   // UI state
   curForm: number;
@@ -313,7 +332,7 @@ export interface State {
   arrivedViaWormhole: boolean;   // Wormhole arrival tracking
   
   // Special items and features
-  wormhole: WormholeArray;
+  wormhole: MutableWormholeArray;
   artifactOnBoard: boolean;
   alreadyPaidForNewspaper: boolean;
   
@@ -340,3 +359,6 @@ export interface State {
   // Current game mode (our addition for managing UI state)
   currentMode: GameMode;
 }
+
+// Export alias for compatibility
+export type GameState = State;

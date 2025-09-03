@@ -1,14 +1,17 @@
 // Special Events System - Port from Palm OS Space Trader
 // Based on original C code in Event.c and EventDialog.c
 
-import type { GameState } from '../types.ts';
+import type { State } from '../types.ts';
 
-// Add newsEvents to GameState type if missing
+// Add newsEvents to State type if missing
 declare module '../types.ts' {
-  interface GameState {
+  interface State {
     newsEvents?: NewsEventInfo[];
   }
 }
+
+// Type alias for consistency with existing code
+type GameState = State;
 
 // Special Event Type Constants (from Palm OS spacetrader.h)
 export const SpecialEventType = {
