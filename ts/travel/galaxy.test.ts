@@ -90,9 +90,7 @@ describe('Galaxy Map System', () => {
   });
 
   describe('Galactic Chart Navigation', () => {
-    test.skip('should start with commander system selected on chart', () => {
-      // TODO: Fix galacticChartSystem initialization issue - edge case
-      // Core functionality works, this is a minor initialization detail
+    test('should start with commander system selected on chart', () => {
       const state = createInitialState();
       
       const result = getGalacticChartSystem(state);
