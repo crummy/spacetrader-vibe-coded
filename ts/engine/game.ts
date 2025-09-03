@@ -123,6 +123,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'combat_attack':
       case 'combat_flee':
       case 'combat_surrender':
+      case 'combat_trade':
+      case 'combat_ignore':
+      case 'combat_plunder':
         return await executeCombatAction(state, action);
       
       case 'get_available_actions':
@@ -913,8 +916,13 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
     const encounterType = policeTypes[Math.floor(Math.random() * policeTypes.length)];
     return { hasEncounter: true, encounterType };
   } else if (encounterTest < politics.strengthPirates + policeStrength + politics.strengthTraders) {
-    // Trader encounter
-    const traderTypes = [30, 31, 32]; // Different trader encounter types
+    // Trader encounter - use correct trader encounter types from combat engine
+    const traderTypes = [
+      EncounterType.TRADERIGNORE,    // 20 - Trader passes by
+      EncounterType.TRADERFLEE,      // 21 - Trader flees
+      EncounterType.TRADERSELL,      // 24 - Trader will sell products in orbit
+      EncounterType.TRADERBUY        // 25 - Trader will buy products in orbit
+    ];
     const encounterType = traderTypes[Math.floor(Math.random() * traderTypes.length)];
     return { hasEncounter: true, encounterType };
   }

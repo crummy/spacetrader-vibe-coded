@@ -2,6 +2,7 @@
 // Ported from Palm OS Space Trader Encounter.c and combat logic
 
 import type { GameState, Ship } from '../types.ts';
+import { executeOrbitalPurchase, executeOrbitalSale } from '../trading/orbital.ts';
 import { GameMode } from '../types.ts';
 
 // Combat Action Types
@@ -311,6 +312,42 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
       applyDamage(state.ship, playerDamage);
       message = `Escape failed! Enemy deals ${playerDamage} damage.`;
     }
+  } else if (playerAction === 'ignore') {
+    // Ignore the encounter - end peacefully
+    endEncounter(state);
+    message = 'You ignore the encounter and continue on your way.';
+  } else if (playerAction === 'trade') {
+    // Handle orbital trading
+    if (state.encounterType === EncounterType.TRADERSELL) {
+      // Trader is selling to player
+      const tradeResult = executeOrbitalPurchase(state, state.encounterType);
+      if (tradeResult.success) {
+        endEncounter(state);
+        message = tradeResult.reason || 'Trade completed successfully';
+      } else {
+        message = tradeResult.reason || 'Trade failed';
+      }
+    } else if (state.encounterType === EncounterType.TRADERBUY) {
+      // Trader is buying from player
+      const tradeResult = executeOrbitalSale(state, state.encounterType);
+      if (tradeResult.success) {
+        endEncounter(state);
+        message = tradeResult.reason || 'Trade completed successfully';
+      } else {
+        message = tradeResult.reason || 'Trade failed';
+      }
+    } else {
+      message = 'This encounter does not offer trading.';
+    }
+  } else if (playerAction === 'surrender') {
+    // Surrender to opponent
+    endEncounter(state);
+    message = 'You surrender. The encounter ends.';
+  } else if (playerAction === 'plunder') {
+    // Plunder defeated opponent (when they surrender)
+    // TODO: Implement plundering mechanics
+    endEncounter(state);
+    message = 'You plunder the defeated ship.';
   }
   
   return {

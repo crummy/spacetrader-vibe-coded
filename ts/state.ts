@@ -117,7 +117,7 @@ export function createInitialState(): State {
   // Create starting ship with proper fuel
   const startingShip = createEmptyShip();
   const shipType = getShipType(0); // Gnat
-  startingShip.fuel = shipType.fuelTanks; // Start with full fuel
+  startingShip.fuel = shipType.fuelTanks; // Start with full fuel (matches Palm OS original)
   startingShip.hull = shipType.hullStrength; // Start with full hull
   
   return {
