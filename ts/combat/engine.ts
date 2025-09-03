@@ -310,6 +310,18 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     }
     
     message = `You deal ${opponentDamage} damage. Enemy deals ${playerDamage} damage.`;
+    
+    // Check for combat resolution
+    const resolution = checkCombatResolution(state);
+    if (resolution) {
+      message += ` ${resolution.message}`;
+      return {
+        success: true,
+        playerDamage,
+        opponentDamage,
+        message
+      };
+    }
   } else if (playerAction === 'flee') {
     // Attempt to flee - success based on ship speed vs opponent
     const fleeSuccess = Math.random() > 0.3; // 70% success rate for now
@@ -589,4 +601,135 @@ function configureOpponentShip(state: GameState, encounterType: number): void {
     state.opponent.hull = shipType.hullStrength;
     state.opponent.weapon[0] = 0; // Pulse Laser
   }
+}
+
+// Check if combat should end due to hull destruction
+function checkCombatResolution(state: GameState): { message: string; gameOver?: boolean } | null {
+  const bothDestroyed = state.ship.hull <= 0 && state.opponent.hull <= 0;
+  const playerDestroyed = state.ship.hull <= 0;
+  const opponentDestroyed = state.opponent.hull <= 0;
+  
+  if (bothDestroyed) {
+    // Both ships destroyed - escape pod check
+    if (state.escapePod) {
+      handleEscapeWithPod(state);
+      return { message: 'Both ships destroyed! Your escape pod activates...' };
+    } else {
+      // Player dies - hull will be 0 for ending system to detect
+      endEncounter(state);
+      return { message: 'Both ships destroyed! Your ship is destroyed.', gameOver: true };
+    }
+  } else if (opponentDestroyed) {
+    // Enemy destroyed - victory!
+    const reward = handleVictory(state);
+    endEncounter(state);
+    return { message: reward.message };
+  } else if (playerDestroyed) {
+    // Player destroyed
+    if (state.escapePod) {
+      handleEscapeWithPod(state);
+      return { message: 'Your ship is destroyed! Your escape pod activates...' };
+    } else {
+      // Player dies - keep hull at 0 for ending system to detect
+      endEncounter(state);
+      return { message: 'Your ship is destroyed! Game Over.', gameOver: true };
+    }
+  }
+  
+  return null; // Combat continues
+}
+
+// Handle escape pod activation (simplified version of Palm OS EscapeWithPod)
+function handleEscapeWithPod(state: GameState): void {
+  // Reset to a basic Flea ship
+  const newShip = createEmptyShip();
+  newShip.type = 0; // Flea
+  newShip.hull = getShipType(0).hullStrength;
+  newShip.fuel = getShipType(0).fuelTanks;
+  newShip.crew[0] = state.ship.crew[0]; // Keep commander
+  
+  // Clear other crew members and equipment 
+  state.ship = newShip;
+  
+  // Financial cost
+  if (state.credits > 500) {
+    state.credits -= 500;
+  } else {
+    state.debt += (500 - state.credits);
+    state.credits = 0;
+  }
+  
+  // Clear quest items and status
+  state.jarekStatus = 0;
+  state.wildStatus = 0;
+  state.reactorStatus = 0;
+  state.ship.tribbles = 0;
+  
+  // Insurance payout
+  if (state.insurance) {
+    // Calculate ship value and add insurance payout
+    const insurancePayout = 15000; // Simplified - should calculate actual ship value
+    state.credits += insurancePayout;
+  }
+  
+  // Advance time and reset
+  state.days += 3;
+  state.escapePod = false;
+  state.insurance = false;
+  
+  endEncounter(state);
+}
+
+// Handle victory rewards (simplified version of Palm OS victory logic)
+function handleVictory(state: GameState): { message: string } {
+  const encounterType = state.encounterType;
+  let message = 'Enemy destroyed!';
+  let bounty = 0;
+  
+  // Calculate bounty based on opponent ship type
+  const opponentShipType = getShipType(state.opponent.type);
+  bounty = opponentShipType.bounty;
+  
+  if (EncounterType.isPoliceEncounter(encounterType)) {
+    // Killing police - bad for police record
+    state.policeKills++;
+    state.policeRecordScore -= 3; // KILLPOLICESCORE equivalent
+    message += ` You are now wanted by the police!`;
+  } else if (EncounterType.isPirateEncounter(encounterType)) {
+    // Killing pirates - good for police record, bounty reward
+    state.pirateKills++;
+    state.policeRecordScore += 1; // KILLPIRATESCORE equivalent
+    state.credits += bounty;
+    message += ` Bounty earned: ${bounty} credits.`;
+    
+    // Chance to scoop cargo (simplified)
+    if (Math.random() < 0.5) {
+      const randomItem = Math.floor(Math.random() * 5); // Focus on cheaper items
+      if (state.ship.cargo.reduce((sum, qty) => sum + qty, 0) < getShipType(state.ship.type).cargoBays) {
+        state.ship.cargo[randomItem]++;
+        const tradeItemNames = ['Water', 'Furs', 'Food', 'Ore', 'Games'];
+        message += ` Found 1 ${tradeItemNames[randomItem]} in the debris.`;
+      }
+    }
+  } else if (EncounterType.isTraderEncounter(encounterType)) {
+    // Killing traders - bad for police record
+    state.traderKills++;
+    state.policeRecordScore -= 2; // KILLTRADERSCORE equivalent  
+    message += ` You are now considered a criminal!`;
+    
+    // Trader cargo scoop
+    if (Math.random() < 0.7) {
+      const randomItem = Math.floor(Math.random() * 10);
+      if (state.ship.cargo.reduce((sum, qty) => sum + qty, 0) < getShipType(state.ship.type).cargoBays) {
+        state.ship.cargo[randomItem]++;
+        const tradeItemNames = ['Water', 'Furs', 'Food', 'Ore', 'Games', 'Firearms', 'Medicine', 'Machinery', 'Narcotics', 'Robots'];
+        message += ` Found 1 ${tradeItemNames[randomItem]} in the wreckage.`;
+      }
+    }
+  }
+  
+  // Reputation increase for victory
+  state.reputationScore += 1 + Math.floor(state.opponent.type / 2);
+  
+  return { message };
 }
