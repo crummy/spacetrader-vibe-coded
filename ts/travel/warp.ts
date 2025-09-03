@@ -5,6 +5,11 @@ import type { GameState, SolarSystem, Ship } from '../types.ts';
 import { MAXWORMHOLE, MAXSOLARSYSTEM } from '../types.ts';
 import { getShipType } from '../data/shipTypes.ts';
 import { getShield } from '../data/equipment.ts';
+import { 
+  checkFabricRipOccurrence, 
+  executeFabricRipTravel, 
+  updateFabricRipProbability 
+} from './fabric-rip.ts';
 
 // Constants from Palm OS source
 const DEBTTOOLARGE = 100000; // Maximum debt before restrictions (from Palm OS spacetrader.h)
@@ -31,6 +36,8 @@ export interface WarpResult {
   reason?: string;
   fuelConsumed?: number;
   costPaid?: number;
+  fabricRipOccurred?: boolean;
+  actualDestination?: number;
 }
 
 // Calculate distance between two solar systems
@@ -251,16 +258,30 @@ export function performWarp(state: GameState, toSystem: number, viaSingularity: 
   // Reset shield strength to full
   resetShields(state.ship);
   
-  // Execute the warp
-  state.currentSystem = toSystem;
-  state.solarSystem[toSystem].visited = true;
+  // Check for fabric rip during travel (Dr. Fehler's experiment)
+  let finalDestination = toSystem;
+  let fabricRipOccurred = false;
   
-  // TODO: Handle special events, encounters, and other arrival mechanics
-  // These will be implemented in later phases
+  if (checkFabricRipOccurrence(state)) {
+    // Fabric rip occurs - transport to random system
+    const ripResult = executeFabricRipTravel(state, state.solarSystem.length);
+    finalDestination = ripResult.destinationSystem;
+    fabricRipOccurred = true;
+    Object.assign(state, ripResult.state);
+  } else {
+    // Normal warp - execute as planned
+    state.currentSystem = toSystem;
+    state.solarSystem[toSystem].visited = true;
+  }
+  
+  // Update fabric rip probability (decreases daily during experiment)
+  Object.assign(state, updateFabricRipProbability(state));
   
   return { 
     success: true, 
     fuelConsumed,
-    costPaid 
+    costPaid,
+    fabricRipOccurred,
+    actualDestination: finalDestination
   };
 }

@@ -120,6 +120,12 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'sell_gadget':
         return await executeSellGadgetAction(state, action.parameters);
       
+      case 'buy_equipment':
+        return await executeBuyEquipmentAction(state, action.parameters);
+      
+      case 'sell_equipment':
+        return await executeSellEquipmentAction(state, action.parameters);
+      
       case 'combat_attack':
       case 'combat_flee':
       case 'combat_surrender':
@@ -1145,4 +1151,35 @@ function getPoliceRecordString(score: number): string {
   if (score >= -100) return 'Dubious';
   if (score >= -200) return 'Criminal';
   return 'Villain';
+}
+
+/**
+ * Execute buy equipment action (general equipment menu)
+ */
+async function executeBuyEquipmentAction(state: GameState, parameters: any): Promise<ActionResult> {
+  // This is a menu action - return the available equipment for UI to display
+  const currentSystem = state.solarSystem[state.currentSystem];
+  const availableEquipment = getAvailableEquipment(state, currentSystem);
+  
+  return {
+    success: true,
+    message: 'Equipment shipyard available',
+    stateChanged: false,
+    data: { availableEquipment }
+  };
+}
+
+/**
+ * Execute sell equipment action (general equipment menu)
+ */
+async function executeSellEquipmentAction(state: GameState, parameters: any): Promise<ActionResult> {
+  // This is a menu action - return the sellable equipment for UI to display
+  const sellableEquipment = getInstialledEquipmentSellPrices(state);
+  
+  return {
+    success: true,
+    message: 'Equipment selling available',
+    stateChanged: false,
+    data: { sellableEquipment }
+  };
 }
