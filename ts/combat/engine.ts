@@ -348,6 +348,32 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     // TODO: Implement plundering mechanics
     endEncounter(state);
     message = 'You plunder the defeated ship.';
+  } else if (playerAction === 'board') {
+    // Handle boarding actions for special ships like Marie Celeste
+    if (state.encounterType === EncounterType.MARIECELESTEENCOUNTER) {
+      message = 'You board the Marie Celeste and find a strange bottle. Use the drink action to consume it.';
+      // Set flag that bottle is available
+      state.justLootedMarie = true;
+      endEncounter(state);
+    } else {
+      message = 'This ship cannot be boarded.';
+    }
+  } else if (playerAction === 'drink') {
+    // Handle drinking from bottle found on Marie Celeste
+    if (state.justLootedMarie) {
+      // Random effect from drinking bottle
+      const goodEffect = Math.random() < 0.5;
+      if (goodEffect) {
+        state.ship.hull = Math.min(state.ship.hull + 10, 100);
+        message = 'The bottle contains a healing elixir! Your ship is partially repaired.';
+      } else {
+        state.ship.hull = Math.max(1, state.ship.hull - 10);
+        message = 'The bottle contains a foul liquid! Your ship takes damage.';
+      }
+      state.justLootedMarie = false; // Consume the bottle
+    } else {
+      message = 'You do not have a bottle to drink from.';
+    }
   }
   
   return {
@@ -372,6 +398,30 @@ export function determineCombatOutcome(state: GameState): CombatOutcome {
   }
   
   if (opponentDestroyed) {
+    // Special handling for Scarab destruction - hull upgrade reward
+    if (state.encounterType === EncounterType.SCARABATTACK && state.scarabStatus !== 1) {
+      state.scarabStatus = 1; // Mark hull upgrade acquired
+      state.ship.hull = Math.min(state.ship.hull + 10, 200); // Permanent +10 hull bonus
+      // Note: Full scarab destruction mechanics are in special-ships.ts
+    }
+    
+    // Mark very rare encounters as completed
+    if (state.encounterType === EncounterType.MARIECELESTEENCOUNTER ||
+        state.encounterType === EncounterType.CAPTAINAHABENCOUNTER ||
+        state.encounterType === EncounterType.CAPTAINCONRADENCOUNTER ||
+        state.encounterType === EncounterType.CAPTAINHUIEENCOUNTER) {
+      // Set the appropriate flag bit
+      if (state.encounterType === EncounterType.MARIECELESTEENCOUNTER) {
+        state.veryRareEncounter |= (1 << 0); // ALREADYMARIE
+      } else if (state.encounterType === EncounterType.CAPTAINAHABENCOUNTER) {
+        state.veryRareEncounter |= (1 << 1); // ALREADYAHAB  
+      } else if (state.encounterType === EncounterType.CAPTAINCONRADENCOUNTER) {
+        state.veryRareEncounter |= (1 << 2); // ALREADYCONRAD
+      } else if (state.encounterType === EncounterType.CAPTAINHUIEENCOUNTER) {
+        state.veryRareEncounter |= (1 << 3); // ALREADYHUIE
+      }
+    }
+    
     // Calculate bounty based on opponent ship value
     const bounty = calculateBounty(state.opponent);
     return {

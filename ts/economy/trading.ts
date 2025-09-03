@@ -7,7 +7,7 @@ import { getShipType } from '../data/shipTypes.ts';
 
 // Constants from Palm OS
 const DEBTTOOLARGE = 200000;
-const EXTRABAYS = 2; // Gadget ID for extra cargo bays
+export const EXTRABAYS = 2; // Gadget ID for extra cargo bays
 
 // Result types for trading operations
 export interface BuyResult {

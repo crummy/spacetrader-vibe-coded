@@ -86,19 +86,10 @@ export function advanceReactorQuest(state: State): State {
 }
 
 /**
- * Get current cargo bay capacity considering reactor fuel consumption
- * Formula from Palm OS Cargo.c: Bays -= (5 + 10 - (ReactorStatus - 1)/2)
+ * Get current cargo bay capacity (already accounts for reactor consumption in getTotalCargoBays)
  */
 export function getAvailableCargoBays(state: State): number {
-  const totalBays = getTotalCargoBays(state);
-  
-  if (state.reactorStatus === 0 || state.reactorStatus >= 21) {
-    return totalBays; // Normal capacity
-  }
-  
-  // Reactor reduces cargo bays: starts at 15 reduction, decreases over time
-  const reactorReduction = 5 + 10 - Math.floor((state.reactorStatus - 1) / 2);
-  return Math.max(0, totalBays - reactorReduction);
+  return getTotalCargoBays(state) - getFilledCargoBays(state);
 }
 
 /**
