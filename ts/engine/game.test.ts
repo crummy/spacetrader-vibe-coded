@@ -198,7 +198,7 @@ describe('Game Engine Integration', () => {
       assert.equal(typeof encounterCheck.hasEncounter, 'boolean');
       if (encounterCheck.hasEncounter) {
         assert.equal(typeof encounterCheck.encounterType, 'number');
-        assert.ok(encounterCheck.encounterType >= 0);
+        assert.ok(encounterCheck.encounterType! >= 0);
       }
     });
 

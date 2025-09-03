@@ -8,9 +8,11 @@ import { GameMode } from '../types.ts';
 // Import all system modules
 import { buyCargo, sellCargo } from '../economy/trading.ts';
 import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getAllSystemPrices } from '../economy/pricing.ts';
+import { refuelToFull, getFuelStatus } from '../economy/fuel.ts';
 import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
+import { getPoliticalSystem } from '../data/politics.ts';
 
 // Action System Types
 export type GameAction = {
@@ -83,12 +85,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'sell_cargo':
         return await executeSellCargoAction(state, action.parameters);
       
-      case 'launch_ship':
-        return await executeLaunchShipAction(state);
-      
-      case 'dock_ship':
-        return await executeDockShipAction(state);
-      
+      case 'refuel_ship':
+        return await executeRefuelAction(state);
+
       case 'warp_to_system':
         return await executeWarpAction(state, action.parameters);
       
@@ -129,10 +128,6 @@ export function getAvailableActions(state: GameState): AvailableAction[] {
   switch (state.currentMode) {
     case GameMode.OnPlanet:
       actions.push(...getPlanetActions(state));
-      break;
-    
-    case GameMode.InSpace:
-      actions.push(...getSpaceActions(state));
       break;
     
     case GameMode.InCombat:
@@ -250,40 +245,48 @@ async function executeSellCargoAction(state: GameState, parameters: any): Promis
   }
 }
 
-async function executeLaunchShipAction(state: GameState): Promise<ActionResult> {
-  if (state.currentMode !== GameMode.OnPlanet) {
+async function executeRefuelAction(state: GameState): Promise<ActionResult> {
+  try {
+    const fuelStatus = getFuelStatus(state);
+    
+    if (fuelStatus.currentFuel >= fuelStatus.maxFuel) {
+      return {
+        success: false,
+        message: 'Fuel tanks are already full',
+        stateChanged: false
+      };
+    }
+    
+    if (state.credits < fuelStatus.costPerUnit) {
+      return {
+        success: false,
+        message: 'Insufficient credits to buy fuel',
+        stateChanged: false
+      };
+    }
+    
+    const result = refuelToFull(state);
+    
+    if (result.success) {
+      return {
+        success: true,
+        message: `Refueled ${result.fuelBought} units for ${result.costPaid} credits`,
+        stateChanged: true
+      };
+    } else {
+      return {
+        success: false,
+        message: result.reason || 'Refuel failed',
+        stateChanged: false
+      };
+    }
+  } catch (error) {
     return {
       success: false,
-      message: 'Cannot launch ship - not on planet',
+      message: `Refuel failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       stateChanged: false
     };
   }
-  
-  state.currentMode = GameMode.InSpace;
-  
-  return {
-    success: true,
-    message: 'Ship launched successfully',
-    stateChanged: true
-  };
-}
-
-async function executeDockShipAction(state: GameState): Promise<ActionResult> {
-  if (state.currentMode !== GameMode.InSpace) {
-    return {
-      success: false,
-      message: 'Cannot dock ship - not in space',
-      stateChanged: false
-    };
-  }
-  
-  state.currentMode = GameMode.OnPlanet;
-  
-  return {
-    success: true,
-    message: 'Ship docked successfully',
-    stateChanged: true
-  };
 }
 
 async function executeWarpAction(state: GameState, parameters: any): Promise<ActionResult> {
@@ -298,12 +301,65 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
   }
   
   try {
+    // Set warpSystem for encounter calculations
+    state.warpSystem = targetSystem;
+    
     const result = performWarp(state, targetSystem, false);
-    return {
-      success: result.success,
-      message: result.message,
-      stateChanged: result.success
-    };
+    
+    if (result.success) {
+      const systemName = getSolarSystemName(targetSystem);
+      let message = `Traveling to ${systemName}...`;
+      
+      if (result.fuelConsumed && result.fuelConsumed > 0) {
+        message += ` (fuel used: ${result.fuelConsumed})`;
+      }
+      if (result.costPaid && result.costPaid > 0) {
+        message += ` (cost: ${result.costPaid})`;
+      }
+      
+      // Check for encounters during tick-based travel
+      const encounterCheck = checkRandomEncountersOnTravel(state);
+      
+      if (encounterCheck.hasEncounter) {
+        // Start combat encounter
+        state.currentMode = GameMode.InCombat;
+        state.encounterType = encounterCheck.encounterType!;
+        
+        // Initialize encounter using combat engine
+        const encounterResult = startEncounter(state, encounterCheck.encounterType!);
+        
+        message += ` - ${encounterResult.message}`;
+        
+        return {
+          success: true,
+          message,
+          stateChanged: true
+        };
+      } else {
+        // No encounter - arrive safely at planet
+        state.currentMode = GameMode.OnPlanet;
+        message = `Arrived safely at ${systemName}`;
+        
+        if (result.fuelConsumed && result.fuelConsumed > 0) {
+          message += ` (fuel used: ${result.fuelConsumed})`;
+        }
+        if (result.costPaid && result.costPaid > 0) {
+          message += ` (cost: ${result.costPaid})`;
+        }
+        
+        return {
+          success: true,
+          message,
+          stateChanged: true
+        };
+      }
+    } else {
+      return {
+        success: false,
+        message: result.reason || 'Warp failed',
+        stateChanged: false
+      };
+    }
   } catch (error) {
     return {
       success: false,
@@ -366,49 +422,45 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
 function getPlanetActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
-  // Buy cargo actions
+  // Check if any cargo can be bought
   const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
-  for (let i = 0; i < 10; i++) {
-    const price = allPrices[i].buyPrice;
-    if (price > 0) {
-      actions.push({
-        type: 'buy_cargo',
-        name: `Buy cargo (item ${i})`,
-        description: `Buy trade goods for ${price} credits each`,
-        parameters: { possibleItems: [i] },
-        available: state.credits >= price
-      });
-    }
+  const canBuyAnything = allPrices.some(p => p.buyPrice > 0 && state.credits >= p.buyPrice);
+  
+  if (canBuyAnything) {
+    actions.push({
+      type: 'buy_cargo',
+      name: 'Buy Cargo',
+      description: 'Purchase trade goods',
+      available: true
+    });
   }
   
-  // Sell cargo actions
-  for (let i = 0; i < state.ship.cargo.length; i++) {
-    if (state.ship.cargo[i] > 0) {
-      const price = allPrices[i].sellPrice;
-      actions.push({
-        type: 'sell_cargo',
-        name: `Sell cargo (item ${i})`,
-        description: `Sell ${state.ship.cargo[i]} units for ${price} credits each`,
-        available: true
-      });
-    }
+  // Check if any cargo can be sold
+  const canSellAnything = state.ship.cargo.some((quantity, index) => 
+    quantity > 0 && allPrices[index].sellPrice > 0
+  );
+  
+  if (canSellAnything) {
+    actions.push({
+      type: 'sell_cargo',
+      name: 'Sell Cargo',
+      description: 'Sell trade goods',
+      available: true
+    });
   }
   
-  // Launch ship
-  actions.push({
-    type: 'launch_ship',
-    name: 'Launch Ship',
-    description: 'Leave the planet and enter space',
-    available: true
-  });
+  // Refuel ship
+  const fuelStatus = getFuelStatus(state);
+  if (fuelStatus.currentFuel < fuelStatus.maxFuel) {
+    actions.push({
+      type: 'refuel_ship',
+      name: 'Refuel Ship',
+      description: `Fill fuel tanks (${fuelStatus.fullRefuelCost} credits)`,
+      available: state.credits >= fuelStatus.costPerUnit
+    });
+  }
   
-  return actions;
-}
-
-function getSpaceActions(state: GameState): AvailableAction[] {
-  const actions: AvailableAction[] = [];
-  
-  // Warp to systems
+  // Travel to other systems (skip intermediate space state)
   const possibleSystems: number[] = [];
   for (let i = 0; i < state.solarSystem.length; i++) {
     if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
@@ -419,31 +471,17 @@ function getSpaceActions(state: GameState): AvailableAction[] {
   if (possibleSystems.length > 0) {
     actions.push({
       type: 'warp_to_system',
-      name: 'Warp to System',
+      name: 'Travel to System',
       description: 'Travel to another solar system',
       parameters: { possibleSystems },
       available: state.ship.fuel > 0
     });
   }
   
-  // Track system
-  actions.push({
-    type: 'track_system',
-    name: 'Track System',
-    description: 'Set navigation target for a system',
-    available: true
-  });
-  
-  // Dock at current system
-  actions.push({
-    type: 'dock_ship',
-    name: 'Dock Ship',
-    description: 'Land on the planet in current system',
-    available: true
-  });
-  
   return actions;
 }
+
+
 
 function getCombatActionsForState(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
@@ -490,17 +528,82 @@ export function checkRandomEncounters(state: GameState): { hasEncounter: boolean
     return { hasEncounter: false };
   }
   
-  // 10% chance of random encounter
-  const encounterChance = Math.random();
-  if (encounterChance < 0.1) {
-    // Random encounter type (simplified)
-    const encounterTypes = [10, 11, 12, 20, 21, 22]; // Various pirate/trader encounters
-    const encounterType = encounterTypes[Math.floor(Math.random() * encounterTypes.length)];
-    
+  return checkRandomEncountersOnTravel(state);
+}
+
+export function checkRandomEncountersOnTravel(state: GameState): { hasEncounter: boolean; encounterType?: number } {
+  // Use tick-based encounter system like Palm OS original
+  return performTickBasedTravel(state);
+}
+
+// Original Palm OS tick-based travel system implementation
+function performTickBasedTravel(state: GameState): { hasEncounter: boolean; encounterType?: number } {
+  const ticks = 21; // Original travel time was 21 ticks
+  
+  // Process each tick for potential encounters
+  for (let currentTick = ticks; currentTick > 0; currentTick--) {
+    // Check for encounter this tick
+    const encounterResult = checkEncounterThisTick(state, currentTick);
+    if (encounterResult.hasEncounter) {
+      // In the original game, we could have multiple encounters per trip
+      // For now, return first encounter found (can be extended later)
+      return encounterResult;
+    }
+  }
+  
+  return { hasEncounter: false };
+}
+
+function checkEncounterThisTick(state: GameState, currentTick: number): { hasEncounter: boolean; encounterType?: number } {
+  // Get the destination system's politics
+  const targetSystem = state.solarSystem[state.warpSystem || state.currentSystem];
+  const politics = getPoliticalSystem(targetSystem.politics);
+  
+  // Original encounter test: GetRandom(44 - (2 * Difficulty))
+  let encounterTest = Math.floor(Math.random() * (44 - (2 * state.difficulty)));
+  
+  // Encounters are half as likely if you're in a flea (ship type 0)
+  if (state.ship.type === 0) {
+    encounterTest *= 2;
+  }
+  
+  // Calculate police strength based on criminal record (like STRENGTHPOLICE macro)
+  const policeStrength = getPoliceStrength(state, targetSystem.politics);
+  
+  // Check encounter types in order of priority
+  if (encounterTest < politics.strengthPirates && !state.raided) {
+    // Pirate encounter
+    const pirateTypes = [10, 11, 12]; // Different pirate encounter types
+    const encounterType = pirateTypes[Math.floor(Math.random() * pirateTypes.length)];
+    return { hasEncounter: true, encounterType };
+  } else if (encounterTest < politics.strengthPirates + policeStrength) {
+    // Police encounter
+    const policeTypes = [20, 21, 22]; // Different police encounter types
+    const encounterType = policeTypes[Math.floor(Math.random() * policeTypes.length)];
+    return { hasEncounter: true, encounterType };
+  } else if (encounterTest < politics.strengthPirates + policeStrength + politics.strengthTraders) {
+    // Trader encounter
+    const traderTypes = [30, 31, 32]; // Different trader encounter types
+    const encounterType = traderTypes[Math.floor(Math.random() * traderTypes.length)];
     return { hasEncounter: true, encounterType };
   }
   
   return { hasEncounter: false };
+}
+
+// Calculate police strength that adapts to criminal record
+function getPoliceStrength(state: GameState, politicsIndex: number): number {
+  const basePolitics = getPoliticalSystem(politicsIndex);
+  let policeStrength = basePolitics.strengthPolice;
+  
+  // Increase police presence based on criminal record
+  if (state.policeRecordScore < 0) {
+    // More negative = more criminal = more police attention
+    const criminalLevel = Math.abs(state.policeRecordScore) / 100;
+    policeStrength += Math.min(criminalLevel * 2, 5); // Cap the bonus
+  }
+  
+  return Math.floor(policeStrength);
 }
 
 export function updateMarkets(state: GameState): void {
