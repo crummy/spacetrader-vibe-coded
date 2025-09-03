@@ -234,7 +234,81 @@ This document outlines the comprehensive plan for porting the Space Trader Palm 
   WILDGETSOUT: 38,          // Wild delivery and disembark
   ```
 
-### 6.2 Enhanced Game Systems 🔧 **MEDIUM PRIORITY**
+### 6.2 News System Enhancement 📰 **MEDIUM PRIORITY**
+- [ ] **Dynamic News System** (`ts/news/dynamic.ts`)
+  - News mastheads and headlines based on political systems
+  - 3 mastheads per political system (MAXMASTHEADS)
+  - 4 canned stories per political system (MAXSTORIES)
+  - Story probability based on tech level: `50/MAXTECHLEVEL`
+  - Special news events tracking (max 5 per system)
+  - News event codes: WILDARRESTED, CAUGHTLITTERING, EXPERIMENTPERFORMED
+  - Captain encounter news: CAPTAINHUIEATTACKED, CAPTAINCONRADATTACKED, CAPTAINAHABATTACKED
+  - Captain destruction news: CAPTAINHUIEDESTROYED, CAPTAINCONRADDESTROYED, CAPTAINAHABDESTROYED
+
+### 6.3 Very Rare Special Encounters 🌟 **HIGH PRIORITY**  
+- [ ] **Very Rare Encounter System** (`ts/encounters/very-rare.ts`)
+  - Very rare encounter probability: 5 in 1000 (`CHANCEOFVERYRAREENCOUNTER`)
+  - **Marie Celeste** (MARIECELESTE): Famous derelict ship encounter
+  - **Famous Captain Encounters**: 
+    - Captain Ahab (CAPTAINAHAB)
+    - Captain Conrad (CAPTAINCONRAD) 
+    - Captain Huie (CAPTAINHUIE)
+  - **Message in Bottle**: BOTTLEOLD, BOTTLEGOOD encounters
+  - Already-done flags: ALREADYMARIE, ALREADYAHAB, ALREADYCONRAD, ALREADYHUIE, etc.
+
+### 6.4 Equipment Selling System 💰 **HIGH PRIORITY**
+- [ ] **Equipment Market** (`ts/economy/equipment-selling.ts`)
+  - Weapon selling with price calculations: `WEAPONSELLPRICE(a)`
+  - Shield selling with price calculations: `SHIELDSELLPRICE(a)`
+  - Gadget selling with price calculations: `GADGETSELLPRICE(a)`
+  - Base sell price formula: `BaseSellPrice(item, basePrice)`
+  - Equipment condition and depreciation
+  - Tech level restrictions on selling equipment
+
+### 6.5 Trade in Orbit System 🚀 **MEDIUM PRIORITY**
+- [ ] **Orbital Trading** (`ts/trading/orbital.ts`)
+  - Trade in orbit probability: 100 in 1000 (`CHANCEOFTRADEINORBIT`)
+  - Trader encounters while in orbit around systems
+  - Buy/sell negotiations with orbital traders
+  - Different encounter behavior based on player reputation
+  - Integration with existing trader encounter system
+
+### 6.6 Advanced Travel Features 🌌 **MEDIUM PRIORITY**
+- [ ] **Fabric Rip System** (`ts/travel/fabric-rip.ts`)
+  - Experimental fabric rip probability system
+  - Initial probability: 25% (`FABRICRIPINITIALPROBABILITY`)
+  - Decreases by 1% per day
+  - Random system switching during warp
+  - Integration with Dr. Fehler's experiment quest
+  
+- [ ] **Singularity Travel** (`ts/travel/singularity.ts`)
+  - Arrival via singularity detection (`ARRIVALVIASINGULARITY`)
+  - Portable singularity device mechanics
+  - Super warp capabilities
+  - News event integration for singularity arrivals
+
+- [ ] **Cloaking Device Enhancement** (`ts/equipment/cloaking.ts`)
+  - Advanced cloaking detection by police
+  - Cloaking effectiveness vs different encounter types
+  - Skill bonus calculations for cloaking (`CLOAKBONUS`)
+
+### 6.7 Advanced Insurance System 🛡️ **MEDIUM PRIORITY**
+- [ ] **Insurance Details** (`ts/economy/insurance-advanced.ts`)
+  - No-claim bonus system tracking (`noClaim` field)
+  - Insurance claim processing and payouts
+  - Insurance premium calculations based on risk
+  - Integration with ship destruction and escape pod mechanics
+  - Insurance effects on ship trading prices
+
+### 6.8 Advanced Cargo Operations 📦 **MEDIUM PRIORITY**
+- [ ] **Cargo Management** (`ts/trading/cargo-operations.ts`)
+  - Sell cargo: `SELLCARGO` (1) - normal trading
+  - Dump cargo: `DUMPCARGO` (2) - dump cargo when docked  
+  - Jettison cargo: `JETTISONCARGO` (3) - jettison cargo in space
+  - Cargo dumping mechanics and penalties
+  - Space littering warnings and fines
+
+### 6.9 Enhanced Game Systems 🔧 **MEDIUM PRIORITY**
 - [ ] **Auto-Flight Preferences** (`ts/state.ts` additions)
   ```typescript
   autoAttack: boolean;           // Auto-attack during combat
@@ -261,7 +335,7 @@ This document outlines the comprehensive plan for porting the Space Trader Palm 
   - Enhanced AI behavior for special ships
   - Combat statistics and tracking
 
-### 6.3 Reputation & Progression Systems 📊 **MEDIUM PRIORITY**
+### 6.10 Reputation & Progression Systems 📊 **MEDIUM PRIORITY**
 - [ ] **Police Record System** (`ts/reputation/police.ts`)
   - Complete police record scoring (Psychopath to Hero)
   - Police encounter behavior based on record
@@ -280,7 +354,7 @@ This document outlines the comprehensive plan for porting the Space Trader Palm 
   - Quest-related news generation
   - Economic news and market reports
 
-### 6.4 Game Balance & Features ⚖️ **LOW PRIORITY**
+### 6.11 Game Balance & Features ⚖️ **LOW PRIORITY**
 - [ ] **Difficulty Scaling** (`ts/difficulty/scaling.ts`)
   - Complete difficulty level implementation
   - Price and encounter modifications by difficulty
@@ -298,14 +372,14 @@ This document outlines the comprehensive plan for porting the Space Trader Palm 
   - Moon purchase victory condition
   - High score table management
 
-### 6.5 Save/Load System 💾 **LOW PRIORITY**
+### 6.12 Save/Load System 💾 **LOW PRIORITY**
 - [ ] **Game Persistence** (`ts/save/`)
   - Complete save/load game state functionality
   - Multiple save slot management
   - Auto-save on critical events
   - Save game validation and error handling
 
-### 6.6 Documentation & Polish 📚 **LOW PRIORITY**
+### 6.13 Documentation & Polish 📚 **LOW PRIORITY**
 - [ ] **Code Documentation** 
   - JSDoc comments for all pure functions
   - Usage examples for core game state transformations
