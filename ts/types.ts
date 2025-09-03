@@ -300,6 +300,18 @@ export interface State {
   tribbleMessage: boolean;
   alwaysInfo: boolean;
   
+  // Additional auto-flight preferences (from Palm OS)
+  autoAttack: boolean;           // Auto-attack during combat
+  autoFlee: boolean;             // Auto-flee from combat  
+  useHWButtons: boolean;         // Hardware button shortcuts
+  newsAutoPay: boolean;          // Auto-pay for newspapers
+  remindLoans: boolean;          // Loan reminder system
+  canSuperWarp: boolean;         // Portable Singularity capability
+  attackIconStatus: boolean;     // Show attack indicators
+  possibleToGoThroughRip: boolean; // Space-time rip travel
+  justLootedMarie: boolean;      // Marie Celeste loot flag
+  arrivedViaWormhole: boolean;   // Wormhole arrival tracking
+  
   // Special items and features
   wormhole: WormholeArray;
   artifactOnBoard: boolean;

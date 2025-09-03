@@ -207,6 +207,18 @@ export function createInitialState(): State {
     tribbleMessage: false,
     alwaysInfo: false,
     
+    // Additional auto-flight preferences (Palm OS defaults)
+    autoAttack: false,           // Auto-attack during combat
+    autoFlee: false,             // Auto-flee from combat
+    useHWButtons: false,         // Hardware button shortcuts
+    newsAutoPay: false,          // Auto-pay for newspapers
+    remindLoans: true,           // Loan reminder system
+    canSuperWarp: false,         // Portable Singularity capability
+    attackIconStatus: false,     // Show attack indicators
+    possibleToGoThroughRip: false, // Space-time rip travel
+    justLootedMarie: false,      // Marie Celeste loot flag
+    arrivedViaWormhole: false,   // Wormhole arrival tracking
+    
     // Special items and features
     wormhole: [0, 0, 0, 0, 0, 0] as WormholeArray,
     artifactOnBoard: false,
