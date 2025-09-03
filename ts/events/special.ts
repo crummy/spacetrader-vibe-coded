@@ -53,7 +53,17 @@ export const SpecialEventType = {
   TWOBUCKS: 33,
   WILD: 34,
   DRAGONFLYSTATUS: 35,
-  EXPERIMENTSTATUS: 36
+  EXPERIMENTSTATUS: 36,
+  
+  // Missing quest-specific events from Palm OS
+  GETREACTOR: 37,           // Reactor pickup at Nix
+  GETHULLUPGRADED: 38,      // Hull upgrade after Scarab destruction
+  SCARABDESTROYED: 39,      // Scarab defeat confirmation
+  REACTORDELIVERED: 40,     // Reactor delivery at Utopia
+  JAREKGETSOUT: 41,         // Ambassador Jarek disembarks
+  EXPERIMENTSTOPPED: 42,    // Dr. Fehler experiment conclusion
+  ARTIFACTDELIVERY: 43,     // Artifact delivery mechanics
+  WILDGETSOUT: 44,          // Wild delivery and disembark
 } as const;
 
 export type SpecialEventId = typeof SpecialEventType[keyof typeof SpecialEventType];
@@ -412,6 +422,64 @@ const SPECIAL_EVENTS: SpecialEventDefinition[] = [
     description: 'Meet with the merchant prince.',
     price: 0,
     justAMessage: false
+  },
+  
+  // Quest-specific events from Palm OS
+  {
+    id: SpecialEventType.GETREACTOR,
+    name: 'Unstable Reactor',
+    description: 'You find an engineer willing to give you an unstable reactor to transport to Utopia. The reactor will take up 15 bays and is very dangerous.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.GETHULLUPGRADED,
+    name: 'Hull Upgrade',
+    description: 'After destroying the Scarab, you can upgrade your hull strength permanently.',
+    price: 0,
+    justAMessage: false
+  },
+  {
+    id: SpecialEventType.SCARABDESTROYED,
+    name: 'Scarab Destroyed',
+    description: 'You have successfully destroyed the Scarab! Your reputation has increased.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.REACTORDELIVERED,
+    name: 'Reactor Delivered',
+    description: 'You have successfully delivered the unstable reactor to Utopia. You receive payment for the dangerous mission.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.JAREKGETSOUT,
+    name: 'Ambassador Departs',
+    description: 'Ambassador Jarek thanks you for the safe transport and disembarks.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.EXPERIMENTSTOPPED,
+    name: 'Experiment Concluded',
+    description: 'Dr. Fehler concludes his space-time experiments. Reality returns to normal.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.ARTIFACTDELIVERY,
+    name: 'Artifact Delivered',
+    description: 'You deliver the alien artifact to the archaeological team. They reward you handsomely.',
+    price: 0,
+    justAMessage: true
+  },
+  {
+    id: SpecialEventType.WILDGETSOUT,
+    name: 'Wild Escapes',
+    description: 'Jonathan Wild thanks you for the transport and disappears into the shadows.',
+    price: 0,
+    justAMessage: true
   }
 ];
 
@@ -518,6 +586,31 @@ export function executeSpecialEvent(state: GameState, eventType: SpecialEventId)
       state.credits -= event.price;
       state.moonBought = true;
       return { success: true, message: 'You bought a moon and can now retire!', creditsSpent: event.price };
+      
+    // Quest-specific events
+    case SpecialEventType.GETREACTOR:
+      return executeGetReactorEvent(state);
+      
+    case SpecialEventType.REACTORDELIVERED:
+      return executeReactorDeliveredEvent(state);
+      
+    case SpecialEventType.SCARABDESTROYED:
+      return executeScarabDestroyedEvent(state);
+      
+    case SpecialEventType.GETHULLUPGRADED:
+      return executeHullUpgradeEvent(state);
+      
+    case SpecialEventType.JAREKGETSOUT:
+      return executeJarekDisembarkEvent(state);
+      
+    case SpecialEventType.ARTIFACTDELIVERY:
+      return executeArtifactDeliveryEvent(state);
+      
+    case SpecialEventType.WILDGETSOUT:
+      return executeWildEscapeEvent(state);
+      
+    case SpecialEventType.EXPERIMENTSTOPPED:
+      return executeExperimentStoppedEvent(state);
       
     default:
       return { success: false, message: 'Event execution not implemented' };
@@ -785,6 +878,141 @@ export function checkEventAvailability(state: GameState, eventType: SpecialEvent
   const available = Object.values(requirements).every(req => req);
   
   return { available, requirements };
+}
+
+// Quest Event Handlers
+
+function executeGetReactorEvent(state: GameState): EventResult {
+  // Reactor quest: Give player unstable reactor that takes up 15 bays and is dangerous
+  // Check if player has enough cargo space (15 bays needed)
+  const filledBays = state.ship.cargo.reduce((sum, quantity) => sum + quantity, 0);
+  const totalBays = 20; // Assume base cargo capacity, should use actual ship capacity
+  const availableBays = totalBays - filledBays;
+  
+  if (availableBays < 15) {
+    return { success: false, message: 'You need at least 15 empty cargo bays for the unstable reactor.' };
+  }
+  
+  // Set reactor status to indicate quest is active (days countdown from 20)
+  state.reactorStatus = 20;
+  return { 
+    success: true, 
+    message: 'You accept the unstable reactor. It will deteriorate over 20 days - get it to Utopia quickly! Warning: It takes up 15 cargo bays.' 
+  };
+}
+
+function executeReactorDeliveredEvent(state: GameState): EventResult {
+  if (state.reactorStatus === 0) {
+    return { success: false, message: 'You are not carrying a reactor.' };
+  }
+  
+  // Reward for delivering reactor safely
+  const reward = 20000;
+  state.credits += reward;
+  state.reactorStatus = 0; // Quest complete
+  
+  return { 
+    success: true, 
+    message: `You successfully deliver the reactor to Utopia! You receive ${reward} credits for the dangerous mission.` 
+  };
+}
+
+function executeScarabDestroyedEvent(state: GameState): EventResult {
+  // Mark Scarab as destroyed and increase reputation
+  state.scarabStatus = 2; // Destroyed
+  state.reputationScore += 50; // Increase reputation for defeating dangerous opponent
+  
+  return { 
+    success: true, 
+    message: 'You have destroyed the Scarab! Your reputation as a skilled pilot has increased significantly.' 
+  };
+}
+
+function executeHullUpgradeEvent(state: GameState): EventResult {
+  if (state.scarabStatus !== 2) {
+    return { success: false, message: 'You must defeat the Scarab first to get a hull upgrade.' };
+  }
+  
+  if (state.scarabStatus === 3) {
+    return { success: false, message: 'You have already received the hull upgrade.' };
+  }
+  
+  // Permanently upgrade ship hull by 50 points
+  state.ship.hull += 50;
+  state.scarabStatus = 3; // Hull upgrade completed
+  
+  return { 
+    success: true, 
+    message: 'Your ship hull has been permanently upgraded! Hull strength increased by 50 points.' 
+  };
+}
+
+function executeJarekDisembarkEvent(state: GameState): EventResult {
+  if (state.jarekStatus !== 1) {
+    return { success: false, message: 'Ambassador Jarek is not aboard your ship.' };
+  }
+  
+  // Reward for successful transport
+  const reward = 15000;
+  state.credits += reward;
+  state.jarekStatus = 2; // Delivered
+  
+  return { 
+    success: true, 
+    message: `Ambassador Jarek thanks you for the safe passage and pays you ${reward} credits.` 
+  };
+}
+
+function executeArtifactDeliveryEvent(state: GameState): EventResult {
+  if (!state.artifactOnBoard) {
+    return { success: false, message: 'You are not carrying an alien artifact.' };
+  }
+  
+  // Reward for artifact delivery
+  const reward = 25000;
+  state.credits += reward;
+  state.artifactOnBoard = false;
+  
+  return { 
+    success: true, 
+    message: `The archaeological team is thrilled with the alien artifact! They pay you ${reward} credits.` 
+  };
+}
+
+function executeWildEscapeEvent(state: GameState): EventResult {
+  // Check if Wild is aboard (experimentAndWildStatus tracks both)
+  const wildStatus = state.experimentAndWildStatus % 256; // Wild status is in lower byte
+  if (wildStatus !== 1) {
+    return { success: false, message: 'Jonathan Wild is not aboard your ship.' };
+  }
+  
+  // Reward for successful smuggling
+  const reward = 10000;
+  state.credits += reward;
+  state.experimentAndWildStatus = (state.experimentAndWildStatus & 0xFF00) | 2; // Mark Wild as delivered
+  
+  return { 
+    success: true, 
+    message: `Wild slips you ${reward} credits and vanishes into the shadows. Mission accomplished.` 
+  };
+}
+
+function executeExperimentStoppedEvent(state: GameState): EventResult {
+  // Check if experiment is active
+  const experimentStatus = (state.experimentAndWildStatus >> 8) & 0xFF; // Experiment status in upper byte
+  if (experimentStatus === 0) {
+    return { success: false, message: 'Dr. Fehler is not conducting experiments.' };
+  }
+  
+  // Reset experiment status and space-time rip probability
+  state.experimentAndWildStatus = state.experimentAndWildStatus & 0x00FF; // Clear experiment status
+  state.possibleToGoThroughRip = false;
+  state.fabricRipProbability = 0;
+  
+  return { 
+    success: true, 
+    message: 'Dr. Fehler concludes his dangerous space-time experiments. Reality stabilizes.' 
+  };
 }
 
 // Utility Functions
