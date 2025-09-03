@@ -13,6 +13,7 @@ import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
+import { EncounterType } from '../combat/engine.ts';
 
 // Action System Types
 export type GameAction = {
@@ -586,6 +587,26 @@ function getCombatActionsForState(state: GameState): AvailableAction[] {
   return actions;
 }
 
+// Very Rare Encounter Constants (from Palm OS spacetrader.h)
+const CHANCEOFVERYRAREENCOUNTER = 5; // 5 in 1000 chance
+const MAXVERYRAREENCOUNTER = 6;
+
+// Very rare encounter types
+const MARIECELESTE = 0;
+const CAPTAINAHAB = 1; 
+const CAPTAINCONRAD = 2;
+const CAPTAINHUIE = 3;
+const BOTTLEOLD = 4;
+const BOTTLEGOOD = 5;
+
+// Already done flags (bitmask)
+const ALREADYMARIE = 1;
+const ALREADYAHAB = 2;
+const ALREADYCONRAD = 4;
+const ALREADYHUIE = 8;
+const ALREADYBOTTLEOLD = 16;
+const ALREADYBOTTLEGOOD = 32;
+
 // Game Loop Management
 
 export function advanceTime(state: GameState, days: number): void {
@@ -656,7 +677,15 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
   // Calculate police strength based on criminal record (like STRENGTHPOLICE macro)
   const policeStrength = getPoliceStrength(state, targetSystem.politics);
   
-  // Check encounter types in order of priority
+  // First check for very rare encounters (5 in 1000 chance)
+  if (Math.floor(Math.random() * 1000) < CHANCEOFVERYRAREENCOUNTER) {
+    const veryRareResult = checkVeryRareEncounter(state);
+    if (veryRareResult.hasEncounter) {
+      return veryRareResult;
+    }
+  }
+  
+  // Check regular encounter types in order of priority
   if (encounterTest < politics.strengthPirates && !state.raided) {
     // Pirate encounter
     const pirateTypes = [10, 11, 12]; // Different pirate encounter types
@@ -690,6 +719,49 @@ function getPoliceStrength(state: GameState, politicsIndex: number): number {
   }
   
   return Math.floor(policeStrength);
+}
+
+// Check for very rare encounters (Marie Celeste, Famous Captains, etc.)
+function checkVeryRareEncounter(state: GameState): { hasEncounter: boolean; encounterType?: number } {
+  // Check which encounters haven't been done yet
+  const availableEncounters: Array<{ type: number, encounterCode: number, flag: number }> = [];
+  
+  if (!(state.veryRareEncounter & ALREADYMARIE)) {
+    availableEncounters.push({ type: MARIECELESTE, encounterCode: EncounterType.MARIECELESTEENCOUNTER, flag: ALREADYMARIE });
+  }
+  
+  if (!(state.veryRareEncounter & ALREADYAHAB)) {
+    availableEncounters.push({ type: CAPTAINAHAB, encounterCode: EncounterType.CAPTAINAHABENCOUNTER, flag: ALREADYAHAB });
+  }
+  
+  if (!(state.veryRareEncounter & ALREADYCONRAD)) {
+    availableEncounters.push({ type: CAPTAINCONRAD, encounterCode: EncounterType.CAPTAINCONRADENCOUNTER, flag: ALREADYCONRAD });
+  }
+  
+  if (!(state.veryRareEncounter & ALREADYHUIE)) {
+    availableEncounters.push({ type: CAPTAINHUIE, encounterCode: EncounterType.CAPTAINHUIEENCOUNTER, flag: ALREADYHUIE });
+  }
+  
+  if (!(state.veryRareEncounter & ALREADYBOTTLEOLD)) {
+    availableEncounters.push({ type: BOTTLEOLD, encounterCode: EncounterType.BOTTLEOLDENCOUNTER, flag: ALREADYBOTTLEOLD });
+  }
+  
+  if (!(state.veryRareEncounter & ALREADYBOTTLEGOOD)) {
+    availableEncounters.push({ type: BOTTLEGOOD, encounterCode: EncounterType.BOTTLEGOODENCOUNTER, flag: ALREADYBOTTLEGOOD });
+  }
+  
+  // If no encounters available, return false
+  if (availableEncounters.length === 0) {
+    return { hasEncounter: false };
+  }
+  
+  // Pick random available encounter
+  const selectedEncounter = availableEncounters[Math.floor(Math.random() * availableEncounters.length)];
+  
+  // Mark this encounter as done
+  state.veryRareEncounter |= selectedEncounter.flag;
+  
+  return { hasEncounter: true, encounterType: selectedEncounter.encounterCode };
 }
 
 export function updateMarkets(state: GameState): void {

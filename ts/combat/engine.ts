@@ -82,6 +82,11 @@ export const EncounterType = {
   BOTTLEOLDENCOUNTER: 81,         // Bottle (old) encounter
   BOTTLEGOODENCOUNTER: 82,        // Bottle (good) encounter
   POSTMARIEPOLICEENCOUNTER: 83,   // Post-Marie police encounter
+  
+  // Famous captain encounters (70+)
+  CAPTAINAHABENCOUNTER: 72,       // Captain Ahab encounter
+  CAPTAINCONRADENCOUNTER: 73,     // Captain Conrad encounter  
+  CAPTAINHUIEENCOUNTER: 74,       // Captain Huie encounter
 
   // Helper functions for encounter type checking (matching Palm OS macros)
   isPoliceEncounter: (type: number): boolean => type >= 0 && type <= 9,
@@ -119,6 +124,11 @@ export function getCurrentEncounter(state: GameState): { type: number; name: str
     [EncounterType.TRADERSELL]: 'Trader Selling',
     [EncounterType.SPACEMONSTERATTACK]: 'Space Monster Attack',
     [EncounterType.MARIECELESTEENCOUNTER]: 'Marie Celeste',
+    [EncounterType.BOTTLEOLDENCOUNTER]: 'Message in Bottle',
+    [EncounterType.BOTTLEGOODENCOUNTER]: 'Message in Bottle', 
+    [EncounterType.CAPTAINAHABENCOUNTER]: 'Captain Ahab',
+    [EncounterType.CAPTAINCONRADENCOUNTER]: 'Captain Conrad',
+    [EncounterType.CAPTAINHUIEENCOUNTER]: 'Captain Huie',
   };
 
   return {
@@ -165,6 +175,10 @@ export function getAvailableActions(state: GameState): CombatAction[] {
   } else if (encounterType === EncounterType.BOTTLEOLDENCOUNTER || 
              encounterType === EncounterType.BOTTLEGOODENCOUNTER) {
     actions.push('drink', 'ignore');
+  } else if (encounterType === EncounterType.CAPTAINAHABENCOUNTER ||
+             encounterType === EncounterType.CAPTAINCONRADENCOUNTER ||
+             encounterType === EncounterType.CAPTAINHUIEENCOUNTER) {
+    actions.push('attack', 'flee', 'ignore');
   }
 
   return actions;
