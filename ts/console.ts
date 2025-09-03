@@ -60,7 +60,7 @@ export class ConsoleInterface {
     console.log(`Commander: ${status.commanderName} | Credits: ${status.credits} | Day: ${status.days}`);
     console.log(`Reputation: ${status.reputation} | Police Record: ${status.policeRecord}`);
     console.log(`Location: ${location.systemName} ${location.isDocked ? '(Docked)' : '(In Space)'}`);
-    console.log(`Ship: Hull ${shipStatus.hull}% | Fuel ${shipStatus.fuel} | Cargo ${shipStatus.cargoUsed}/${shipStatus.cargoCapacity}`);
+    console.log(`Ship: Hull ${shipStatus.hullPercentage}% | Fuel ${shipStatus.fuel} | Cargo ${shipStatus.cargoUsed}/${shipStatus.cargoCapacity}`);
     
     // Cargo display
     if (shipStatus.cargoUsed > 0) {
@@ -362,14 +362,52 @@ export class ConsoleInterface {
   }
 
   private getEncounterTypeName(encounterType: number): string {
-    // Simplified encounter type names
+    // Match encounter types from combat engine
     const encounterNames: { [key: number]: string } = {
-      10: 'Pirate',
-      11: 'Police',
-      12: 'Trader',
-      20: 'Mantis',
-      21: 'Dragonfly',
-      22: 'Scarab'
+      // Police encounters (0-9)
+      0: 'Police Inspector',
+      1: 'Police (Ignoring)',
+      2: 'Police (Attacking)',
+      3: 'Police (Fleeing)',
+      
+      // Pirate encounters (10-19)
+      10: 'Pirate (Attacking)',
+      11: 'Pirate (Fleeing)',
+      12: 'Pirate (Ignoring)',
+      13: 'Pirate (Surrendering)',
+      
+      // Trader encounters (20-29)
+      20: 'Trader (Passing)',
+      21: 'Trader (Fleeing)',
+      22: 'Trader (Attacking)',
+      23: 'Trader (Surrendering)',
+      24: 'Trader (Selling)',
+      25: 'Trader (Buying)',
+      
+      // Monster encounters (30-39)
+      30: 'Space Monster (Attacking)',
+      31: 'Space Monster (Ignoring)',
+      
+      // Dragonfly encounters (40-49)
+      40: 'Dragonfly (Attacking)',
+      41: 'Dragonfly (Ignoring)',
+      
+      // Scarab encounters (60-69)
+      60: 'Scarab (Attacking)',
+      61: 'Scarab (Ignoring)',
+      
+      // Famous captain encounters (70-79)
+      70: 'Famous Captain',
+      71: 'Famous Captain (Attacking)',
+      72: 'Captain Ahab',
+      73: 'Captain Conrad',
+      74: 'Captain Huie',
+      
+      // Special encounters (80+)
+      80: 'Marie Celeste',
+      81: 'Bottle (Old)',
+      82: 'Bottle (Good)',
+      83: 'Post-Marie Police'
     };
     
     return encounterNames[encounterType] || `Unknown (${encounterType})`;

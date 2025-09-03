@@ -13,6 +13,7 @@ import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
+import { getShipType } from '../data/shipTypes.ts';
 import { EncounterType } from '../combat/engine.ts';
 import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, getAvailableEquipment, getInstialledEquipmentSellPrices } from '../economy/equipment-trading.ts';
 
@@ -89,6 +90,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'refuel_ship':
         return await executeRefuelAction(state);
+      
+      case 'repair_ship':
+        return await executeRepairAction(state);
 
       case 'warp_to_system':
         return await executeWarpAction(state, action.parameters);
@@ -323,6 +327,48 @@ async function executeRefuelAction(state: GameState): Promise<ActionResult> {
     return {
       success: false,
       message: `Refuel failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
+}
+
+async function executeRepairAction(state: GameState): Promise<ActionResult> {
+  try {
+    const shipType = getShipType(state.ship.type);
+    const maxHull = shipType.hullStrength;
+    
+    if (state.ship.hull >= maxHull) {
+      return {
+        success: false,
+        message: 'Ship hull is already at full strength',
+        stateChanged: false
+      };
+    }
+    
+    const damagePoints = maxHull - state.ship.hull;
+    const repairCost = damagePoints * shipType.repairCosts;
+    
+    if (state.credits < repairCost) {
+      return {
+        success: false,
+        message: `Insufficient credits for repairs (need ${repairCost} credits)`,
+        stateChanged: false
+      };
+    }
+    
+    // Perform repair
+    state.ship.hull = maxHull;
+    state.credits -= repairCost;
+    
+    return {
+      success: true,
+      message: `Ship repaired to full hull strength for ${repairCost} credits`,
+      stateChanged: true
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Repair error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       stateChanged: false
     };
   }
@@ -705,6 +751,21 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     });
   }
   
+  // Repair ship
+  const shipType = getShipType(state.ship.type);
+  const maxHull = shipType.hullStrength;
+  if (state.ship.hull < maxHull) {
+    const damagePoints = maxHull - state.ship.hull;
+    const repairCost = damagePoints * shipType.repairCosts;
+    
+    actions.push({
+      type: 'repair_ship',
+      name: 'Repair Ship',
+      description: `Repair ${damagePoints} hull damage (${repairCost} credits)`,
+      available: state.credits >= repairCost
+    });
+  }
+  
   // Note: Warp actions are handled by launching to space first
   // This matches the original Palm OS game flow where you launch then warp
 
@@ -918,7 +979,7 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
     return { hasEncounter: true, encounterType };
   } else if (encounterTest < politics.strengthPirates + policeStrength) {
     // Police encounter
-    const policeTypes = [20, 21, 22]; // Different police encounter types
+    const policeTypes = [0, 1, 2, 3]; // POLICEINSPECTION, POLICEIGNORE, POLICEATTACK, POLICEFLEE
     const encounterType = policeTypes[Math.floor(Math.random() * policeTypes.length)];
     return { hasEncounter: true, encounterType };
   } else if (encounterTest < politics.strengthPirates + policeStrength + politics.strengthTraders) {
@@ -1100,15 +1161,19 @@ export function getCurrentLocation(state: GameState): {
 
 export function getCurrentShipStatus(state: GameState): {
   hull: number;
+  hullPercentage: number;
   fuel: number;
   cargoUsed: number;
   cargoCapacity: number;
 } {
+  const shipType = getShipType(state.ship.type);
   const cargoUsed = state.ship.cargo.reduce((total, quantity) => total + quantity, 0);
-  const cargoCapacity = 50; // Base cargo capacity - would come from ship data
+  const cargoCapacity = shipType.cargoBays;
+  const hullPercentage = Math.round((state.ship.hull / shipType.hullStrength) * 100);
   
   return {
     hull: state.ship.hull,
+    hullPercentage,
     fuel: state.ship.fuel,
     cargoUsed,
     cargoCapacity

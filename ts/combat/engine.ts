@@ -4,6 +4,8 @@
 import type { GameState, Ship } from '../types.ts';
 import { executeOrbitalPurchase, executeOrbitalSale } from '../trading/orbital.ts';
 import { GameMode } from '../types.ts';
+import { getShipType } from '../data/shipTypes.ts';
+import { createEmptyShip } from '../state.ts';
 
 // Combat Action Types
 export type CombatAction = 'attack' | 'flee' | 'surrender' | 'bribe' | 'submit' | 'ignore' | 'trade' | 'board' | 'meet' | 'drink' | 'yield' | 'plunder';
@@ -108,6 +110,9 @@ export function startEncounter(state: GameState, encounterType: number): { succe
 
   state.currentMode = GameMode.InCombat;
   state.encounterType = encounterType;
+  
+  // Configure opponent ship based on encounter type
+  configureOpponentShip(state, encounterType);
   
   return { success: true };
 }
@@ -282,6 +287,11 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
       opponentDamage: 0,
       message: `Cannot perform action: ${playerAction}`
     };
+  }
+  
+  // Ensure opponent is configured if not already
+  if (state.opponent.hull <= 0 || state.opponent.type === 0) {
+    configureOpponentShip(state, state.encounterType);
   }
   
   let playerDamage = 0;
@@ -543,4 +553,40 @@ export function updateEncounterState(
       timestamp: Date.now()
     }]
   };
+}
+
+// Configure opponent ship based on encounter type  
+function configureOpponentShip(state: GameState, encounterType: number): void {
+  // Reset opponent to empty ship
+  state.opponent = createEmptyShip();
+  
+  if (EncounterType.isPoliceEncounter(encounterType)) {
+    // Police ships - use Gnat or better
+    state.opponent.type = 1; // Gnat
+    const shipType = getShipType(1);
+    state.opponent.hull = shipType.hullStrength;
+    state.opponent.weapon[0] = 1; // Beam Laser (stronger than player's pulse laser)
+    
+  } else if (EncounterType.isPirateEncounter(encounterType)) {
+    // Pirate ships - varied types
+    const pirateShipTypes = [1, 2]; // Gnat, Firefly
+    state.opponent.type = pirateShipTypes[Math.floor(Math.random() * pirateShipTypes.length)];
+    const shipType = getShipType(state.opponent.type);
+    state.opponent.hull = shipType.hullStrength;
+    state.opponent.weapon[0] = 0; // Pulse Laser (same as player)
+    
+  } else if (EncounterType.isTraderEncounter(encounterType)) {
+    // Trader ships - usually weaker
+    state.opponent.type = 1; // Gnat
+    const shipType = getShipType(1);
+    state.opponent.hull = shipType.hullStrength;
+    state.opponent.weapon[0] = 0; // Pulse Laser
+    
+  } else {
+    // Default opponent setup
+    state.opponent.type = 1; // Gnat
+    const shipType = getShipType(1);
+    state.opponent.hull = shipType.hullStrength;
+    state.opponent.weapon[0] = 0; // Pulse Laser
+  }
 }

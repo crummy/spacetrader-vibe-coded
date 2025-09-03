@@ -116,9 +116,13 @@ export function createInitialState(): State {
   
   // Create starting ship with proper fuel
   const startingShip = createEmptyShip();
-  const shipType = getShipType(0); // Gnat
+  startingShip.type = 1; // Gnat (starting ship type from Palm OS Traveler.c line 1674)
+  const shipType = getShipType(1); // Gnat
   startingShip.fuel = shipType.fuelTanks; // Start with full fuel (matches Palm OS original)
   startingShip.hull = shipType.hullStrength; // Start with full hull
+  
+  // Player starts with a basic weapon (Pulse Laser - index 0) per Palm OS Traveler.c line 1677
+  startingShip.weapon[0] = 0; // Pulse Laser
   
   return {
     // Core player stats
