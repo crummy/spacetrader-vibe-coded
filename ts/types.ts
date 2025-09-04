@@ -362,6 +362,21 @@ export interface State {
   
   // Current game mode (our addition for managing UI state)
   currentMode: GameMode;
+  
+  // Debug configuration (optional, for development)
+  debug?: DebugConfig;
+}
+
+// Debug configuration for development and testing
+export interface DebugConfig {
+  log: {
+    actions: boolean;           // Log all actions executed
+    encounters: boolean;        // Log encounter details
+    travel: boolean;           // Log travel and warp details
+    economy: boolean;          // Log trading and economic actions
+    combat: boolean;           // Log combat details
+  };
+  enabled: boolean;            // Master debug switch
 }
 
 // Export alias for compatibility

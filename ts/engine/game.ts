@@ -76,6 +76,17 @@ export function createGameEngine(initialState?: GameState): GameEngine {
 }
 
 export async function executeAction(state: GameState, action: GameAction): Promise<ActionResult> {
+  // Debug logging for actions
+  if (state.debug?.enabled && state.debug?.log?.actions) {
+    console.log(`🔍 [DEBUG] Executing action: ${action.type}`, {
+      parameters: action.parameters,
+      currentMode: state.currentMode,
+      currentSystem: state.currentSystem,
+      credits: state.credits,
+      fuel: state.ship.fuel
+    });
+  }
+
   // Validate action is available
   if (!canExecuteAction(state, action)) {
     return {

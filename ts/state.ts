@@ -5,6 +5,7 @@ import type {
   CrewMember, 
   SolarSystem, 
   GameMode,
+  DebugConfig,
   MutableTradeItemArray,
   MutableWeaponArray,
   MutableShieldArray,
@@ -259,6 +260,18 @@ export function createInitialState(): State {
     
     // Current game mode (our addition)
     currentMode: GameModeValues.OnPlanet, // Start docked at Sol
+    
+    // Debug configuration (initialize disabled)
+    debug: {
+      enabled: false,
+      log: {
+        actions: false,
+        encounters: false,
+        travel: false,
+        economy: false,
+        combat: false,
+      }
+    }
   };
 }
 

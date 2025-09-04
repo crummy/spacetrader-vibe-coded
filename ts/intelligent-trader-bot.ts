@@ -18,6 +18,7 @@ import { createGameEngine } from './engine/game.ts';
 import { GameMode, TradeItem } from './types.ts';
 import { getSolarSystemName } from './data/systems.ts';
 import { getTradeItems } from './data/tradeItems.ts';
+import { enableActionLogging, enableAllDebug, disableDebug, applyEnvDebugConfig } from './debug.ts';
 
 interface TradingSession {
   startTime: number;
@@ -37,10 +38,23 @@ export class IntelligentTraderBot {
   private verbose: boolean;
   private maxActions: number;
 
-  constructor(verbose: boolean = false, maxActions: number = 1000) {
+  constructor(verbose: boolean = false, maxActions: number = 1000, debugActions: boolean = false) {
     this.engine = createGameEngine();
     this.verbose = verbose;
     this.maxActions = maxActions;
+    
+    // Apply environment debug configuration
+    applyEnvDebugConfig(this.engine.state);
+    
+    // Enable action debug logging if requested
+    if (debugActions || process.env.ST_DEBUG_ACTIONS === 'true') {
+      enableActionLogging(this.engine.state);
+    }
+    
+    // Enable all debug logging if ST_DEBUG is set
+    if (process.env.ST_DEBUG === 'true') {
+      enableAllDebug(this.engine.state);
+    }
     
     this.session = {
       startTime: Date.now(),
@@ -57,6 +71,14 @@ export class IntelligentTraderBot {
       console.log('🤖 Intelligent Trader Bot initialized');
       console.log(`📍 Starting location: ${getSolarSystemName(this.engine.state.currentSystem)}`);
       console.log(`💰 Starting credits: ${this.session.startingCredits}`);
+      
+      if (this.engine.state.debug?.enabled) {
+        console.log('🔍 Debug logging enabled:', Object.entries(this.engine.state.debug.log)
+          .filter(([_, enabled]) => enabled)
+          .map(([key, _]) => key)
+          .join(', ') || 'none'
+        );
+      }
     }
   }
 
@@ -428,9 +450,10 @@ export class IntelligentTraderBot {
  */
 export async function runIntelligentTrader(
   verbose: boolean = true,
-  maxActions: number = 500
+  maxActions: number = 500,
+  debugActions: boolean = false
 ): Promise<TradingSession> {
-  const bot = new IntelligentTraderBot(verbose, maxActions);
+  const bot = new IntelligentTraderBot(verbose, maxActions, debugActions);
   return await bot.run();
 }
 
@@ -438,13 +461,27 @@ export async function runIntelligentTrader(
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const verbose = !args.includes('--quiet');
+  const debugActions = args.includes('--debug-actions') || process.env.ST_DEBUG_ACTIONS === 'true';
+  const debugAll = args.includes('--debug') || process.env.ST_DEBUG === 'true';
   const maxActions = parseInt(args.find(arg => arg.startsWith('--max='))?.split('=')[1] || '500');
   
   console.log('🤖 Intelligent Trader Bot');
-  console.log(`Running with max ${maxActions} actions (verbose: ${verbose ? 'on' : 'off'})\n`);
+  console.log(`Running with max ${maxActions} actions (verbose: ${verbose ? 'on' : 'off'})`);
+  
+  if (debugAll) {
+    console.log('🔍 Full debug logging enabled');
+  } else if (debugActions) {
+    console.log('🔍 Action debug logging enabled');
+  }
+  
+  console.log('\n💡 Debug options:');
+  console.log('  --debug-actions  Enable action logging');
+  console.log('  --debug          Enable all debug logging');
+  console.log('  ST_DEBUG=true    Environment variable for full debug');
+  console.log('  ST_DEBUG_ACTIONS=true  Environment variable for action debug\n');
   
   try {
-    const result = await runIntelligentTrader(verbose, maxActions);
+    const result = await runIntelligentTrader(verbose, maxActions, debugActions || debugAll);
     process.exit(0);
   } catch (error) {
     console.error('❌ Bot crashed:', error);

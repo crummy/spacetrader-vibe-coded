@@ -52,6 +52,24 @@ console.log(`Completed ${result.totalActions} actions`);
 console.log(`Profit: ${result.profit} credits`);
 ```
 
+### Debug Logging
+```typescript
+import { IntelligentTraderBot } from './intelligent-trader-bot.ts';
+import { enableActionLogging, enableAllDebug } from './debug.ts';
+
+// Method 1: Constructor parameter
+const bot = new IntelligentTraderBot(true, 100, true); // debugActions=true
+
+// Method 2: Programmatic control
+const bot2 = new IntelligentTraderBot(true, 100);
+enableActionLogging(bot2.engine.state);  // Enable action logging only
+enableAllDebug(bot2.engine.state);       // Enable all debug categories
+
+// Method 3: Environment variables
+process.env.ST_DEBUG_ACTIONS = 'true';   // Action logging only
+process.env.ST_DEBUG = 'true';           // All debug categories
+```
+
 ### Command Line
 ```bash
 # Run bot directly
@@ -60,14 +78,34 @@ node --experimental-strip-types intelligent-trader-bot.ts
 # Run with options
 node --experimental-strip-types intelligent-trader-bot.ts --max=200 --quiet
 
-# Run demonstration
+# Run with debug logging
+node --experimental-strip-types intelligent-trader-bot.ts --debug-actions
+node --experimental-strip-types intelligent-trader-bot.ts --debug
+
+# Run with environment variables
+ST_DEBUG_ACTIONS=true node --experimental-strip-types intelligent-trader-bot.ts
+ST_DEBUG=true node --experimental-strip-types intelligent-trader-bot.ts
+
+# Run demonstrations
 node --experimental-strip-types demo-intelligent-bot.ts
+node --experimental-strip-types demo-debug-bot.ts
 ```
 
 ### Options
 - `--max=N` - Set maximum actions (default: 500)
 - `--quiet` - Disable verbose output
+- `--debug-actions` - Enable action debug logging
+- `--debug` - Enable all debug logging categories
 - `verbose` - Enable detailed logging (constructor parameter)
+- `debugActions` - Enable action debug logging (constructor parameter)
+
+### Environment Variables
+- `ST_DEBUG_ACTIONS=true` - Enable action debug logging
+- `ST_DEBUG=true` - Enable all debug logging categories
+- `ST_DEBUG_ENCOUNTERS=true` - Enable encounter debug logging
+- `ST_DEBUG_TRAVEL=true` - Enable travel debug logging
+- `ST_DEBUG_ECONOMY=true` - Enable economy debug logging
+- `ST_DEBUG_COMBAT=true` - Enable combat debug logging
 
 ## Results Tracking
 
@@ -87,6 +125,7 @@ interface TradingSession {
 
 ## Example Output
 
+### Normal Output
 ```
 🤖 Intelligent Trader Bot initialized
 📍 Starting location: Acamar
@@ -107,6 +146,50 @@ interface TradingSession {
 ⚔️ Total Combats: 1
 💰 Final Credits: 1050
 📈 Net Profit: +50 credits
+```
+
+### Debug Output (with --debug-actions)
+```
+🤖 Intelligent Trader Bot initialized
+📍 Starting location: Acamar  
+💰 Starting credits: 1000
+🔍 Debug logging enabled: actions
+
+🔍 [DEBUG] Executing action: buy_cargo {
+  parameters: { tradeItem: 2, quantity: 3 },
+  currentMode: 1,
+  currentSystem: 0,
+  credits: 1000,
+  fuel: 14
+}
+🛒 Bought 3 units of Food
+
+🔍 [DEBUG] Executing action: launch_ship {
+  parameters: {},
+  currentMode: 1,
+  currentSystem: 0,
+  credits: 437,
+  fuel: 14
+}
+🚀 Traveling to Korma
+
+🔍 [DEBUG] Executing action: warp_to_system {
+  parameters: { systemIndex: 49 },
+  currentMode: 0,
+  currentSystem: 0,
+  credits: 437,
+  fuel: 13
+}
+✅ Successfully warped to Korma
+
+🔍 [DEBUG] Executing action: sell_cargo {
+  parameters: { tradeItem: 2, quantity: 3 },
+  currentMode: 1,
+  currentSystem: 49,
+  credits: 437,
+  fuel: 13
+}
+💰 Sold 3 units of Food
 ```
 
 ## Technical Implementation
