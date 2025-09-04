@@ -19,6 +19,7 @@ import { GameMode, TradeItem } from './types.ts';
 import { getSolarSystemName } from './data/systems.ts';
 import { getTradeItems } from './data/tradeItems.ts';
 import { enableActionLogging, enableAllDebug, disableDebug, applyEnvDebugConfig } from './debug.ts';
+import { checkGameEndConditions, type EndGameResult } from './game/endings.ts';
 
 interface TradingSession {
   startTime: number;
@@ -30,6 +31,8 @@ interface TradingSession {
   currentCredits: number;
   profit: number;
   isActive: boolean;
+  gameOver?: boolean;
+  endCondition?: EndGameResult;
 }
 
 export class IntelligentTraderBot {
@@ -88,6 +91,18 @@ export class IntelligentTraderBot {
   async run(): Promise<TradingSession> {
     while (this.session.isActive && this.session.totalActions < this.maxActions) {
       try {
+        // Check for game over conditions
+        const gameEndCondition = checkGameEndConditions(this.engine.state);
+        if (gameEndCondition?.isGameOver) {
+          if (this.verbose) {
+            console.log(`🎬 Game Over: ${gameEndCondition.message}`);
+            console.log(`📊 End Status: ${this.getEndStatusName(gameEndCondition.endStatus)}`);
+          }
+          this.session.gameOver = true;
+          this.session.endCondition = gameEndCondition;
+          break;
+        }
+
         // Ensure we're on a planet to start trading cycle
         await this.ensureOnPlanet();
         
@@ -440,6 +455,17 @@ export class IntelligentTraderBot {
     console.log(`📈 Net Profit: ${this.session.profit >= 0 ? '+' : ''}${this.session.profit} credits`);
     console.log(`📍 Final Location: ${getSolarSystemName(this.engine.state.currentSystem)}`);
     
+    if (this.session.gameOver && this.session.endCondition) {
+      console.log(`🎬 Game Ended: ${this.session.endCondition.message}`);
+      console.log(`📊 End Condition: ${this.getEndStatusName(this.session.endCondition.endStatus)}`);
+      console.log(`🏆 Final Score: ${this.session.endCondition.finalScore}`);
+      console.log(`💎 Final Worth: ${this.session.endCondition.finalWorth}`);
+    } else if (this.session.totalActions >= this.maxActions) {
+      console.log(`⏱️ Stopped: Reached maximum action limit (${this.maxActions})`);
+    } else {
+      console.log(`⏹️ Stopped: Manual termination`);
+    }
+    
     if (this.session.totalTrades > 0) {
       const profitPerTrade = this.session.profit / this.session.totalTrades;
       console.log(`💡 Average Profit per Trade: ${profitPerTrade.toFixed(2)} credits`);
@@ -461,6 +487,18 @@ export class IntelligentTraderBot {
    */
   getStats(): TradingSession {
     return { ...this.session };
+  }
+
+  /**
+   * Get human-readable end status name
+   */
+  private getEndStatusName(endStatus: number): string {
+    const statusNames = {
+      0: 'Killed', // KILLED
+      1: 'Retired', // RETIRED  
+      2: 'Moon Purchased' // MOON
+    };
+    return statusNames[endStatus as keyof typeof statusNames] || 'Unknown';
   }
 }
 
