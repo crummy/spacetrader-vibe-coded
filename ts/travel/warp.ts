@@ -268,10 +268,14 @@ export function performWarp(state: GameState, toSystem: number, viaSingularity: 
     finalDestination = ripResult.destinationSystem;
     fabricRipOccurred = true;
     Object.assign(state, ripResult.state);
+    // Reset newspaper payment flag when arriving at new system via fabric rip
+    state.alreadyPaidForNewspaper = false;
   } else {
     // Normal warp - execute as planned
     state.currentSystem = toSystem;
     state.solarSystem[toSystem].visited = true;
+    // Reset newspaper payment flag when arriving at new system
+    state.alreadyPaidForNewspaper = false;
   }
   
   // Update fabric rip probability (decreases daily during experiment)

@@ -102,6 +102,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'track_system':
         return await executeTrackSystemAction(state, action.parameters);
       
+      case 'read_news':
+        return await executeReadNewsAction(state);
+      
       case 'launch_ship':
         return await executeLaunchShipAction(state);
       
@@ -508,6 +511,8 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
       // No more encounters - arrive at destination
       state.currentSystem = state.warpSystem;
       state.currentMode = GameMode.OnPlanet;
+      // Reset newspaper payment flag when arriving at new system
+      state.alreadyPaidForNewspaper = false;
       return { 
         hasEncounter: false, 
         arrivedSafely: true,
@@ -537,6 +542,76 @@ async function executeTrackSystemAction(state: GameState, parameters: any): Prom
     message: `Now tracking ${getSolarSystemName(systemIndex)}`,
     stateChanged: true
   };
+}
+
+async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
+  try {
+    // News costs 1 credit base, +1 per difficulty level (like Palm OS)
+    const newsCost = 1 + state.difficulty;
+    let actualCost = 0;
+    
+    // Check if already paid for newspaper in this system
+    if (!state.alreadyPaidForNewspaper) {
+      if (state.credits < newsCost) {
+        return {
+          success: false,
+          message: `Not enough credits to buy newspaper (costs ${newsCost} credits)`,
+          stateChanged: false
+        };
+      }
+      
+      // Pay for newspaper
+      state.credits -= newsCost;
+      actualCost = newsCost;
+      state.alreadyPaidForNewspaper = true;
+    }
+    
+    // Generate news content
+    const { getNewsEvents, getEventName } = await import('../events/special.ts');
+    const newsEvents = getNewsEvents(state);
+    const { getSolarSystemName } = await import('../data/systems.ts');
+    const systemName = getSolarSystemName(state.currentSystem);
+    
+    let newsContent = `\n=== ${systemName} Daily News ===\n`;
+    if (actualCost > 0) {
+      newsContent += `Cost: ${actualCost} credits\n\n`;
+    } else {
+      newsContent += `Re-reading (already paid)\n\n`;
+    }
+    
+    if (newsEvents.length > 0) {
+      newsContent += 'Recent Headlines:\n';
+      newsEvents.forEach((event, index) => {
+        const eventName = getEventName(event.id);
+        newsContent += `• ${eventName}\n`;
+      });
+    } else {
+      newsContent += 'No major news today.\n';
+      // Add some generic filler headlines like Palm OS
+      const fillerHeadlines = [
+        'Local weather continues to be pleasant',
+        'Trade prices stable according to market analysts', 
+        'Shipping lanes report normal traffic patterns',
+        'No major incidents reported in local space'
+      ];
+      const randomHeadline = fillerHeadlines[Math.floor(Math.random() * fillerHeadlines.length)];
+      newsContent += `• ${randomHeadline}\n`;
+    }
+    
+    newsContent += '\nPress Enter to continue...';
+    
+    return {
+      success: true,
+      message: newsContent,
+      stateChanged: true
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error reading news: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
 }
 
 async function executeLaunchShipAction(state: GameState): Promise<ActionResult> {
@@ -897,6 +972,14 @@ function getPlanetActions(state: GameState): AvailableAction[] {
       available: true
     });
   }
+
+  // News action - read local newspaper
+  actions.push({
+    type: 'read_news',
+    name: 'Read News',
+    description: 'Buy and read the local newspaper',
+    available: true
+  });
 
   // Launch ship action (transition from planet to space)
   actions.push({
