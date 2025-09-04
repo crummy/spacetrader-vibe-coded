@@ -157,7 +157,7 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateWithReactor = {
       ...state,
-      currentSystem: 119, // Utopia system index
+      currentSystem: 109, // Utopia system index
       reactorStatus: 10,
       credits: 5000
     };
@@ -190,7 +190,7 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateAtUtopia = {
       ...state,
-      currentSystem: 119, // Utopia system index
+      currentSystem: 109, // Utopia system index
       reactorStatus: 10
     };
     
