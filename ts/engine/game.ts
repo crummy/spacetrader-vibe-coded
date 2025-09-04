@@ -1079,45 +1079,153 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
     }
   }
   
-  // Check regular encounter types in order of priority
+  // Special case: Wild at Kravat system creates extra police encounters
+  if (state.wildStatus === 1 && state.warpSystem === 50) { // KRAVATSYSTEM = 50
+    const rareEncounter = Math.floor(Math.random() * 100);
+    let policeThreshold = 0;
+    
+    if (state.difficulty <= 0) { // EASY
+      policeThreshold = 25;
+    } else if (state.difficulty === 1) { // NORMAL  
+      policeThreshold = 33;
+    } else { // HARD or IMPOSSIBLE
+      policeThreshold = 50;
+    }
+    
+    if (rareEncounter < policeThreshold) {
+      const policeEncounterType = determinePoliceEncounterType(state);
+      return { hasEncounter: true, encounterType: policeEncounterType };
+    }
+  }
+  
+  // Check regular encounter types in order of priority (exact Palm OS logic)
   if (encounterTest < politics.strengthPirates && !state.raided) {
-    // Pirate encounter
-    const pirateTypes = [10, 11, 12]; // Different pirate encounter types
-    const encounterType = pirateTypes[Math.floor(Math.random() * pirateTypes.length)];
-    return { hasEncounter: true, encounterType };
+    // Pirate encounter - determine specific type based on reputation and ship
+    const pirateEncounterType = determinePirateEncounterType(state);
+    return { hasEncounter: true, encounterType: pirateEncounterType };
   } else if (encounterTest < politics.strengthPirates + policeStrength) {
-    // Police encounter
-    const policeTypes = [0, 1, 2, 3]; // POLICEINSPECTION, POLICEIGNORE, POLICEATTACK, POLICEFLEE
-    const encounterType = policeTypes[Math.floor(Math.random() * policeTypes.length)];
-    return { hasEncounter: true, encounterType };
+    // Police encounter - determine specific type based on criminal record
+    const policeEncounterType = determinePoliceEncounterType(state);
+    return { hasEncounter: true, encounterType: policeEncounterType };
   } else if (encounterTest < politics.strengthPirates + policeStrength + politics.strengthTraders) {
-    // Trader encounter - use correct trader encounter types from combat engine
-    const traderTypes = [
-      EncounterType.TRADERIGNORE,    // 20 - Trader passes by
-      EncounterType.TRADERFLEE,      // 21 - Trader flees
-      EncounterType.TRADERSELL,      // 24 - Trader will sell products in orbit
-      EncounterType.TRADERBUY        // 25 - Trader will buy products in orbit
-    ];
-    const encounterType = traderTypes[Math.floor(Math.random() * traderTypes.length)];
-    return { hasEncounter: true, encounterType };
+    // Trader encounter - determine specific type based on criminal record and trade possibilities
+    const traderEncounterType = determineTraderEncounterType(state);
+    return { hasEncounter: true, encounterType: traderEncounterType };
+  }
+  
+  // Special case: Mantis encounters when carrying artifact
+  if (state.artifactOnBoard && Math.floor(Math.random() * 20) <= 3) {
+    // Generate Mantis encounter (simplified)
+    return { hasEncounter: true, encounterType: EncounterType.PIRATEATTACK }; // Treat as pirate attack for now
   }
   
   return { hasEncounter: false };
 }
 
-// Calculate police strength that adapts to criminal record
+// Calculate police strength that adapts to criminal record (STRENGTHPOLICE macro)
 function getPoliceStrength(state: GameState, politicsIndex: number): number {
   const basePolitics = getPoliticalSystem(politicsIndex);
-  let policeStrength = basePolitics.strengthPolice;
+  const baseStrength = basePolitics.strengthPolice;
   
-  // Increase police presence based on criminal record
-  if (state.policeRecordScore < 0) {
-    // More negative = more criminal = more police attention
-    const criminalLevel = Math.abs(state.policeRecordScore) / 100;
-    policeStrength += Math.min(criminalLevel * 2, 5); // Cap the bonus
+  // Palm OS constants for police record thresholds
+  const PSYCHOPATHSCORE = -70;
+  const VILLAINSCORE = -30;
+  
+  // Exact Palm OS STRENGTHPOLICE macro logic
+  if (state.policeRecordScore < PSYCHOPATHSCORE) {
+    return 3 * baseStrength; // Psychopath - 3x police attention
+  } else if (state.policeRecordScore < VILLAINSCORE) {
+    return 2 * baseStrength; // Villain - 2x police attention  
+  } else {
+    return baseStrength; // Normal - 1x police attention
+  }
+}
+
+// Encounter type determination functions (exact Palm OS logic)
+
+function determinePirateEncounterType(state: GameState): number {
+  // Palm OS constants
+  const ELITESCORE = 1500; // From Palm OS
+  
+  // If cloaked, pirates ignore you (simplified - proper cloaking check needed)
+  // For now, assume no cloaking (would need proper Cloaked() function implementation)
+  
+  // Pirates will mostly attack, but are cowardly if your reputation is too high
+  const opponentType = 1; // Assume average pirate ship (would be determined by GenerateOpponent in Palm OS)
+  
+  // If opponent type >= 7 OR random check fails, pirates attack
+  if (opponentType >= 7 || Math.floor(Math.random() * ELITESCORE) > (state.reputationScore * 4) / (1 + opponentType)) {
+    return EncounterType.PIRATEATTACK; // 10
+  } else {
+    return EncounterType.PIRATEFLEE; // 11  
+  }
+}
+
+function determinePoliceEncounterType(state: GameState): number {
+  // Palm OS constants for police record thresholds
+  const PSYCHOPATHSCORE = -70;
+  const VILLAINSCORE = -30;
+  const CRIMINALSCORE = -10;
+  const DUBIOUSSCORE = -5;
+  const CLEANSCORE = 0;
+  const LAWFULSCORE = 5;
+  
+  // Exact Palm OS police encounter logic
+  if (state.policeRecordScore < PSYCHOPATHSCORE) {
+    // Psychopath - police attack on sight
+    return EncounterType.POLICEATTACK; // 2
+  } else if (state.policeRecordScore < VILLAINSCORE) {
+    // Villain - police attack or flee based on ship comparison
+    // Simplified: assume police flee (proper logic would compare ship types)
+    return EncounterType.POLICEFLEE; // 3
+  } else if (state.policeRecordScore >= DUBIOUSSCORE && state.policeRecordScore < CLEANSCORE) {
+    // Dubious record - mandatory inspection
+    return EncounterType.POLICEINSPECTION; // 0
+  } else if (state.policeRecordScore < LAWFULSCORE) {
+    // Clean record - 10% chance of inspection on Normal difficulty
+    if (Math.floor(Math.random() * (12 - state.difficulty)) < 1) {
+      return EncounterType.POLICEINSPECTION; // 0
+    } else {
+      return EncounterType.POLICEIGNORE; // 1
+    }
+  } else {
+    // Lawful trader - 2.5% chance of inspection
+    if (Math.floor(Math.random() * 40) === 0) {
+      return EncounterType.POLICEINSPECTION; // 0
+    } else {
+      return EncounterType.POLICEIGNORE; // 1
+    }
+  }
+}
+
+function determineTraderEncounterType(state: GameState): number {
+  // Start with ignore (default)
+  let encounterType = EncounterType.TRADERIGNORE; // 20
+  
+  const CRIMINALSCORE = -10;
+  const ELITESCORE = 1500;
+  
+  // If you're a criminal, traders tend to flee if you have reputation
+  if (state.policeRecordScore <= CRIMINALSCORE) {
+    const opponentType = 1; // Assume average trader ship
+    if (Math.floor(Math.random() * ELITESCORE) <= (state.reputationScore * 10) / (1 + opponentType)) {
+      encounterType = EncounterType.TRADERFLEE; // 21
+    }
   }
   
-  return Math.floor(policeStrength);
+  // Check for trade in orbit (10% chance)
+  const CHANCEOFTRADEINORBIT = 100; // 100 out of 1000 = 10%
+  if (encounterType === EncounterType.TRADERIGNORE && Math.floor(Math.random() * 1000) < CHANCEOFTRADEINORBIT) {
+    // Simplified trade check - in Palm OS this checks HasTradeableItems()
+    // For now, randomly choose between sell and buy
+    if (Math.random() < 0.5) {
+      encounterType = EncounterType.TRADERSELL; // 24
+    } else {
+      encounterType = EncounterType.TRADERBUY; // 25
+    }
+  }
+  
+  return encounterType;
 }
 
 // Check for very rare encounters (Marie Celeste, Famous Captains, etc.)
