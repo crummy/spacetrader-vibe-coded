@@ -265,8 +265,8 @@ function getDifficultyName(level: number): string {
   return names[level] || 'Unknown';
 }
 
-// Run if executed directly
-if (import.meta.main) {
+// Run if executed directly (Node.js check)
+if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const gameCount = parseInt(args[0]) || 5;
   const difficulty = parseInt(args[1]) || Difficulty.Easy;

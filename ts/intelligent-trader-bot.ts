@@ -457,8 +457,8 @@ export async function runIntelligentTrader(
   return await bot.run();
 }
 
-// Run if executed directly
-if (import.meta.main) {
+// Run if executed directly (Node.js check)
+if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const verbose = !args.includes('--quiet');
   const debugActions = args.includes('--debug-actions') || process.env.ST_DEBUG_ACTIONS === 'true';
