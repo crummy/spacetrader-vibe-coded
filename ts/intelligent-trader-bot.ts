@@ -20,6 +20,7 @@ import { getSolarSystemName } from './data/systems.ts';
 import { getTradeItems } from './data/tradeItems.ts';
 import { enableActionLogging, enableAllDebug, disableDebug, applyEnvDebugConfig } from './debug.ts';
 import { checkGameEndConditions, type EndGameResult } from './game/endings.ts';
+import { getAllSystemPrices } from './economy/pricing.ts';
 
 interface TradingSession {
   startTime: number;
@@ -172,40 +173,66 @@ export class IntelligentTraderBot {
       return;
     }
 
-    // Try to buy items in random order until we find one we can afford
-    const itemIndices = Array.from({ length: tradeItems.length }, (_, i) => i);
-    for (let attempts = 0; attempts < itemIndices.length; attempts++) {
-      const randomIndex = Math.floor(Math.random() * itemIndices.length);
-      const itemIndex = itemIndices.splice(randomIndex, 1)[0];
-      
-      // Try to buy just 1 unit to minimize cost
-      const quantity = Math.min(3, maxCargo - totalCargo);
-      
-      const buyResult = await this.engine.executeAction({
-        type: 'buy_cargo',
-        parameters: {
-          tradeItem: itemIndex,
-          quantity: quantity
-        }
-      });
+    // Get current market prices
+    const currentSystem = this.engine.state.solarSystem[this.engine.state.currentSystem];
+    const prices = getAllSystemPrices(
+      currentSystem, 
+      this.engine.state.commanderTrader, 
+      this.engine.state.policeRecordScore
+    );
 
-      this.session.totalActions++;
+    // Find items we can actually afford
+    const availableItems = [];
+    const currentCredits = this.engine.state.credits;
+    const availableCargoSpace = maxCargo - totalCargo;
+
+    for (let i = 0; i < prices.length; i++) {
+      const buyPrice = prices[i].buyPrice;
       
-      if (buyResult.success) {
-        this.session.totalTrades++;
-        if (this.verbose) {
-          const itemName = tradeItems[itemIndex].name;
-          console.log(`🛒 Bought ${quantity} units of ${itemName}`);
+      // Skip if item not available (buyPrice = 0) or we can't afford even 1 unit
+      if (buyPrice > 0 && buyPrice <= currentCredits) {
+        const maxAffordable = Math.floor(currentCredits / buyPrice);
+        const quantity = Math.min(3, availableCargoSpace, maxAffordable); // Buy up to 3 units
+        
+        if (quantity > 0) {
+          availableItems.push({
+            itemIndex: i,
+            quantity: quantity,
+            totalCost: buyPrice * quantity,
+            unitPrice: buyPrice,
+            itemName: tradeItems[i].name
+          });
         }
-        return; // Successfully bought something, exit
-      } else if (this.verbose && attempts < 3) {
-        // Only show errors for first few attempts to reduce spam
-        console.log(`❌ Failed to buy ${tradeItems[itemIndex].name}: ${buyResult.message}`);
       }
     }
 
-    if (this.verbose) {
-      console.log('⚠️ Unable to afford any available goods');
+    if (availableItems.length === 0) {
+      if (this.verbose) {
+        console.log('⚠️ No affordable items available at this system');
+      }
+      return;
+    }
+
+    // Pick a random affordable item
+    const randomChoice = availableItems[Math.floor(Math.random() * availableItems.length)];
+    
+    const buyResult = await this.engine.executeAction({
+      type: 'buy_cargo',
+      parameters: {
+        tradeItem: randomChoice.itemIndex,
+        quantity: randomChoice.quantity
+      }
+    });
+
+    this.session.totalActions++;
+    
+    if (buyResult.success) {
+      this.session.totalTrades++;
+      if (this.verbose) {
+        console.log(`🛒 Bought ${randomChoice.quantity} units of ${randomChoice.itemName} for ${randomChoice.totalCost} credits`);
+      }
+    } else if (this.verbose) {
+      console.log(`❌ Failed to buy ${randomChoice.itemName}: ${buyResult.message}`);
     }
   }
 
