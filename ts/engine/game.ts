@@ -417,6 +417,11 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
   }
   
   try {
+    // Auto-launch ship if we're on a planet
+    if (state.currentMode === GameMode.OnPlanet) {
+      state.currentMode = GameMode.InSpace;
+    }
+    
     // Check if we can warp first (before setting warpSystem)
     const validation = canWarpTo(state, targetSystem);
     if (!validation.canWarp) {
@@ -1006,7 +1011,25 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     available: true
   });
 
-  // Launch ship action (transition from planet to space)
+  // Warp to systems directly from planet (no need to launch first)
+  const possibleSystems: number[] = [];
+  for (let i = 0; i < state.solarSystem.length; i++) {
+    if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
+      possibleSystems.push(i);
+    }
+  }
+  
+  if (possibleSystems.length > 0) {
+    actions.push({
+      type: 'warp_to_system',
+      name: 'Warp to System',
+      description: 'Launch ship and warp to another solar system',
+      parameters: { possibleSystems },
+      available: state.ship.fuel > 0
+    });
+  }
+
+  // Launch ship action (for manual space travel without warping)
   actions.push({
     type: 'launch_ship',
     name: 'Launch Ship',
