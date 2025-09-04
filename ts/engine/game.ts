@@ -16,6 +16,8 @@ import { getPoliticalSystem } from '../data/politics.ts';
 import { getShipType } from '../data/shipTypes.ts';
 import { EncounterType } from '../combat/engine.ts';
 import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, getAvailableEquipment, getInstialledEquipmentSellPrices } from '../economy/equipment-trading.ts';
+import { purchaseShip, getShipPurchaseInfo } from '../economy/ship-trading.ts';
+import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
 
 // Action System Types
 export type GameAction = {
@@ -129,6 +131,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'sell_equipment':
         return await executeSellEquipmentAction(state, action.parameters);
+      
+      case 'buy_ship':
+        return await executeBuyShipAction(state, action.parameters);
       
       case 'combat_attack':
       case 'combat_flee':
@@ -802,6 +807,18 @@ function getPlanetActions(state: GameState): AvailableAction[] {
       available: true
     });
   }
+  
+  // Ship trading at shipyard
+  const availableShips = getAvailableShipsForPurchase(state);
+  if (availableShips.length > 0) {
+    actions.push({
+      type: 'buy_ship',
+      name: 'Buy Ship',
+      description: 'Trade in current ship for a new one',
+      parameters: { availableShips },
+      available: true
+    });
+  }
 
   // Launch ship action (transition from planet to space)
   actions.push({
@@ -1247,4 +1264,43 @@ async function executeSellEquipmentAction(state: GameState, parameters: any): Pr
     stateChanged: false,
     data: { sellableEquipment }
   };
+}
+
+/**
+ * Execute buy ship action
+ */
+async function executeBuyShipAction(state: GameState, parameters: any): Promise<ActionResult> {
+  if (parameters.shipType !== undefined) {
+    // Actually purchase the ship
+    const result = purchaseShip(state, parameters.shipType, {
+      transferLightning: parameters.transferLightning,
+      transferCompactor: parameters.transferCompactor, 
+      transferMorgan: parameters.transferMorgan,
+    });
+    
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.error || 'Ship purchase failed',
+        stateChanged: false
+      };
+    }
+    
+    return {
+      success: true,
+      message: `Successfully purchased ${getShipType(parameters.shipType).name}`,
+      stateChanged: true,
+      newState: result.newState
+    };
+  } else {
+    // This is a menu action - return available ships for UI to display
+    const availableShips = getAvailableShipsForPurchase(state);
+    
+    return {
+      success: true,
+      message: 'Ship trading available',
+      stateChanged: false,
+      data: { availableShips }
+    };
+  }
 }

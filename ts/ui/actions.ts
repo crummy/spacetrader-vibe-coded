@@ -41,6 +41,8 @@ export function getActionParameterPrompts(action: AvailableAction, state: GameSt
       return createTradeParameterPrompt(action, state);
     case 'warp_to_system':
       return createWarpParameterPrompt(action, state);
+    case 'buy_ship':
+      return createShipPurchaseParameterPrompt(action, state);
     default:
       return null; // No parameters needed
   }
@@ -208,4 +210,47 @@ function getEncounterTypeName(encounterType: number): string {
   };
   
   return encounterNames[encounterType] || `Unknown (${encounterType})`;
+}
+
+/**
+ * Handle ship purchase action
+ */
+function createShipPurchaseParameterPrompt(action: AvailableAction, state: GameState): ActionParameterPrompt {
+  const availableShips = action.parameters?.availableShips || [];
+  
+  return {
+    prompts: [
+      {
+        question: `Available Ships for Purchase:
+
+${availableShips.map((ship: any, index: number) => 
+  `${index + 1}. ${ship.name} - Net Cost: ${ship.netPrice} credits ${!ship.canAfford ? '(Cannot afford)' : ''}`
+).join('\n')}
+
+Enter ship number (1-${availableShips.length}):`,
+        validation: (input: string) => {
+          const choice = parseInt(input);
+          if (isNaN(choice) || choice < 1 || choice > availableShips.length) {
+            return { valid: false, errorMessage: `Please enter a number between 1 and ${availableShips.length}` };
+          }
+          const selectedShip = availableShips[choice - 1];
+          if (!selectedShip.canAfford) {
+            return { valid: false, errorMessage: 'Insufficient funds for this ship' };
+          }
+          return { valid: true, value: selectedShip };
+        }
+      }
+    ],
+    buildParameters: (responses: any[]) => {
+      const selectedShip = responses[0];
+      return { 
+        shipType: selectedShip.shipType,
+        // For now, don't transfer special equipment automatically
+        // This could be enhanced to ask the user about special equipment
+        transferLightning: false,
+        transferCompactor: false,
+        transferMorgan: false,
+      };
+    }
+  };
 }
