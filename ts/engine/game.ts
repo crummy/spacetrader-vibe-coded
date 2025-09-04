@@ -9,7 +9,7 @@ import { GameMode } from '../types.ts';
 import { buyCargo, sellCargo } from '../economy/trading.ts';
 import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getAllSystemPrices } from '../economy/pricing.ts';
 import { refuelToFull, getFuelStatus } from '../economy/fuel.ts';
-import { performWarp, canWarpTo, calculateWarpCost } from '../travel/warp.ts';
+import { performWarp, canWarpTo, calculateWarpCost, calculateDistance } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
@@ -141,8 +141,14 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'combat_attack':
       case 'combat_flee':
       case 'combat_surrender':
+      case 'combat_submit':
+      case 'combat_bribe':
       case 'combat_trade':
       case 'combat_ignore':
+      case 'combat_board':
+      case 'combat_meet':
+      case 'combat_drink':
+      case 'combat_yield':
       case 'combat_plunder':
         return await executeCombatAction(state, action);
       
@@ -394,42 +400,58 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
   }
   
   try {
-    // Set warpSystem for encounter calculations
+    // Check if we can warp first (before setting warpSystem)
+    const validation = canWarpTo(state, targetSystem);
+    if (!validation.canWarp) {
+      return {
+        success: false,
+        message: validation.reason || 'Warp failed',
+        stateChanged: false
+      };
+    }
+    
+    // Set warpSystem for encounter calculations but DON'T move yet
+    const originalSystem = state.currentSystem;
     state.warpSystem = targetSystem;
     
-    const result = performWarp(state, targetSystem, false);
+    // Calculate costs and consume resources, but don't arrive yet  
+    const systemName = getSolarSystemName(targetSystem);
+    let message = `Traveling to ${systemName}...`;
     
-    if (result.success) {
-      const systemName = getSolarSystemName(targetSystem);
-      let message = `Traveling to ${systemName}...`;
+    // Consume fuel and credits (logic from performWarp but without arrival)
+    const distance = calculateDistance(state.solarSystem[originalSystem], state.solarSystem[targetSystem]);
+    state.ship.fuel -= distance;
+    message += ` (fuel used: ${distance})`;
+    
+    const cost = calculateWarpCost(state, originalSystem, targetSystem, false);
+    state.credits -= cost.total;
+    if (cost.total > 0) {
+      message += ` (cost: ${cost.total})`;
+    }
+    
+    // Check for encounters during tick-based travel
+    const encounterCheck = checkRandomEncountersOnTravel(state);
+    
+    if (encounterCheck.hasEncounter) {
+      // Initialize encounter using combat engine (this will set the mode and configure opponent)
+      const encounterResult = startEncounter(state, encounterCheck.encounterType!);
       
-      if (result.fuelConsumed && result.fuelConsumed > 0) {
-        message += ` (fuel used: ${result.fuelConsumed})`;
-      }
-      if (result.costPaid && result.costPaid > 0) {
-        message += ` (cost: ${result.costPaid})`;
-      }
-      
-      // Check for encounters during tick-based travel
-      const encounterCheck = checkRandomEncountersOnTravel(state);
-      
-      if (encounterCheck.hasEncounter) {
-        // Start combat encounter
-        state.currentMode = GameMode.InCombat;
-        state.encounterType = encounterCheck.encounterType!;
-        
-        // Initialize encounter using combat engine
-        const encounterResult = startEncounter(state, encounterCheck.encounterType!);
-        
-        message += ` - ${encounterResult.message}`;
-        
-        return {
-          success: true,
-          message,
-          stateChanged: true
-        };
+      if (encounterResult.success) {
+        message += ` - Combat encounter!`;
       } else {
-        // No encounter - arrive safely at planet
+        message += ` - ${encounterResult.message}`;
+      }
+      
+      // DON'T arrive yet - keep currentSystem != warpSystem so continue travel is available
+      return {
+        success: true,
+        message,
+        stateChanged: true
+      };
+    } else {
+      // No encounter - complete the warp and arrive
+      const result = performWarp(state, targetSystem, false);
+      if (result.success) {
         state.currentMode = GameMode.OnPlanet;
         message = `Arrived safely at ${systemName}`;
         
@@ -445,13 +467,13 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
           message,
           stateChanged: true
         };
+      } else {
+        return {
+          success: false,
+          message: result.reason || 'Warp failed',
+          stateChanged: false
+        };
       }
-    } else {
-      return {
-        success: false,
-        message: result.reason || 'Warp failed',
-        stateChanged: false
-      };
     }
   } catch (error) {
     return {
@@ -460,6 +482,41 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
       stateChanged: false
     };
   }
+}
+
+// Helper function to automatically continue travel after encounter resolution
+export function automaticTravelContinuation(state: GameState): { hasEncounter: boolean; encounterType?: number; arrivedSafely: boolean; message: string } {
+  if (state.warpSystem === state.currentSystem) {
+    return { hasEncounter: false, arrivedSafely: true, message: '' };
+  }
+  
+  const systemName = getSolarSystemName(state.warpSystem);
+  
+  // Keep checking for encounters until we find one or arrive
+  while (state.warpSystem !== state.currentSystem) {
+    const encounterCheck = checkRandomEncountersOnTravel(state);
+    
+    if (encounterCheck.hasEncounter) {
+      // Another encounter found
+      return { 
+        hasEncounter: true, 
+        encounterType: encounterCheck.encounterType,
+        arrivedSafely: false,
+        message: `En route to ${systemName} - Another encounter!`
+      };
+    } else {
+      // No more encounters - arrive at destination
+      state.currentSystem = state.warpSystem;
+      state.currentMode = GameMode.OnPlanet;
+      return { 
+        hasEncounter: false, 
+        arrivedSafely: true,
+        message: `Arrived safely at ${systemName}`
+      };
+    }
+  }
+  
+  return { hasEncounter: false, arrivedSafely: true, message: '' };
 }
 
 async function executeTrackSystemAction(state: GameState, parameters: any): Promise<ActionResult> {
@@ -694,9 +751,27 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
   
   try {
     const result = resolveCombatRound(state, combatAction as any);
+    let message = result.message;
+    
+    // If encounter ended and we're still traveling, automatically continue
+    if (state.currentMode === GameMode.InSpace && state.warpSystem !== state.currentSystem) {
+      const travelResult = automaticTravelContinuation(state);
+      
+      if (travelResult.hasEncounter) {
+        // Another encounter found - start it
+        const encounterResult = startEncounter(state, travelResult.encounterType!);
+        if (encounterResult.success) {
+          message += ` ${travelResult.message}`;
+        }
+      } else if (travelResult.arrivedSafely) {
+        // Arrived at destination
+        message += ` ${travelResult.message}`;
+      }
+    }
+    
     return {
       success: result.success,
-      message: result.message,
+      message,
       stateChanged: true,
       combatResult: result
     };
@@ -965,13 +1040,14 @@ export function checkRandomEncountersOnTravel(state: GameState): { hasEncounter:
 function performTickBasedTravel(state: GameState): { hasEncounter: boolean; encounterType?: number } {
   const ticks = 21; // Original travel time was 21 ticks
   
-  // Process each tick for potential encounters
+  // Process each tick for potential encounters (following original Palm OS logic exactly)
+  // Original game checks encounters every tick and can have multiple encounters per trip
   for (let currentTick = ticks; currentTick > 0; currentTick--) {
     // Check for encounter this tick
     const encounterResult = checkEncounterThisTick(state, currentTick);
     if (encounterResult.hasEncounter) {
-      // In the original game, we could have multiple encounters per trip
-      // For now, return first encounter found (can be extended later)
+      // Return first encounter found - in Palm OS, after encounter resolution,
+      // Travel() gets called again to continue with remaining ticks
       return encounterResult;
     }
   }

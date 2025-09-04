@@ -141,8 +141,18 @@ describe('Game Engine Integration', () => {
       });
       
       assert.equal(result.success, true);
-      assert.equal(engine.state.currentSystem, targetSystem);
-      assert.ok(engine.state.ship.fuel <= 14); // Fuel should decrease or stay same for wormhole
+      
+      // With the new multi-encounter system, warp might not arrive immediately if there's an encounter
+      if (engine.state.currentMode === GameMode.InCombat) {
+        // Encounter during travel - should still be traveling to target
+        assert.equal(engine.state.warpSystem, targetSystem);
+        assert.notEqual(engine.state.currentSystem, targetSystem); // Still traveling
+      } else {
+        // No encounter - should arrive immediately  
+        assert.equal(engine.state.currentSystem, targetSystem);
+      }
+      
+      assert.ok(engine.state.ship.fuel <= 14); // Fuel should decrease
     });
 
     test('should execute combat actions through unified interface', async () => {

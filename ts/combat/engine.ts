@@ -157,18 +157,25 @@ export function getAvailableActions(state: GameState): CombatAction[] {
     actions.push('attack', 'flee', 'yield', 'bribe');
   } else if (EncounterType.isPoliceEncounter(encounterType) || 
              EncounterType.isPirateEncounter(encounterType) ||
-             EncounterType.isMonsterEncounter(encounterType)) {
+             EncounterType.isMonsterEncounter(encounterType) ||
+             EncounterType.isDragonflyEncounter(encounterType) ||
+             EncounterType.isScarabEncounter(encounterType)) {
     
-    if (encounterType === EncounterType.POLICEFLEE || 
-        encounterType === EncounterType.TRADERFLEE ||
-        encounterType === EncounterType.PIRATEFLEE) {
+    if (encounterType === EncounterType.POLICEIGNORE ||
+        encounterType === EncounterType.POLICEFLEE || 
+        encounterType === EncounterType.PIRATEFLEE ||
+        encounterType === EncounterType.PIRATEIGNORE ||
+        encounterType === EncounterType.SPACEMONSTERIGNORE ||
+        encounterType === EncounterType.DRAGONFLYIGNORE ||
+        encounterType === EncounterType.SCARABIGNORE) {
       actions.push('attack', 'ignore');
     } else if (encounterType === EncounterType.PIRATEATTACK || 
                encounterType === EncounterType.POLICEATTACK ||
-               encounterType === EncounterType.SPACEMONSTERATTACK) {
+               encounterType === EncounterType.SPACEMONSTERATTACK ||
+               encounterType === EncounterType.DRAGONFLYATTACK ||
+               encounterType === EncounterType.SCARABATTACK) {
       actions.push('attack', 'flee', 'surrender');
-    } else if (encounterType === EncounterType.PIRATESURRENDER || 
-               encounterType === EncounterType.TRADERSURRENDER) {
+    } else if (encounterType === EncounterType.PIRATESURRENDER) {
       actions.push('attack', 'plunder');
     }
   } else if (EncounterType.isTraderEncounter(encounterType)) {
@@ -176,6 +183,10 @@ export function getAvailableActions(state: GameState): CombatAction[] {
       actions.push('attack', 'ignore', 'trade');
     } else if (encounterType === EncounterType.TRADERATTACK) {
       actions.push('attack', 'flee');
+    } else if (encounterType === EncounterType.TRADERIGNORE || 
+               encounterType === EncounterType.TRADERFLEE ||
+               encounterType === EncounterType.TRADERSURRENDER) {
+      actions.push('attack', 'ignore');
     }
   } else if (encounterType === EncounterType.MARIECELESTEENCOUNTER) {
     actions.push('board', 'ignore');
@@ -184,7 +195,9 @@ export function getAvailableActions(state: GameState): CombatAction[] {
     actions.push('drink', 'ignore');
   } else if (encounterType === EncounterType.CAPTAINAHABENCOUNTER ||
              encounterType === EncounterType.CAPTAINCONRADENCOUNTER ||
-             encounterType === EncounterType.CAPTAINHUIEENCOUNTER) {
+             encounterType === EncounterType.CAPTAINHUIEENCOUNTER ||
+             encounterType === EncounterType.FAMOUSCAPTAIN ||
+             encounterType === EncounterType.FAMOUSCAPATTACK) {
     actions.push('attack', 'flee', 'ignore');
   }
 
@@ -590,7 +603,7 @@ export function updateEncounterState(
 }
 
 // Configure opponent ship based on encounter type  
-function configureOpponentShip(state: GameState, encounterType: number): void {
+export function configureOpponentShip(state: GameState, encounterType: number): void {
   // Reset opponent to empty ship
   state.opponent = createEmptyShip();
   

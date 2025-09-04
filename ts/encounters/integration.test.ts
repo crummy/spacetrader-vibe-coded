@@ -194,7 +194,7 @@ test('Encounter System Integration', async (t) => {
     }
     
     // Validate encounter distribution
-    assert.ok(totalEncounters > 500, 'Should have high encounter rate with tick-based system');
+    assert.ok(totalEncounters > 500, 'Should have high encounter rate with tick-based system (matches original Palm OS cumulative probability)');
     assert.ok(regularEncounters > tradingEncounters, 'Regular encounters should be more common than trading');
     assert.ok(veryRareEncounters < totalEncounters * 0.05, 'Very rare encounters should be <5% of total');
     
