@@ -23,7 +23,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Police Kill Tracking', async (t) => {
     
     await t.test('should track police kills and apply score penalty', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialPoliceRecord = state.policeRecordScore;
       
       // Kill a police ship
@@ -35,7 +35,7 @@ test('Combat Statistics System', async (t) => {
     });
 
     await t.test('should track multiple police kills', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       // Kill 3 police ships
       state = recordShipKill(state, EncounterType.POLICEATTACK);
@@ -51,7 +51,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Trader Kill Tracking', async (t) => {
     
     await t.test('should track trader kills and apply score penalty', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialPoliceRecord = state.policeRecordScore;
       
       // Kill a trader ship
@@ -67,7 +67,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Pirate Kill Tracking', async (t) => {
     
     await t.test('should track pirate kills and improve police record', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialPoliceRecord = state.policeRecordScore;
       
       // Kill a pirate ship
@@ -83,7 +83,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Special Ship Kill Tracking', async (t) => {
     
     await t.test('should track space monster kill and update status', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialPirateKills = state.pirateKills;
       
       state = recordShipKill(state, EncounterType.SPACEMONSTERATTACK);
@@ -94,7 +94,7 @@ test('Combat Statistics System', async (t) => {
     });
 
     await t.test('should track dragonfly kill and update status', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       state = recordShipKill(state, EncounterType.DRAGONFLYATTACK);
       
@@ -103,7 +103,7 @@ test('Combat Statistics System', async (t) => {
     });
 
     await t.test('should track scarab kill and update status', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       state = recordShipKill(state, EncounterType.SCARABATTACK);
       
@@ -116,7 +116,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Famous Captain Kill Handling', async (t) => {
     
     await t.test('should handle famous captain kill with special reputation boost', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.reputationScore = 100; // Below DANGEROUSREP (300)
       
       state = handleFamousCaptainKill(state, EncounterType.CAPTAINAHABENCOUNTER);
@@ -125,7 +125,7 @@ test('Combat Statistics System', async (t) => {
     });
 
     await t.test('should add bonus points if already dangerous reputation', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.reputationScore = 400; // Already above DANGEROUSREP
       
       state = handleFamousCaptainKill(state, EncounterType.CAPTAINCONRADENCOUNTER);
@@ -145,7 +145,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Statistics Retrieval and Formatting', async (t) => {
     
     await t.test('should retrieve combat statistics correctly', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       // Add some kills
       state.policeKills = 5;
@@ -227,7 +227,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Statistics Reset', async (t) => {
     
     await t.test('should reset all kill counters', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.policeKills = 10;
       state.traderKills = 5;
       state.pirateKills = 15;
@@ -244,7 +244,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Encounter Type Classification', async (t) => {
     
     await t.test('should correctly classify encounter types', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       // Test police encounter
       state = recordShipKill(state, EncounterType.POLICEATTACK);
@@ -264,7 +264,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Integration with Reputation System', async (t) => {
     
     await t.test('should integrate kill tracking with reputation scoring', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialReputation = state.reputationScore;
       
       // Kill a pirate (should improve both reputation and police record)
@@ -279,7 +279,7 @@ test('Combat Statistics System', async (t) => {
   await t.test('Edge Cases', async (t) => {
     
     await t.test('should handle unknown encounter types gracefully', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       const initialStats = getCombatStatistics(state);
       
       // Unknown encounter type should not crash
@@ -291,7 +291,7 @@ test('Combat Statistics System', async (t) => {
     });
 
     await t.test('should handle multiple rapid kills correctly', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       
       // Rapid succession of kills
       for (let i = 0; i < 10; i++) {

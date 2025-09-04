@@ -32,6 +32,9 @@ export type ActionResult = {
   combatResult?: any;
   encounterResult?: any;
   economyResult?: any;
+  newState?: GameState;
+  data?: any;
+  gameOver?: boolean;
 };
 
 export type AvailableAction = {
@@ -416,12 +419,13 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
     // Set warpSystem for encounter calculations but DON'T move yet
     const originalSystem = state.currentSystem;
     state.warpSystem = targetSystem;
+    state.clicks = 21; // Original Palm OS travel time (always 21 regardless of distance)
     
     // Calculate costs and consume resources, but don't arrive yet  
     const systemName = getSolarSystemName(targetSystem);
     let message = `Traveling to ${systemName}...`;
     
-    // Consume fuel and credits (logic from performWarp but without arrival)
+    // Consume fuel and credits now that validation passed
     const distance = calculateDistance(state.solarSystem[originalSystem], state.solarSystem[targetSystem]);
     state.ship.fuel -= distance;
     message += ` (fuel used: ${distance})`;
@@ -432,17 +436,18 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
       message += ` (cost: ${cost.total})`;
     }
     
-    // Check for encounters during tick-based travel
-    const encounterCheck = checkRandomEncountersOnTravel(state);
+    // Check for encounters during first tick of travel
+    state.clicks--; // Decrement first click
+    const encounterCheck = checkEncounterThisTick(state, state.clicks);
     
     if (encounterCheck.hasEncounter) {
       // Initialize encounter using combat engine (this will set the mode and configure opponent)
       const encounterResult = startEncounter(state, encounterCheck.encounterType!);
       
       if (encounterResult.success) {
-        message += ` - Combat encounter!`;
+        message += ` - Combat encounter at ${state.clicks} clicks to ${systemName}!`;
       } else {
-        message += ` - ${encounterResult.message}`;
+        message += ` - ${encounterResult.message} at ${state.clicks} clicks to ${systemName}`;
       }
       
       // DON'T arrive yet - keep currentSystem != warpSystem so continue travel is available
@@ -452,8 +457,8 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
         stateChanged: true
       };
     } else {
-      // No encounter - complete the warp and arrive
-      const result = performWarp(state, targetSystem, false);
+      // No encounter - complete the warp and arrive (resources already consumed)
+      const result = performWarp(state, targetSystem, true); // Use viaSingularity=true to skip resource consumption
       if (result.success) {
         state.currentMode = GameMode.OnPlanet;
         message = `Arrived safely at ${systemName}`;
@@ -495,9 +500,11 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
   
   const systemName = getSolarSystemName(state.warpSystem);
   
-  // Keep checking for encounters until we find one or arrive
-  while (state.warpSystem !== state.currentSystem) {
-    const encounterCheck = checkRandomEncountersOnTravel(state);
+  // Continue travel using click-based system like Palm OS
+  while (state.clicks > 0 && state.warpSystem !== state.currentSystem) {
+    // Decrement clicks and check for encounter this click
+    state.clicks--;
+    const encounterCheck = checkEncounterThisTick(state, state.clicks);
     
     if (encounterCheck.hasEncounter) {
       // Another encounter found
@@ -505,23 +512,22 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
         hasEncounter: true, 
         encounterType: encounterCheck.encounterType,
         arrivedSafely: false,
-        message: `En route to ${systemName} - Another encounter!`
-      };
-    } else {
-      // No more encounters - arrive at destination
-      state.currentSystem = state.warpSystem;
-      state.currentMode = GameMode.OnPlanet;
-      // Reset newspaper payment flag when arriving at new system
-      state.alreadyPaidForNewspaper = false;
-      return { 
-        hasEncounter: false, 
-        arrivedSafely: true,
-        message: `Arrived safely at ${systemName}`
+        message: `En route to ${systemName} - Another encounter at ${state.clicks} clicks to ${systemName}!`
       };
     }
   }
   
-  return { hasEncounter: false, arrivedSafely: true, message: '' };
+  // No more clicks or encounters - arrive at destination
+  state.currentSystem = state.warpSystem;
+  state.currentMode = GameMode.OnPlanet;
+  state.clicks = 0; // Reset travel clicks
+  // Reset newspaper payment flag when arriving at new system
+  state.alreadyPaidForNewspaper = false;
+  return { 
+    hasEncounter: false, 
+    arrivedSafely: true,
+    message: `Arrived safely at ${systemName}`
+  };
 }
 
 async function executeTrackSystemAction(state: GameState, parameters: any): Promise<ActionResult> {

@@ -38,17 +38,17 @@ test('Encounter System Integration', async (t) => {
     }
     
     console.log(`Total encounters: ${totalEncounters}`);
-    console.log(`Encounter types found:`, Array.from(encounterTypes).sort((a, b) => a - b));
+    console.log(`Encounter types found:`, Array.from(encounterTypes).sort((a, b) => (a as number) - (b as number)));
     
     // Should find multiple encounter types
     assert.ok(encounterTypes.size >= 5, 'Should find at least 5 different encounter types');
     
     // Should find pirate encounters (10-12)
-    const hasPirateEncounters = Array.from(encounterTypes).some(type => type >= 10 && type <= 12);
+    const hasPirateEncounters = Array.from(encounterTypes).some(type => (type as number) >= 10 && (type as number) <= 12);
     assert.ok(hasPirateEncounters, 'Should find pirate encounters');
     
     // Should find police encounters (20-22)  
-    const hasPoliceEncounters = Array.from(encounterTypes).some(type => type >= 20 && type <= 22);
+    const hasPoliceEncounters = Array.from(encounterTypes).some(type => (type as number) >= 20 && (type as number) <= 22);
     assert.ok(hasPoliceEncounters, 'Should find police encounters');
     
     // Should find trader encounters (24-25, fixed from 30-32 bug)
@@ -139,7 +139,7 @@ test('Encounter System Integration', async (t) => {
           }
         }
         
-        console.log(`${testSys.name} encounters:`, Array.from(encounterTypes).sort((a, b) => a - b));
+        console.log(`${testSys.name} encounters:`, Array.from(encounterTypes).sort((a, b) => (a as number) - (b as number)));
       }
     }
   });

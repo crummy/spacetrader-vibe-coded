@@ -7,7 +7,7 @@ import { getAllSystemPrices } from '../economy/pricing.ts';
 import { getCurrentShipStatus } from '../engine/game.ts';
 import { getSystemsWithinRange } from '../travel/galaxy.ts';
 import { getSolarSystemName } from '../data/systems.ts';
-import { calculateDistance } from '../travel/warp.ts';
+import { calculateDistance, getCurrentFuel } from '../travel/warp.ts';
 
 /**
  * Render available actions as menu text
@@ -157,7 +157,7 @@ function createWarpParameterPrompt(action: AvailableAction, state: GameState): A
       index: systemIndex,
       name: getSolarSystemName(systemIndex),
       distance,
-      canAfford: state.ship.fuel >= distance
+      canAfford: getCurrentFuel(state.ship) >= distance
     });
   }
   

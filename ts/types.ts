@@ -199,6 +199,7 @@ export interface Ship {
   fuel: number;
   hull: number;
   tribbles: number;
+  hullUpgrades?: number; // Optional hull upgrades (for special encounters)
 }
 
 // Crew Member
@@ -221,7 +222,7 @@ export interface SolarSystem {
   y: number; // 0-110 (GALAXYHEIGHT)
   specialResources: number;
   size: SystemSize;
-  qty: TradeItemArray; // Quantities of trade items
+  qty: MutableTradeItemArray; // Quantities of trade items
   countDown: number;
   visited: boolean;
   special: number; // Special event index (-1 = none)
@@ -263,7 +264,7 @@ export interface State {
   // Settings and flags
   autoFuel: boolean;
   autoRepair: boolean;
-  clicks: boolean;
+  clicks: number; // Distance from target system, 0 = arrived
   
   // Current encounter
   encounterType: number;

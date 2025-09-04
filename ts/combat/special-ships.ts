@@ -2,6 +2,7 @@
 // Based on original C code in SpecialEvent.c and Traveler.c
 
 import type { State } from '../types.ts';
+import { GameMode } from '../types.ts';
 import { EncounterType } from './engine.ts';
 import { EXTRABAYS } from '../economy/trading.ts';
 // No need for specific random utilities - use Math.random() directly
@@ -39,7 +40,7 @@ export function boardMarieCeleste(state: State): { success: boolean; message: st
     ship: {
       ...state.ship,
       // Add bottle to cargo - using trade item 9 (could vary by implementation)
-      cargo: state.ship.cargo.map((qty, index) => index === 9 ? qty + 1 : qty)
+      cargo: state.ship.cargo.map((qty, index) => index === 9 ? qty + 1 : qty) as [number, number, number, number, number, number, number, number, number, number]
     }
   };
   
@@ -73,7 +74,7 @@ export function drinkBottle(state: State): { success: boolean; message: string; 
     ship: {
       ...state.ship,
       // Remove bottle from cargo
-      cargo: state.ship.cargo.map((qty, index) => index === 9 ? Math.max(0, qty - 1) : qty)
+      cargo: state.ship.cargo.map((qty, index) => index === 9 ? Math.max(0, qty - 1) : qty) as [number, number, number, number, number, number, number, number, number, number]
     }
   };
   
@@ -106,7 +107,7 @@ export function handleSpaceMonsterEncounter(state: State): { message: string; st
   const newState = {
     ...state,
     encounterType: SPACEMONSTERATTACK,
-    currentMode: 2 // InCombat
+    currentMode: GameMode.InCombat
   };
   
   return {
@@ -124,7 +125,7 @@ export function handleDragonflyEncounter(state: State): { message: string; state
   const newState = {
     ...state,
     encounterType: DRAGONFLYATTACK,
-    currentMode: 2 // InCombat
+    currentMode: GameMode.InCombat
   };
   
   return {
@@ -141,7 +142,7 @@ export function handleScarabEncounter(state: State): { message: string; state: S
   const newState = {
     ...state,
     encounterType: SCARABATTACK,
-    currentMode: 2 // InCombat
+    currentMode: GameMode.InCombat
   };
   
   return {
@@ -186,7 +187,7 @@ export function handleMarieEncounter(state: State): { message: string; state: St
   const newState = {
     ...state,
     encounterType: MARIECELESTEENCOUNTER,
-    currentMode: 2 // InCombat (though peaceful)
+    currentMode: GameMode.InCombat // (though peaceful)
   };
   
   return {

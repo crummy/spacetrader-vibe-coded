@@ -4,7 +4,12 @@ import type {
   Ship, 
   CrewMember, 
   SolarSystem, 
-  GameMode
+  GameMode,
+  MutableTradeItemArray,
+  MutableWeaponArray,
+  MutableShieldArray,
+  MutableGadgetArray,
+  MutableCrewArray
 } from './types.ts';
 
 import {
@@ -41,12 +46,12 @@ import { getPoliticalSystem } from './data/politics.ts';
 export function createEmptyShip(): Ship {
   return {
     type: 0,
-    cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
-    weapon: [-1, -1, -1] as WeaponArray, // -1 means no weapon installed
-    shield: [-1, -1, -1] as ShieldArray, // -1 means no shield installed
-    shieldStrength: [0, 0, 0] as ShieldArray,
-    gadget: [-1, -1, -1] as GadgetArray, // -1 means no gadget installed
-    crew: [-1, -1, -1] as CrewArray, // -1 means no crew member
+    cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as MutableTradeItemArray,
+    weapon: [-1, -1, -1] as MutableWeaponArray, // -1 means no weapon installed
+    shield: [-1, -1, -1] as MutableShieldArray, // -1 means no shield installed
+    shieldStrength: [0, 0, 0] as MutableShieldArray,
+    gadget: [-1, -1, -1] as MutableGadgetArray, // -1 means no gadget installed
+    crew: [-1, -1, -1] as MutableCrewArray, // -1 means no crew member
     fuel: 0,
     hull: 0,
     tribbles: 0,
@@ -159,7 +164,7 @@ export function createInitialState(): State {
     // Settings and flags
     autoFuel: true,
     autoRepair: true,
-    clicks: true,
+    clicks: 0, // Travel distance from target system, 0 = arrived
     
     // Current encounter
     encounterType: 0,

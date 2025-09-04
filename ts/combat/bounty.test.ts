@@ -19,10 +19,11 @@ function createTestShip(type: number, withEquipment: boolean = false): Ship {
     fuel: shipType.fuelTanks,
     weapon: [-1, -1, -1],
     shield: [-1, -1, -1], 
+    shieldStrength: [0, 0, 0],
     gadget: [-1, -1, -1],
     crew: [0, -1, -1], // Commander only
     cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    filledCargo: 0,
+    tribbles: 0,
   };
   
   if (withEquipment) {

@@ -267,7 +267,9 @@ async function runIntegrationTest() {
     
   } catch (error) {
     console.error('❌ Integration test FAILED:', error);
-    console.error(error.stack);
+    if (error instanceof Error) {
+      console.error(error.stack);
+    }
   }
 }
 

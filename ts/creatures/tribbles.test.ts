@@ -28,7 +28,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Tribble Breeding Mechanics', async (t) => {
     
     await t.test('should not breed with no tribbles', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 0;
       
       const result = breedTribbles(state);
@@ -37,7 +37,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should breed tribbles when conditions are met', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 100;
       
       // Test multiple breeding cycles
@@ -56,7 +56,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should cap tribbles at maximum population', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = MAX_TRIBBLES - 100;
       
       const result = breedTribbles(state);
@@ -64,7 +64,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should generate infestation message at max population', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = MAX_TRIBBLES - 1000;
       
       // Force breeding to max
@@ -84,7 +84,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Radiation Effects', async (t) => {
     
     await t.test('should kill half tribbles from radiation', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       
       const result = irradiateTribbles(state);
@@ -93,7 +93,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should kill all tribbles if population too small', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 5;
       
       const result = irradiateTribbles(state);
@@ -102,7 +102,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should do nothing with no tribbles', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 0;
       
       const result = irradiateTribbles(state);
@@ -115,7 +115,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Narcotics Interaction', async (t) => {
     
     await t.test('should have tribbles eat narcotics and get sick', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       state.ship.cargo[TradeItem.Narcotics] = 10;
       
@@ -126,7 +126,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should do nothing without narcotics', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 100;
       state.ship.cargo[TradeItem.Narcotics] = 0;
       
@@ -136,7 +136,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should do nothing without tribbles', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 0;
       state.ship.cargo[TradeItem.Narcotics] = 10;
       
@@ -197,7 +197,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('IGP Inspection System', async (t) => {
     
     await t.test('should pass inspection with no tribbles', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 0;
       
       const result = handleIGPInspection(state);
@@ -207,7 +207,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should confiscate tribbles and impose fine', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       state.credits = 10000;
       
@@ -220,7 +220,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should cap fine at maximum amount', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 20000; // Would be 100k fine, but capped at 50k
       state.credits = 100000;
       
@@ -233,7 +233,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Combat Survival', async (t) => {
     
     await t.test('should handle tribble survival in rare cases', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       
       // Test multiple times to check for occasional survival
@@ -253,7 +253,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should do nothing if ship not destroyed', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       
       const result = handleTribbleSurvival(state, false);
@@ -266,7 +266,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Tribble Trading', async (t) => {
     
     await t.test('should sell tribbles to buyer for half credits', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 100;
       
       const result = sellTribblesToBuyer(state);
@@ -277,7 +277,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should fail to sell with no tribbles', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 0;
       
       const result = sellTribblesToBuyer(state);
@@ -299,7 +299,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should handle tribble warning system', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 100;
       state.tribbleMessage = false;
       
@@ -323,7 +323,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Integration with Game Systems', async (t) => {
     
     await t.test('should integrate with reactor quest radiation', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 1000;
       state.reactorStatus = 10; // Reactor active
       
@@ -333,7 +333,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should integrate with narcotics trading', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = 500;
       state.ship.cargo[TradeItem.Narcotics] = 8;
       
@@ -357,7 +357,7 @@ test('Tribble Enhancement System', async (t) => {
   await t.test('Edge Cases and Error Handling', async (t) => {
     
     await t.test('should handle negative tribble counts gracefully', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = -10;
       
       const result = breedTribbles(state);
@@ -368,7 +368,7 @@ test('Tribble Enhancement System', async (t) => {
     });
 
     await t.test('should handle extremely large populations', () => {
-      let state = createInitialState(Difficulty.Easy);
+      let state = createInitialState();
       state.ship.tribbles = MAX_TRIBBLES * 2; // Somehow exceeded max
       
       const result = breedTribbles(state);

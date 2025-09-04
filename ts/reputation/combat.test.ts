@@ -53,7 +53,7 @@ test('Combat Reputation System', async (t) => {
   });
 
   await t.test('Award kill points progression', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     state.reputationScore = HARMLESS_REP;
     
     // Kill a competent opponent
@@ -94,7 +94,7 @@ test('Combat Reputation System', async (t) => {
   });
 
   await t.test('Combat victory processing', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     const initialCredits = state.credits;
     const initialReputation = state.reputationScore;
     
@@ -116,7 +116,7 @@ test('Combat Reputation System', async (t) => {
   });
 
   await t.test('Reputation penalty application', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     state.reputationScore = COMPETENT_REP;
     
     // Apply penalty

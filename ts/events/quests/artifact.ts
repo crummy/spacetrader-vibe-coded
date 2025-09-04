@@ -27,7 +27,7 @@ interface QuestResult {
  * This happens through special encounter, not system event
  */
 export function pickupArtifact(state: State): QuestResult {
-  if (state.currentSystemId !== NIX_SYSTEM_ID) {
+  if (state.currentSystem !== NIX_SYSTEM_ID) {
     return { 
       success: false, 
       state, 
@@ -146,7 +146,7 @@ export function completeArtifactDelivery(state: State): QuestResult {
  * This is a special encounter, not system-based
  */
 export function isArtifactPickupAvailable(state: State): boolean {
-  return !state.artifactOnBoard && state.currentSystemId === NIX_SYSTEM_ID;
+  return !state.artifactOnBoard && state.currentSystem === NIX_SYSTEM_ID;
 }
 
 /**
@@ -155,7 +155,7 @@ export function isArtifactPickupAvailable(state: State): boolean {
 export function isArtifactDeliveryAvailable(state: State): boolean {
   // For testing purposes, use Regulas system (index 82) as delivery point
   // In real game, this would be any high-tech system with ARTIFACTDELIVERY special event
-  return state.currentSystemId === 82 && state.artifactOnBoard;
+  return state.currentSystem === 82 && state.artifactOnBoard;
 }
 
 /**

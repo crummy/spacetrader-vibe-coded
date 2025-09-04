@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { AutomatedPlayer, runMultipleGames } from './automated-player.ts';
+import { Difficulty } from './types.ts';
 
 test('AutomatedPlayer', async (t) => {
 
@@ -16,7 +17,7 @@ test('AutomatedPlayer', async (t) => {
     });
 
     await t.test('should create player with custom parameters', () => {
-      const player = new AutomatedPlayer('Impossible', 100, true);
+      const player = new AutomatedPlayer(Difficulty.Impossible, 100, true);
       
       assert.ok(player instanceof AutomatedPlayer);
       console.log('✅ AutomatedPlayer created with custom settings');
@@ -79,7 +80,7 @@ test('AutomatedPlayer', async (t) => {
       
       assert.ok(result.gameNumber >= 0);
       assert.ok(result.startTime > 0);
-      assert.ok(result.endTime >= result.startTime);
+      assert.ok(result.endTime! >= result.startTime);
       
       console.log(`✅ Session data: Game #${result.gameNumber}, ${result.totalTurns} turns`);
     });

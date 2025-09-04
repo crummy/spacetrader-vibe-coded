@@ -69,7 +69,7 @@ test('Police Record System', async (t) => {
   });
 
   await t.test('Police record penalties', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     state.policeRecordScore = CLEAN_SCORE;
     
     // Apply attack police penalty
@@ -84,7 +84,7 @@ test('Police Record System', async (t) => {
   });
 
   await t.test('Police record improvements', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     state.policeRecordScore = VILLAIN_SCORE;
     
     // Improve record
@@ -105,7 +105,7 @@ test('Police Record System', async (t) => {
   });
 
   await t.test('Inspector encounter processing', () => {
-    let state = createInitialState(Difficulty.Easy);
+    let state = createInitialState();
     state.policeRecordScore = CRIMINAL_SCORE;
     state.credits = 10000;
     

@@ -115,7 +115,7 @@ export function executeFabricRipTravel(state: State, numSystems: number): {
 } {
   if (!isExperimentActive(state)) {
     return {
-      destinationSystem: state.currentSystemId,
+      destinationSystem: state.currentSystem,
       message: 'No fabric rip - experiment not active.',
       state
     };
@@ -125,12 +125,12 @@ export function executeFabricRipTravel(state: State, numSystems: number): {
   let randomSystem;
   do {
     randomSystem = Math.floor(Math.random() * numSystems);
-  } while (randomSystem === state.currentSystemId);
+  } while (randomSystem === state.currentSystem);
   
   // Update state with new location
   const newState = {
     ...state,
-    currentSystemId: randomSystem,
+    currentSystem: randomSystem,
     // Mark system as visited
     solarSystem: state.solarSystem.map((system, index) => 
       index === randomSystem ? { ...system, visited: true } : system
@@ -199,7 +199,7 @@ export function simulateFabricRipDestination(state: State, numSystems: number): 
   
   // All systems except current are possible destinations
   const possibleDestinations = Array.from({ length: numSystems }, (_, i) => i)
-    .filter(i => i !== state.currentSystemId);
+    .filter(i => i !== state.currentSystem);
   
   return {
     wouldOccur: true,

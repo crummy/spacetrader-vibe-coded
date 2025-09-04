@@ -14,7 +14,7 @@ import { Difficulty } from '../../types.ts';
 
 describe('Ambassador Jarek Quest', () => {
   test('isJarekPickupAvailable - available when quest not started and crew quarters available', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 0;
     // Default ship has crew quarters available
     
@@ -23,7 +23,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('isJarekPickupAvailable - not available when quest already started', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 1; // Already on board
     
     const result = isJarekPickupAvailable(state);
@@ -31,7 +31,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('isJarekPickupAvailable - not available when no crew quarters', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 0;
     // Fill all crew quarters
     state.ship.crew = [0, -1, -1]; // Fill crew quarters with one crew member
@@ -41,7 +41,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('pickupJarek - successfully picks up Jarek', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 0;
     
     const result = pickupJarek(state);
@@ -52,7 +52,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('pickupJarek - fails when quest already active', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 1; // Already on board
     
     const result = pickupJarek(state);
@@ -62,7 +62,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('pickupJarek - fails when no crew quarters available', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 0;
     state.ship.crew = [0, -1, -1]; // Fill available quarters
     
@@ -74,8 +74,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('isJarekDeliveryAvailable - available when Jarek on board and at Devidia', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 22; // DEVIDIA system
+    const state = createInitialState();
+    state.currentSystem = 22; // DEVIDIA system
     state.jarekStatus = 1;
     
     const result = isJarekDeliveryAvailable(state);
@@ -83,8 +83,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('isJarekDeliveryAvailable - not available when Jarek not on board', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 22; // DEVIDIA system
+    const state = createInitialState();
+    state.currentSystem = 22; // DEVIDIA system
     state.jarekStatus = 0;
     
     const result = isJarekDeliveryAvailable(state);
@@ -92,8 +92,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('isJarekDeliveryAvailable - not available when not at Devidia', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     state.jarekStatus = 1;
     
     const result = isJarekDeliveryAvailable(state);
@@ -101,8 +101,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('completeJarekDelivery - successfully completes delivery with reward', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 22; // DEVIDIA system
+    const state = createInitialState();
+    state.currentSystem = 22; // DEVIDIA system
     state.jarekStatus = 1;
     state.credits = 1000;
     
@@ -115,8 +115,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('completeJarekDelivery - fails when Jarek not on board', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 22; // DEVIDIA system
+    const state = createInitialState();
+    state.currentSystem = 22; // DEVIDIA system
     state.jarekStatus = 0;
     
     const result = completeJarekDelivery(state);
@@ -126,8 +126,8 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('completeJarekDelivery - fails when not at Devidia', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     state.jarekStatus = 1;
     
     const result = completeJarekDelivery(state);
@@ -137,7 +137,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('jarekTakenByPirates - successfully removes Jarek when on board', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 1;
     
     const result = jarekTakenByPirates(state);
@@ -148,7 +148,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('jarekTakenByPirates - fails when Jarek not on board', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.jarekStatus = 0;
     
     const result = jarekTakenByPirates(state);
@@ -158,7 +158,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('getAvailableCrewQuarters - calculates available quarters correctly', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 2; // Ship with more crew quarters
     state.ship.crew = [-1, -1, -1]; // No crew
     state.jarekStatus = 0;
@@ -169,7 +169,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('getAvailableCrewQuarters - accounts for Jarek taking quarters', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 4; // Ship with 2 crew quarters 
     state.ship.crew = [-1, -1, -1];
     state.jarekStatus = 1; // Jarek on board
@@ -180,7 +180,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('getAvailableCrewQuarters - accounts for Wild and Jarek both taking quarters', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 5; // Ship with 3 crew quarters
     state.ship.crew = [-1, -1, -1];
     state.jarekStatus = 1; // Jarek on board
@@ -191,7 +191,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('getJarekStatus - returns correct status for each quest stage', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     
     // Not started but available
     state.jarekStatus = 0;
@@ -206,7 +206,7 @@ describe('Ambassador Jarek Quest', () => {
     assert.match(status.description, /transport.*devidia/i);
     
     // Delivery available
-    state.currentSystemId = 22; // DEVIDIA system
+    state.currentSystem = 22; // DEVIDIA system
     status = getJarekStatus(state);
     assert.equal(status.phase, 'delivery_available');
     assert.match(status.description, /deliver.*jarek/i);
@@ -219,7 +219,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('jarek quest - complete workflow from pickup to delivery', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 3; // Ship with crew quarters
     state.ship.crew = [-1, -1, -1];
     const initialCredits = state.credits;
@@ -232,7 +232,7 @@ describe('Ambassador Jarek Quest', () => {
     assert.equal(pickupResult.state.jarekStatus, 1);
     
     // Travel to Devidia and complete delivery
-    pickupResult.state.currentSystemId = 22; // DEVIDIA system
+    pickupResult.state.currentSystem = 22; // DEVIDIA system
     assert.equal(isJarekDeliveryAvailable(pickupResult.state), true);
     
     const deliveryResult = completeJarekDelivery(pickupResult.state);
@@ -242,7 +242,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('jarek quest - pirates interrupt quest', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 3; // Ship with crew quarters
     state.ship.crew = [-1, -1, -1];
     
@@ -260,7 +260,7 @@ describe('Ambassador Jarek Quest', () => {
   });
 
   test('crew quarters - prevent pickup when ship full', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.ship.type = 0; // Ship with 1 crew quarter
     state.ship.crew = [0, -1, -1]; // Fill the only quarter
     state.jarekStatus = 0;

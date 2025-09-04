@@ -67,7 +67,7 @@ export function completeJarekDelivery(state: State): QuestResult {
     };
   }
   
-  if (state.currentSystemId !== DEVIDIA_SYSTEM_ID) {
+  if (state.currentSystem !== DEVIDIA_SYSTEM_ID) {
     return {
       success: false,
       state,
@@ -119,7 +119,7 @@ export function isJarekPickupAvailable(state: State): boolean {
  * Check if Jarek delivery is available at current system
  */
 export function isJarekDeliveryAvailable(state: State): boolean {
-  return state.currentSystemId === DEVIDIA_SYSTEM_ID && state.jarekStatus === 1;
+  return state.currentSystem === DEVIDIA_SYSTEM_ID && state.jarekStatus === 1;
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   calculateShipBasePrice,
   getAvailableShipsForPurchase
 } from './ship-pricing.ts';
+import { getFilledCargoBays } from './trading.ts';
 import { MAXWEAPON, MAXSHIELD, MAXGADGET } from '../types.ts';
 
 /**
@@ -53,6 +54,7 @@ function createShip(shipTypeIndex: number): Ship {
     // Initialize all equipment slots to empty (-1)
     weapon: [-1, -1, -1] as [number, number, number],
     shield: [-1, -1, -1] as [number, number, number],
+    shieldStrength: [0, 0, 0] as [number, number, number],
     gadget: [-1, -1, -1] as [number, number, number],
     
     // Initialize cargo to empty
@@ -61,8 +63,8 @@ function createShip(shipTypeIndex: number): Ship {
     // Initialize crew quarters to empty
     crew: [-1, -1, -1] as [number, number, number],
     
-    // Track filled vs. used slots
-    filledCargo: 0,
+    // Initialize tribbles
+    tribbles: 0,
   };
 }
 
@@ -193,7 +195,7 @@ function transferCargo(oldShip: Ship, newShip: Ship): Ship {
   }
   
   newShip.cargo = transferredCargo;
-  newShip.filledCargo = totalCargo;
+  // Cargo is already set in the cargo array
   
   return newShip;
 }
@@ -292,7 +294,7 @@ export function getShipPurchaseInfo(state: GameState, shipTypeIndex: number): {
   const transferInfo = analyzeEquipmentTransfer(state.ship, shipTypeIndex);
   
   // Calculate cargo loss
-  const currentCargo = state.ship.filledCargo;
+  const currentCargo = getFilledCargoBays(state);
   const newCargoCapacity = shipType.cargoBays;
   const cargoLoss = Math.max(0, currentCargo - newCargoCapacity);
   

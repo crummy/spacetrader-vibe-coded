@@ -21,7 +21,7 @@ function createTestState(): GameState {
   state.ship.type = 1; // Gnat (starting ship)
   state.ship.hull = 100;
   state.ship.fuel = 14;
-  state.tribbles = 0;
+  state.ship.tribbles = 0;
   state.debt = 0;
   return state;
 }
@@ -42,7 +42,7 @@ describe('Ship Pricing System', () => {
     const normalValue = calculateShipTradeInValue(state);
     
     // Add tribbles to reduce trade-in value
-    state.tribbles = 10;
+    state.ship.tribbles = 10;
     const tribbleValue = calculateShipTradeInValue(state);
     
     // Tribbles should reduce trade-in value significantly (to 1/4 instead of 3/4)
@@ -52,7 +52,7 @@ describe('Ship Pricing System', () => {
 
   test('calculateShipTradeInValue - insurance vs trade-in', () => {
     const state = createTestState();
-    state.tribbles = 10;
+    state.ship.tribbles = 10;
     
     const tradeInValue = calculateShipTradeInValue(state, false);
     const insuranceValue = calculateShipTradeInValue(state, true);

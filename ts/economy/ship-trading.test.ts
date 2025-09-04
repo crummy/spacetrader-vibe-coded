@@ -23,8 +23,9 @@ function createTestState(): GameState {
   state.ship.hull = 100;
   state.ship.fuel = 14;
   state.ship.cargo = [5, 3, 0, 0, 0, 0, 0, 0, 0, 0]; // Some cargo
-  state.ship.filledCargo = 8;
-  state.tribbles = 0;
+  // Set cargo in the cargo array instead
+  state.ship.cargo[0] = 8;
+  state.ship.tribbles = 0;
   state.debt = 0;
   return state;
 }
@@ -71,7 +72,8 @@ describe('Ship Trading System', () => {
   test('purchaseShip - cargo transfer', () => {
     const state = createTestState();
     state.ship.cargo = [10, 5, 3, 2, 1, 0, 0, 0, 0, 0];
-    state.ship.filledCargo = 21;
+    // Fill cargo array to simulate 21 total cargo
+  state.ship.cargo = [10, 5, 3, 2, 1, 0, 0, 0, 0, 0];
     
     const result = purchaseShip(state, 0); // Flea (10 cargo bays)
     
@@ -152,7 +154,8 @@ describe('Ship Trading System', () => {
 
   test('getShipPurchaseInfo - cargo loss calculation', () => {
     const state = createTestState();
-    state.ship.filledCargo = 20;
+    // Fill cargo array to simulate 20 total cargo
+  state.ship.cargo = [10, 5, 3, 2, 0, 0, 0, 0, 0, 0];
     
     const info = getShipPurchaseInfo(state, 0); // Flea (10 cargo bays)
     

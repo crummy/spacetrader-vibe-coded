@@ -99,7 +99,7 @@ export function completeWildDelivery(state: State): QuestResult {
     };
   }
   
-  if (state.currentSystemId !== KRAVAT_SYSTEM_ID) {
+  if (state.currentSystem !== KRAVAT_SYSTEM_ID) {
     return {
       success: false,
       state,
@@ -178,7 +178,7 @@ export function isWildPickupAvailable(state: State): boolean {
  * Check if Wild delivery is available at current system
  */
 export function isWildDeliveryAvailable(state: State): boolean {
-  return state.currentSystemId === KRAVAT_SYSTEM_ID && state.wildStatus === 1;
+  return state.currentSystem === KRAVAT_SYSTEM_ID && state.wildStatus === 1;
 }
 
 /**

@@ -24,7 +24,7 @@ export function calculateShipTradeInValue(state: GameState, forInsurance: boolea
 
   // Trade-in value is three-fourths the original price
   // Reduced to 1/4 if tribbles are present (unless for insurance)
-  const tribblePenalty = state.tribbles > 0 && !forInsurance ? 1 : 3;
+  const tribblePenalty = ship.tribbles > 0 && !forInsurance ? 1 : 3;
   let tradeInValue = Math.floor((shipType.price * tribblePenalty) / 4);
 
   // Subtract repair costs (damage to hull)

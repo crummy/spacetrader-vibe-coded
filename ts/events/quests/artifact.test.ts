@@ -14,16 +14,16 @@ import { Difficulty } from '../../types.ts';
 
 describe('Artifact Quest', () => {
   test('isArtifactPickupAvailable - available when quest not started and at correct system', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     
     const result = isArtifactPickupAvailable(state);
     assert.equal(result, true);
   });
 
   test('isArtifactPickupAvailable - not available when artifact already aboard', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     state.artifactOnBoard = true;
     
     const result = isArtifactPickupAvailable(state);
@@ -31,16 +31,16 @@ describe('Artifact Quest', () => {
   });
 
   test('isArtifactPickupAvailable - not available when not at Nix', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 0; // ACAMAR system
+    const state = createInitialState();
+    state.currentSystem = 0; // ACAMAR system
     
     const result = isArtifactPickupAvailable(state);
     assert.equal(result, false);
   });
 
   test('pickupArtifact - successfully picks up artifact', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     
     const result = pickupArtifact(state);
     
@@ -50,8 +50,8 @@ describe('Artifact Quest', () => {
   });
 
   test('pickupArtifact - fails when artifact already aboard', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     state.artifactOnBoard = true;
     
     const result = pickupArtifact(state);
@@ -61,8 +61,8 @@ describe('Artifact Quest', () => {
   });
 
   test('isArtifactDeliveryAvailable - available when artifact on board and at correct system', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 82; // REGULAS system (delivery point)
+    const state = createInitialState();
+    state.currentSystem = 82; // REGULAS system (delivery point)
     state.artifactOnBoard = true;
     
     const result = isArtifactDeliveryAvailable(state);
@@ -70,8 +70,8 @@ describe('Artifact Quest', () => {
   });
 
   test('isArtifactDeliveryAvailable - not available when no artifact on board', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 82; // REGULAS system (delivery point)
+    const state = createInitialState();
+    state.currentSystem = 82; // REGULAS system (delivery point)
     state.artifactOnBoard = false;
     
     const result = isArtifactDeliveryAvailable(state);
@@ -79,8 +79,8 @@ describe('Artifact Quest', () => {
   });
 
   test('isArtifactDeliveryAvailable - not available when not at delivery system', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     state.artifactOnBoard = true;
     
     const result = isArtifactDeliveryAvailable(state);
@@ -88,8 +88,8 @@ describe('Artifact Quest', () => {
   });
 
   test('completeArtifactDelivery - successfully completes delivery with reward', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 82; // REGULAS system (delivery point)
+    const state = createInitialState();
+    state.currentSystem = 82; // REGULAS system (delivery point)
     state.artifactOnBoard = true;
     state.credits = 1000;
     
@@ -102,8 +102,8 @@ describe('Artifact Quest', () => {
   });
 
   test('completeArtifactDelivery - fails when no artifact on board', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 82; // REGULAS system (delivery point)
+    const state = createInitialState();
+    state.currentSystem = 82; // REGULAS system (delivery point)
     state.artifactOnBoard = false;
     
     const result = completeArtifactDelivery(state);
@@ -113,7 +113,7 @@ describe('Artifact Quest', () => {
   });
 
   test('checkArtifactStolen - chance of theft when artifact on board', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.artifactOnBoard = true;
     
     // Mock Math.random to return 0.01 (below 2% threshold)
@@ -130,7 +130,7 @@ describe('Artifact Quest', () => {
   });
 
   test('checkArtifactStolen - no theft when random above threshold', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.artifactOnBoard = true;
     
     // Mock Math.random to return 0.5 (above 2% threshold)
@@ -146,7 +146,7 @@ describe('Artifact Quest', () => {
   });
 
   test('checkArtifactStolen - no theft when no artifact on board', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.artifactOnBoard = false;
     
     const result = checkArtifactStolen(state);
@@ -156,7 +156,7 @@ describe('Artifact Quest', () => {
   });
 
   test('stealArtifact - successfully steals artifact when available', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.artifactOnBoard = true;
     
     const result = stealArtifact(state);
@@ -167,7 +167,7 @@ describe('Artifact Quest', () => {
   });
 
   test('stealArtifact - fails when no artifact on board', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     state.artifactOnBoard = false;
     
     const result = stealArtifact(state);
@@ -177,7 +177,7 @@ describe('Artifact Quest', () => {
   });
 
   test('getArtifactStatus - returns correct status for each quest stage', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     
     // Not started
     let status = getArtifactStatus(state);
@@ -185,7 +185,7 @@ describe('Artifact Quest', () => {
     assert.equal(status.description, 'Quest not started');
     
     // Artifact available for pickup
-    state.currentSystemId = 67; // NIX system
+    state.currentSystem = 67; // NIX system
     status = getArtifactStatus(state);
     assert.equal(status.phase, 'pickup_available');
     assert.match(status.description, /artifact.*available/i);
@@ -197,25 +197,25 @@ describe('Artifact Quest', () => {
     assert.match(status.description, /find.*high-tech/i);
     
     // Delivery available
-    state.currentSystemId = 82; // REGULAS system (delivery point)
+    state.currentSystem = 82; // REGULAS system (delivery point)
     status = getArtifactStatus(state);
     assert.equal(status.phase, 'delivery_available');
     assert.match(status.description, /deliver.*artifact/i);
     
     // Back to not started when artifact not on board and not at Nix
     state.artifactOnBoard = false;
-    state.currentSystemId = 0; // ACAMAR system
+    state.currentSystem = 0; // ACAMAR system
     status = getArtifactStatus(state);
     assert.equal(status.phase, 'not_started');
     assert.match(status.description, /not started/i);
   });
 
   test('artifact quest - complete workflow from pickup to delivery', () => {
-    const state = createInitialState(Difficulty.Easy);
+    const state = createInitialState();
     const initialCredits = state.credits;
     
     // Travel to Nix and pick up artifact
-    state.currentSystemId = 67; // NIX system
+    state.currentSystem = 67; // NIX system
     assert.equal(isArtifactPickupAvailable(state), true);
     
     const pickupResult = pickupArtifact(state);
@@ -223,7 +223,7 @@ describe('Artifact Quest', () => {
     assert.equal(pickupResult.state.artifactOnBoard, true);
     
     // Travel to delivery system and complete delivery
-    pickupResult.state.currentSystemId = 82; // REGULAS system (delivery point)
+    pickupResult.state.currentSystem = 82; // REGULAS system (delivery point)
     assert.equal(isArtifactDeliveryAvailable(pickupResult.state), true);
     
     const deliveryResult = completeArtifactDelivery(pickupResult.state);
@@ -233,8 +233,8 @@ describe('Artifact Quest', () => {
   });
 
   test('artifact quest - theft interrupts quest', () => {
-    const state = createInitialState(Difficulty.Easy);
-    state.currentSystemId = 67; // NIX system
+    const state = createInitialState();
+    state.currentSystem = 67; // NIX system
     
     // Pick up artifact
     const pickupResult = pickupArtifact(state);
@@ -246,7 +246,7 @@ describe('Artifact Quest', () => {
     assert.equal(stealResult.state.artifactOnBoard, false);
     
     // Can pick up again
-    stealResult.state.currentSystemId = 67; // NIX system
+    stealResult.state.currentSystem = 67; // NIX system
     assert.equal(isArtifactPickupAvailable(stealResult.state), true);
   });
 });

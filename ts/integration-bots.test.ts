@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { createGameEngine } from './engine/game.ts';
+import { GameMode } from './types.ts';
 
 test('Integration Bots System', async (t) => {
 
@@ -23,7 +24,7 @@ test('Integration Bots System', async (t) => {
     await t.test('should test action system integration', async () => {
       const engine = createGameEngine();
       engine.state.credits = 10000;
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       // Test sequence of actions like integration bot would
       const actions = [
@@ -76,7 +77,7 @@ test('Integration Bots System', async (t) => {
       const { getAllSystemPrices } = await import('./economy/pricing.ts');
       
       engine.state.credits = 10000;
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       // Simulate finding profitable trades
       const currentSystem = engine.state.solarSystem[engine.state.currentSystem];
@@ -104,7 +105,7 @@ test('Integration Bots System', async (t) => {
       const { getSystemsWithinRange } = await import('./travel/galaxy.ts');
       
       engine.state.ship.fuel = 30; // Good fuel for travel
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       // Find reachable systems
       const reachableSystems = getSystemsWithinRange(engine.state, engine.state.ship.fuel);
@@ -129,7 +130,7 @@ test('Integration Bots System', async (t) => {
         console.log(`✅ Advanced integration bot: Travel result - ${warpResult.message}`);
         
         // Handle potential encounter
-        if (engine.state.currentMode === 2) { // InCombat
+        if (engine.state.currentMode === GameMode.InCombat) {
           console.log(`Encounter Type: ${engine.state.encounterType}`);
           
           // Try to flee or ignore
@@ -151,7 +152,7 @@ test('Integration Bots System', async (t) => {
       const { getAvailableEquipment } = await import('./economy/equipment-trading.ts');
       
       engine.state.credits = 50000; // Rich player
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       const equipment = getAvailableEquipment(engine.state);
       
@@ -183,7 +184,7 @@ test('Integration Bots System', async (t) => {
       const engine = createGameEngine();
       
       // Simulate bot getting into unexpected state
-      engine.state.currentMode = 99; // Invalid mode
+      engine.state.currentMode = 99 as any; // Invalid mode for testing
       
       const actions = engine.getAvailableActions();
       
@@ -243,7 +244,7 @@ test('Integration Bots System', async (t) => {
       // Simulate 50 game turns
       for (let turn = 0; turn < 50; turn++) {
         // Start each turn on planet
-        engine.state.currentMode = 1;
+        engine.state.currentMode = GameMode.OnPlanet;
         
         // Try to refuel if needed
         if (engine.state.ship.fuel < 10) {
@@ -285,7 +286,7 @@ test('Integration Bots System', async (t) => {
           if (warpResult.success) successfulActions++;
           
           // Handle any encounters
-          if (engine.state.currentMode === 2) {
+          if (engine.state.currentMode === GameMode.InCombat) {
             encountersHandled++;
             
             // Try to flee from combat
