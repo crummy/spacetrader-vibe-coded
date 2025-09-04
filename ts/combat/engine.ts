@@ -119,8 +119,8 @@ export function startEncounter(state: GameState, encounterType: number): { succe
 }
 
 export function endEncounter(state: GameState): void {
-  state.currentMode = GameMode.InSpace;
   state.encounterType = -1; // No encounter
+  state.currentMode = GameMode.InSpace;
 }
 
 export function getCurrentEncounter(state: GameState): { type: number; name: string; isActive: boolean } {

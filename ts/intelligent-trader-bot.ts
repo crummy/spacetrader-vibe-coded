@@ -159,11 +159,8 @@ export class IntelligentTraderBot {
       if (this.session.gameOver) return;
     }
     
-    // Try multiple times to dock if we're in space (may have timing issues after warp)
-    let attempts = 0;
-    while (this.engine.state.currentMode === GameMode.InSpace && attempts < 3) {
-      attempts++;
-      
+    // Now dock if we're in space
+    if (this.engine.state.currentMode === GameMode.InSpace) {
       const dockAction = await this.engine.executeAction({
         type: 'dock_at_planet',
         parameters: {}
@@ -171,18 +168,14 @@ export class IntelligentTraderBot {
       
       this.session.totalActions++;
       
-      if (!dockAction.success) {
-        if (this.verbose) {
-          console.log(`⚠️ Failed to dock at planet (attempt ${attempts}):`, dockAction.message);
-        }
-        // Small delay before retry
-        await new Promise(resolve => setTimeout(resolve, 10));
+      if (this.verbose && !dockAction.success) {
+        console.log('⚠️ Failed to dock at planet:', dockAction.message);
       }
     }
     
     // Debug: Log current game mode if still not on planet (but not if game is over)
     if (this.verbose && this.engine.state.currentMode !== GameMode.OnPlanet && !this.session.gameOver) {
-      console.log(`⚠️ Warning: Expected to be on planet, but mode is ${this.engine.state.currentMode} after ${attempts} attempts`);
+      console.log(`⚠️ Warning: Expected to be on planet, but mode is ${this.engine.state.currentMode}`);
     }
   }
 
@@ -557,9 +550,9 @@ export class IntelligentTraderBot {
   private async sellGoods(): Promise<void> {
     await this.ensureOnPlanet();
     
-    // Debug: Check if we're properly docked before selling
+    // Debug: Check game mode before selling
     if (this.verbose && this.engine.state.currentMode !== GameMode.OnPlanet) {
-      console.log(`⚠️ Cannot sell goods - not docked (mode: ${this.engine.state.currentMode})`);
+      console.log(`⚠️ DEBUG: Cannot sell - wrong mode: ${this.engine.state.currentMode} (OnPlanet=1)`);
       return;
     }
     

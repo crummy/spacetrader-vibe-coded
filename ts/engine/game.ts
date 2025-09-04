@@ -506,6 +506,8 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
 // Helper function to automatically continue travel after encounter resolution
 export function automaticTravelContinuation(state: GameState): { hasEncounter: boolean; encounterType?: number; arrivedSafely: boolean; message: string } {
   if (state.warpSystem === state.currentSystem) {
+    // Already at destination - ensure we're on the planet
+    state.currentMode = GameMode.OnPlanet;
     return { hasEncounter: false, arrivedSafely: true, message: '' };
   }
   
@@ -528,17 +530,23 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
     }
   }
   
-  // No more clicks or encounters - arrive at destination
-  state.currentSystem = state.warpSystem;
-  state.currentMode = GameMode.OnPlanet;
-  state.clicks = 0; // Reset travel clicks
-  // Reset newspaper payment flag when arriving at new system
-  state.alreadyPaidForNewspaper = false;
-  return { 
-    hasEncounter: false, 
-    arrivedSafely: true,
-    message: `Arrived safely at ${systemName}`
-  };
+  // Check if we've reached our destination (either by clicks running out or by system match)
+  if (state.clicks === 0 || state.warpSystem === state.currentSystem) {
+    // Arrive at destination
+    state.currentSystem = state.warpSystem;
+    state.currentMode = GameMode.OnPlanet;
+    state.clicks = 0; // Reset travel clicks
+    // Reset newspaper payment flag when arriving at new system
+    state.alreadyPaidForNewspaper = false;
+    return { 
+      hasEncounter: false, 
+      arrivedSafely: true,
+      message: `Arrived safely at ${systemName}`
+    };
+  }
+  
+  // Still traveling with clicks remaining
+  return { hasEncounter: false, arrivedSafely: false, message: '' };
 }
 
 async function executeTrackSystemAction(state: GameState, parameters: any): Promise<ActionResult> {
@@ -845,8 +853,8 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
     const result = resolveCombatRound(state, combatAction as any);
     let message = result.message;
     
-    // If encounter ended and we're still traveling, automatically continue
-    if ((state.currentMode as GameMode) === GameMode.InSpace && state.warpSystem !== state.currentSystem) {
+    // If encounter ended, automatically continue travel (whether we have clicks remaining or arrived)
+    if ((state.currentMode as GameMode) === GameMode.InSpace) {
       const travelResult = automaticTravelContinuation(state);
       
       if (travelResult.hasEncounter) {
