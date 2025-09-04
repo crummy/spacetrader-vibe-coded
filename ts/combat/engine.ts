@@ -375,6 +375,22 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     } else {
       message = 'This encounter does not offer trading.';
     }
+  } else if (playerAction === 'submit') {
+    // Submit to police inspection
+    if (state.encounterType === EncounterType.POLICEINSPECTION) {
+      message = handlePoliceSubmit(state);
+      endEncounter(state);
+    } else {
+      message = 'Submit is only available for police inspections.';
+    }
+  } else if (playerAction === 'bribe') {
+    // Bribe police to avoid inspection
+    if (state.encounterType === EncounterType.POLICEINSPECTION) {
+      message = handlePoliceBribe(state);
+      endEncounter(state);
+    } else {
+      message = 'Bribe is only available for police inspections.';
+    }
   } else if (playerAction === 'surrender') {
     // Surrender to opponent
     endEncounter(state);
@@ -767,4 +783,97 @@ function handleVictory(state: GameState): { message: string } {
   state.reputationScore += 1 + Math.floor(state.opponent.type / 2);
   
   return { message };
+}
+
+// Police encounter specific functions  
+function handlePoliceSubmit(state: GameState): string {
+  // TradeItem enum constants
+  const FIREARMS = 4;
+  const NARCOTICS = 5;
+  
+  // Check for illegal goods (firearms, narcotics) and Jonathan Wild
+  const hasFirearms = state.ship.cargo[FIREARMS] > 0;
+  const hasNarcotics = state.ship.cargo[NARCOTICS] > 0;
+  const hasWild = state.wildStatus === 1; // Wild aboard
+  const hasReactor = state.reactorStatus > 0 && state.reactorStatus < 21; // Dangerous reactor
+  
+  if (hasFirearms || hasNarcotics || hasWild || hasReactor) {
+    let message = 'Police inspection reveals illegal items! ';
+    
+    if (hasFirearms || hasNarcotics) {
+      // Confiscate illegal goods
+      state.ship.cargo[FIREARMS] = 0;
+      state.buyingPrice[FIREARMS] = 0;
+      state.ship.cargo[NARCOTICS] = 0;
+      state.buyingPrice[NARCOTICS] = 0;
+      
+      // Calculate fine based on worth and difficulty
+      const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * state.sellPrice[i]), 0);
+      let fine = Math.floor(currentWorth / ((7 - state.difficulty) * 10));
+      if (fine % 50 !== 0) {
+        fine += (50 - (fine % 50));
+      }
+      fine = Math.max(100, Math.min(fine, 10000));
+      
+      // Apply fine
+      if (state.credits >= fine) {
+        state.credits -= fine;
+      } else {
+        state.debt += (fine - state.credits);
+        state.credits = 0;
+      }
+      
+      message += `Illegal goods confiscated and fined ${fine} credits. `;
+    }
+    
+    if (hasWild) {
+      // Jonathan Wild captured - severe consequences
+      state.wildStatus = 0; // Remove Wild
+      state.days += 10; // Jail time
+      message += 'Jonathan Wild arrested! You spend 10 days in jail. ';
+    }
+    
+    // Worsen police record for having illegal items
+    state.policeRecordScore += 70; // TRAFFICKING penalty
+    message += 'Your police record is damaged.';
+    
+    return message;
+  } else {
+    // Clean inspection - improve police record
+    state.policeRecordScore -= 70; // Improve record (negative is better)
+    return 'Police inspection found nothing illegal. Your lawfulness record improves.';
+  }
+}
+
+function handlePoliceBribe(state: GameState): string {
+  // Calculate bribe amount based on worth and system politics
+  const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * state.sellPrice[i]), 0);
+  
+  // Use hardcoded politics bribeLevel for now (should be imported properly)
+  const bribeLevel = 1; // Default bribe level
+  
+  let bribe = Math.floor(currentWorth / ((10 + 5 * (4 - state.difficulty)) * bribeLevel));
+  if (bribe % 100 !== 0) {
+    bribe += (100 - (bribe % 100));
+  }
+  
+  // Higher bribe if carrying Wild or dangerous reactor
+  if (state.wildStatus === 1 || (state.reactorStatus > 0 && state.reactorStatus < 21)) {
+    if (state.difficulty <= 1) { // NORMAL difficulty or easier
+      bribe *= 2;
+    } else {
+      bribe *= 3;
+    }
+  }
+  
+  bribe = Math.max(100, Math.min(bribe, 10000));
+  
+  if (state.credits >= bribe) {
+    state.credits -= bribe;
+    // Small police record penalty for bribing
+    state.policeRecordScore += 10;
+    return `You successfully bribed the police for ${bribe} credits.`;
+  } else {
+    return `Bribe amount is ${bribe} credits, but you only have ${state.credits} credits.`;
+  }
 }
