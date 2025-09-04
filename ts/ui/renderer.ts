@@ -124,6 +124,15 @@ function renderCombatContent(state: GameState): string {
   sections.push(`Opponent: ${getEncounterTypeName(state.encounterType)}`);
   sections.push(`Your Hull: ${state.ship.hull} | Enemy Hull: ${state.opponent.hull}`);
   
+  // Check for combat resolution
+  if (state.opponent.hull <= 0) {
+    sections.push('');
+    sections.push('🎉 VICTORY! Enemy ship destroyed!');
+  } else if (state.ship.hull <= 0) {
+    sections.push('');
+    sections.push('💥 DEFEAT! Your ship is destroyed!');
+  }
+  
   return sections.join('\n');
 }
 

@@ -5,6 +5,7 @@ import type { GameState, Ship } from '../types.ts';
 import { executeOrbitalPurchase, executeOrbitalSale } from '../trading/orbital.ts';
 import { GameMode } from '../types.ts';
 import { getShipType } from '../data/shipTypes.ts';
+import { getWeapons, getShields } from '../data/equipment.ts';
 import { createEmptyShip } from '../state.ts';
 
 // Combat Action Types
@@ -462,16 +463,37 @@ export function determineCombatOutcome(state: GameState): CombatOutcome {
   };
 }
 
-function calculateBounty(opponent: Ship): number {
-  // Basic bounty calculation - can be expanded
-  const shipTypeValues = [1000, 2500, 5000, 10000, 15000]; // Different ship types
-  const baseValue = shipTypeValues[opponent.type] || 1000;
+export function calculateBounty(opponent: Ship): number {
+  // Port of Palm OS GetBounty() function from Encounter.c
+  // Uses EnemyShipPrice() equivalent for ship valuation
   
-  // Bounty is a fraction of ship value
-  let bounty = Math.floor(baseValue / 200);
-  bounty = Math.floor(bounty / 25) * 25; // Round to nearest 25
+  const shipType = getShipType(opponent.type);
+  const weapons = getWeapons();
+  const shields = getShields();
   
-  // Bounds from Palm OS source
+  // Calculate ship price including equipment (EnemyShipPrice equivalent)
+  let shipPrice = shipType.price;
+  
+  // Add weapon values
+  for (let i = 0; i < opponent.weapon.length; i++) {
+    if (opponent.weapon[i] >= 0) {
+      shipPrice += weapons[opponent.weapon[i]].price;
+    }
+  }
+  
+  // Add shield values
+  for (let i = 0; i < opponent.shield.length; i++) {
+    if (opponent.shield[i] >= 0) {
+      shipPrice += shields[opponent.shield[i]].price;
+    }
+  }
+  
+  // Apply Palm OS bounty formula
+  let bounty = Math.floor(shipPrice / 200);
+  bounty = Math.floor(bounty / 25);
+  bounty = bounty * 25;
+  
+  // Apply bounds
   if (bounty <= 0) bounty = 25;
   if (bounty > 2500) bounty = 2500;
   
@@ -604,7 +626,7 @@ function configureOpponentShip(state: GameState, encounterType: number): void {
 }
 
 // Check if combat should end due to hull destruction
-function checkCombatResolution(state: GameState): { message: string; gameOver?: boolean } | null {
+export function checkCombatResolution(state: GameState): { message: string; gameOver?: boolean } | null {
   const bothDestroyed = state.ship.hull <= 0 && state.opponent.hull <= 0;
   const playerDestroyed = state.ship.hull <= 0;
   const opponentDestroyed = state.opponent.hull <= 0;

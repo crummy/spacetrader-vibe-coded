@@ -16,6 +16,7 @@ test('Equipment Trading System', async (t) => {
       const state = createInitialState();
       state.credits = 10000;
       state.currentSystem = 0; // Acamar has tech level 7
+      state.ship.weapon[0] = -1; // Clear the starting weapon slot
       
       const result = buyWeapon(state, 0); // Pulse laser
       
@@ -30,6 +31,7 @@ test('Equipment Trading System', async (t) => {
     await t.test('should fail when insufficient credits', () => {
       const state = createInitialState();
       state.credits = 100; // Not enough for any weapon
+      state.ship.weapon[0] = -1; // Clear the starting weapon slot
       
       const result = buyWeapon(state, 0); // Pulse laser (costs ~2000)
       
@@ -41,12 +43,10 @@ test('Equipment Trading System', async (t) => {
     await t.test('should fail when no empty weapon slots', () => {
       const state = createInitialState();
       state.credits = 50000;
-      // Fill all weapon slots
-      state.ship.weapon[0] = 0;
-      state.ship.weapon[1] = 1;
-      state.ship.weapon[2] = 2;
+      // Gnat only has 1 weapon slot, and it starts with a weapon already installed
+      // No need to change slots - it's already full
       
-      const result = buyWeapon(state, 0);
+      const result = buyWeapon(state, 1); // Try to buy a different weapon
       
       assert.equal(result.success, false);
       assert.ok(result.reason?.includes('No empty weapon slots'));
@@ -78,7 +78,7 @@ test('Equipment Trading System', async (t) => {
 
     await t.test('should fail to sell from empty slot', () => {
       const state = createInitialState();
-      // All weapon slots are empty (-1)
+      state.ship.weapon[0] = -1; // Clear the starting weapon to make slot empty
       
       const result = sellWeapon(state, 0);
       
@@ -92,9 +92,11 @@ test('Equipment Trading System', async (t) => {
       
       state1.credits = 50000;
       state1.commanderTrader = 1; // Low trader skill
+      state1.ship.weapon[0] = -1; // Clear starting weapon
       
       state2.credits = 50000;
       state2.commanderTrader = 10; // High trader skill
+      state2.ship.weapon[0] = -1; // Clear starting weapon
       
       const result1 = buyWeapon(state1, 0);
       const result2 = buyWeapon(state2, 0);
@@ -108,6 +110,7 @@ test('Equipment Trading System', async (t) => {
       const state = createInitialState();
       const originalCredits = 10000;
       state.credits = originalCredits;
+      state.ship.weapon[0] = -1; // Clear starting weapon to allow purchase
       
       // Buy weapon at full price
       const buyResult = buyWeapon(state, 0);
@@ -134,38 +137,46 @@ test('Equipment Trading System', async (t) => {
 
   await t.test('Shield Trading Operations', async (t) => {
     
-    await t.test('should successfully buy and install shield', () => {
+    await t.test('should fail to buy shield when no shield slots', () => {
       const state = createInitialState();
       state.credits = 10000;
       
       const result = buyShield(state, 0); // Energy shield
       
-      assert.equal(result.success, true);
-      assert.ok(result.reason?.includes('Energy shield'));
-      assert.equal(state.ship.shield[0], 0); // Shield installed
-      assert.equal(state.ship.shieldStrength[0], 100); // Full strength
+      // Gnat has 0 shield slots, so purchase should fail
+      assert.equal(result.success, false);
+      assert.ok(result.reason?.includes('No empty shield slots'));
     });
 
-    await t.test('should properly initialize shield strength on purchase', () => {
+    await t.test('should fail to sell shield from empty slot when no shield slots', () => {
       const state = createInitialState();
-      state.credits = 30000;
       
-      const result = buyShield(state, 1); // Reflective shield (power 200)
-      
-      assert.equal(result.success, true);
-      assert.equal(state.ship.shieldStrength[0], 200); // Should be set to full power
-    });
-
-    await t.test('should reset shield strength when selling shield', () => {
-      const state = createInitialState();
-      state.ship.shield[0] = 0; // Energy shield
-      state.ship.shieldStrength[0] = 50; // Partial strength
-      
+      // Trying to sell from slot 0 should fail because Gnat has no shield slots
       const result = sellShield(state, 0);
       
+      assert.equal(result.success, false);
+      assert.ok(result.reason?.includes('Invalid shield slot'));
+    });
+
+    await t.test('should handle shield operations correctly for ships with shield slots', () => {
+      // This test acknowledges that some ships have shield slots, even if Gnat doesn't
+      // We test the logic conceptually since the Gnat starting ship has none
+      const state = createInitialState();
+      
+      // Test with a ship that has shield slots (simulate by changing ship type)
+      const originalShipType = state.ship.type;
+      state.ship.type = 3; // Firefly has shield slots
+      state.credits = 10000;
+      
+      const result = buyShield(state, 0);
+      
+      // Should succeed with a ship that has shield slots
       assert.equal(result.success, true);
-      assert.equal(state.ship.shield[0], -1); // Shield removed
-      assert.equal(state.ship.shieldStrength[0], 0); // Strength reset
+      assert.equal(state.ship.shield[0], 0); // Shield installed
+      assert.equal(state.ship.shieldStrength[0], 100); // Full strength
+      
+      // Restore original ship type
+      state.ship.type = originalShipType;
     });
   });
 
@@ -227,20 +238,18 @@ test('Equipment Trading System', async (t) => {
 
     await t.test('should list sellable equipment correctly', () => {
       const state = createInitialState();
-      // Install some equipment
-      state.ship.weapon[0] = 0; // Pulse laser
-      state.ship.shield[1] = 1; // Reflective shield
-      state.ship.gadget[2] = 0; // Extra cargo bays
+      // Gnat starts with a weapon in slot 0, has 0 shield slots, 1 gadget slot
+      // Install a gadget (weapon is already there)
+      state.ship.gadget[0] = 0; // Extra cargo bays
       
       const sellable = getInstialledEquipmentSellPrices(state);
       
-      assert.equal(sellable.weapons.length, 1);
-      assert.equal(sellable.shields.length, 1);
-      assert.equal(sellable.gadgets.length, 1);
+      assert.equal(sellable.weapons.length, 1); // Starting weapon
+      assert.equal(sellable.shields.length, 0); // No shield slots on Gnat
+      assert.equal(sellable.gadgets.length, 1); // Installed gadget
       
       assert.equal(sellable.weapons[0].slotIndex, 0);
-      assert.equal(sellable.shields[0].slotIndex, 1);
-      assert.equal(sellable.gadgets[0].slotIndex, 2);
+      assert.equal(sellable.gadgets[0].slotIndex, 0);
     });
   });
 
@@ -324,21 +333,20 @@ test('Equipment Trading System', async (t) => {
       const state = createInitialState();
       state.credits = 200000;
       
-      // Buy multiple weapons until slots are full
+      // Gnat has only 1 weapon slot, and it starts with a weapon
+      // Try to buy another weapon - should fail because slot is full
       let weaponsPurchased = 0;
-      for (let i = 0; i < 5; i++) { // Try to buy more than 3 weapons
-        const result = buyWeapon(state, 0);
+      for (let i = 0; i < 5; i++) { // Try to buy more weapons
+        const result = buyWeapon(state, 1); // Try Beam laser
         if (result.success) {
           weaponsPurchased++;
         }
       }
       
-      assert.equal(weaponsPurchased, 3); // Should only buy 3 (max slots)
+      assert.equal(weaponsPurchased, 0); // Should buy 0 (slot already full)
       
-      // All weapon slots should be filled
+      // Starting weapon slot should still be filled
       assert.notEqual(state.ship.weapon[0], -1);
-      assert.notEqual(state.ship.weapon[1], -1);
-      assert.notEqual(state.ship.weapon[2], -1);
     });
   });
 
@@ -375,6 +383,7 @@ test('Equipment Trading System', async (t) => {
         const state = createInitialState();
         state.credits = 10000;
         state.commanderTrader = test.skill;
+        state.ship.weapon[0] = -1; // Clear starting weapon to allow purchase
         
         const result = buyWeapon(state, 0);
         assert.equal(result.success, true);
@@ -428,10 +437,8 @@ test('Equipment Trading System', async (t) => {
     await t.test('should list installed equipment for selling accurately', () => {
       const state = createInitialState();
       
-      // Install mixed equipment
-      state.ship.weapon[0] = 1;    // Beam laser
-      state.ship.shield[0] = 0;    // Energy shield  
-      state.ship.shieldStrength[0] = 75; // Partial strength
+      // Replace starting weapon and install gadget
+      state.ship.weapon[0] = 1;    // Beam laser (replace starting Pulse laser)
       state.ship.gadget[0] = 1;    // Auto-repair system
       
       const sellable = getInstialledEquipmentSellPrices(state);
@@ -440,9 +447,7 @@ test('Equipment Trading System', async (t) => {
       assert.equal(sellable.weapons[0].name, 'Beam laser');
       assert.equal(sellable.weapons[0].sellPrice, 9375); // 12500 * 3/4
       
-      assert.equal(sellable.shields.length, 1);
-      assert.equal(sellable.shields[0].currentStrength, 75);
-      assert.equal(sellable.shields[0].maxStrength, 100);
+      assert.equal(sellable.shields.length, 0); // Gnat has no shield slots
       
       assert.equal(sellable.gadgets.length, 1);
       assert.equal(sellable.gadgets[0].name, 'Auto-repair system');

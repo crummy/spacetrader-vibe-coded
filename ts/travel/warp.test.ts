@@ -44,16 +44,15 @@ describe('Warp System', () => {
   describe('Fuel System', () => {
     test('should return base fuel tanks from ship type', () => {
       const state = createInitialState();
-      // Flea (type 0) has 20 fuel tanks
-      state.ship.type = 0;
+      // Default starting ship is Gnat (type 1) with 14 fuel tanks
       
       const tanks = getFuelTanks(state.ship);
-      assert.equal(tanks, 20);
+      assert.equal(tanks, 14);
     });
 
     test('should return increased fuel tanks with fuel compactor', () => {
       const state = createInitialState();
-      state.ship.type = 0; // Flea normally has 20 tanks
+      // Starting ship is Gnat (type 1) with 14 tanks normally
       state.ship.gadget[0] = 5; // FUELCOMPACTOR = 5
       
       const tanks = getFuelTanks(state.ship);
@@ -62,20 +61,20 @@ describe('Warp System', () => {
 
     test('should return current fuel limited by tank capacity', () => {
       const state = createInitialState();
-      state.ship.type = 0; // 20 fuel tanks
-      state.ship.fuel = 25; // More than tank capacity
+      // Starting ship is Gnat with 14 fuel tanks
+      state.ship.fuel = 20; // More than tank capacity
       
       const fuel = getCurrentFuel(state.ship);
-      assert.equal(fuel, 20); // Limited by tank capacity
+      assert.equal(fuel, 14); // Limited by tank capacity
     });
 
     test('should return actual fuel when less than capacity', () => {
       const state = createInitialState();
-      state.ship.type = 0; // 20 fuel tanks
-      state.ship.fuel = 15;
+      // Starting ship is Gnat with 14 fuel tanks
+      state.ship.fuel = 10;
       
       const fuel = getCurrentFuel(state.ship);
-      assert.equal(fuel, 15);
+      assert.equal(fuel, 10);
     });
   });
 
@@ -99,18 +98,17 @@ describe('Warp System', () => {
 
     test('should calculate wormhole tax correctly', () => {
       const state = createInitialState();
-      // Flea ship type 0 has cost of fuel = 1
-      state.ship.type = 0;
+      // Starting ship is Gnat (type 1) with cost of fuel = 2
       
       const tax = calculateWormholeTax(state.ship);
-      assert.equal(tax, 25); // CostOfFuel * 25 = 1 * 25 = 25
+      assert.equal(tax, 50); // CostOfFuel * 25 = 2 * 25 = 50
     });
   });
 
   describe('Warp Cost Calculation', () => {
     test('should calculate base warp cost with no extras', () => {
       const state = createInitialState();
-      state.ship.type = 0; // Flea
+      // Starting ship is Gnat (type 1)
       state.debt = 0;
       state.insurance = false;
       // No crew beyond commander
@@ -125,13 +123,13 @@ describe('Warp System', () => {
 
     test('should include wormhole tax for wormhole travel', () => {
       const state = createInitialState();
-      state.ship.type = 0; // CostOfFuel = 1
+      // Starting ship is Gnat (type 1) with CostOfFuel = 2
       state.wormhole[0] = 0;
       state.wormhole[1] = 1;
       
       const cost = calculateWarpCost(state, 0, 1, true); // Wormhole
-      assert.equal(cost.wormholeTax, 25);
-      assert.equal(cost.total, 25);
+      assert.equal(cost.wormholeTax, 50); // 2 * 25 = 50
+      assert.equal(cost.total, 50);
     });
 
     test('should include mercenary pay for crew members', () => {
@@ -190,8 +188,8 @@ describe('Warp System', () => {
       state.credits = 1000;
       state.currentSystem = 0;
       
-      // Use system 16 which is closer (distance 18 vs default fuel 20)
-      const result = canWarpTo(state, 16);
+      // Use system 49 which is reachable (distance 7 with Gnat's 14 fuel)
+      const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, true);
     });
 
@@ -201,7 +199,7 @@ describe('Warp System', () => {
       state.credits = 1000;
       state.ship.fuel = 0; // No fuel at all
       
-      const result = canWarpTo(state, 1);
+      const result = canWarpTo(state, 49); // Even reachable system fails with no fuel
       assert.equal(result.canWarp, false);
       assert.equal(result.reason, 'Out of fuel range');
     });
@@ -221,36 +219,34 @@ describe('Warp System', () => {
     test('should prevent warp when insufficient credits', () => {
       const state = createInitialState();
       state.credits = 10; // Very low credits
-      state.debt = 2000; // High debt means high interest
+      state.debt = 2000; // High debt means high interest (200 credits)
       state.currentSystem = 0;
       
-      // Use system 16 which is reachable with default fuel (distance 18 vs fuel 20)
-      const result = canWarpTo(state, 16);
+      // Use system 49 which is reachable with Gnat's 14 fuel (distance 7)
+      const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, false);
       assert.equal(result.reason, 'Insufficient credits');
     });
 
     test('should prevent warp when debt too large', () => {
       const state = createInitialState();
-      state.ship.fuel = 15;
       state.credits = 100000;
       state.debt = 150000; // > DEBTTOOLARGE (100000)
       state.currentSystem = 0;
       
-      const result = canWarpTo(state, 1);
+      const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, false);
       assert.equal(result.reason, 'Debt too large');
     });
 
     test('should prevent warp when Wild aboard without beam laser', () => {
       const state = createInitialState();
-      state.ship.fuel = 15;
       state.credits = 1000;
       state.wildStatus = 1; // Wild is aboard
       state.currentSystem = 0;
       // No beam laser weapon
       
-      const result = canWarpTo(state, 1);
+      const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, false);
       assert.equal(result.reason, 'Wild refuses to travel without beam laser');
     });
@@ -262,8 +258,8 @@ describe('Warp System', () => {
       state.ship.weapon[0] = 1; // BEAMLASERWEAPON = 1
       state.currentSystem = 0;
       
-      // Use closer system 16 (distance 18 vs fuel 20)
-      const result = canWarpTo(state, 16);
+      // Use system 49 which is reachable (distance 7 with Gnat's 14 fuel)
+      const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, true);
     });
   });
@@ -277,12 +273,12 @@ describe('Warp System', () => {
       
       const initialFuel = state.ship.fuel;
       const initialCredits = state.credits;
-      const expectedDistance = calculateDistance(state.solarSystem[0], state.solarSystem[16]);
+      const expectedDistance = calculateDistance(state.solarSystem[0], state.solarSystem[49]);
       
-      const result = performWarp(state, 16, false);
+      const result = performWarp(state, 49, false);
       
       assert.equal(result.success, true);
-      assert.equal(state.currentSystem, 16);
+      assert.equal(state.currentSystem, 49);
       assert.equal(state.ship.fuel, initialFuel - expectedDistance); // Consumed fuel for actual distance
       assert.ok(state.credits < initialCredits); // Some costs deducted (interest on debt)
     });
@@ -300,7 +296,7 @@ describe('Warp System', () => {
       assert.equal(result.success, true);
       assert.equal(state.currentSystem, 1);
       assert.equal(state.ship.fuel, 5); // No fuel consumed for wormhole
-      assert.equal(state.credits, 75); // 100 - 25 wormhole tax
+      assert.equal(state.credits, 50); // 100 - 50 wormhole tax (Gnat has costOfFuel=2, so 2*25=50)
     });
 
     test('should reset shield strength after warp', () => {
@@ -310,7 +306,7 @@ describe('Warp System', () => {
       state.ship.shield[0] = 0; // ENERGYSHIELD = 0, power = 100
       state.ship.shieldStrength[0] = 50; // Damaged
       
-      const result = performWarp(state, 16, false);
+      const result = performWarp(state, 49, false);
       
       assert.equal(result.success, true);
       assert.equal(state.ship.shieldStrength[0], 100); // Reset to full
@@ -323,10 +319,10 @@ describe('Warp System', () => {
       state.debt = 1000; // Would cause interest
       state.currentSystem = 0;
       
-      const result = performWarp(state, 1, true); // Via singularity
+      const result = performWarp(state, 49, true); // Via singularity
       
       assert.equal(result.success, true);
-      assert.equal(state.currentSystem, 1);
+      assert.equal(state.currentSystem, 49);
       assert.equal(state.credits, 50); // No costs deducted for singularity
     });
 
@@ -336,7 +332,7 @@ describe('Warp System', () => {
       state.currentSystem = 0;
       state.ship.fuel = 0; // No fuel at all
       
-      const result = performWarp(state, 1, false);
+      const result = performWarp(state, 49, false);
       
       assert.equal(result.success, false);
       assert.equal(state.currentSystem, 0); // No change
@@ -347,12 +343,12 @@ describe('Warp System', () => {
       const state = createInitialState();
       state.credits = 1000;
       state.currentSystem = 0;
-      state.solarSystem[16].visited = false;
+      state.solarSystem[49].visited = false;
       
-      const result = performWarp(state, 16, false);
+      const result = performWarp(state, 49, false);
       
       assert.equal(result.success, true);
-      assert.equal(state.solarSystem[16].visited, true);
+      assert.equal(state.solarSystem[49].visited, true);
     });
   });
 

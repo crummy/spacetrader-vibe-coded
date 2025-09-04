@@ -18,9 +18,9 @@ describe('Trading Functions', () => {
     test('should calculate total cargo bays correctly', () => {
       const state = createInitialState();
       
-      // Flea ship has 10 cargo bays by default
+      // Gnat ship has 15 cargo bays by default
       const totalBays = getTotalCargoBays(state);
-      assert.equal(totalBays, 10);
+      assert.equal(totalBays, 15);
     });
 
     test('should account for extra cargo bay gadgets', () => {
@@ -30,7 +30,7 @@ describe('Trading Functions', () => {
       state.ship.gadget[0] = 2; // EXTRABAYS gadget
       
       const totalBays = getTotalCargoBays(state);
-      assert.equal(totalBays, 15); // 10 + 5
+      assert.equal(totalBays, 20); // 15 + 5
     });
 
     test('should calculate filled cargo bays correctly', () => {
@@ -54,7 +54,7 @@ describe('Trading Functions', () => {
       const filledBays = getFilledCargoBays(state);
       const available = totalBays - filledBays;
       
-      assert.equal(available, 4); // 10 - 6
+      assert.equal(available, 9); // 15 - 6
     });
   });
 
@@ -127,8 +127,8 @@ describe('Trading Functions', () => {
       const state = createInitialState();
       state.credits = 5000;
       
-      // Fill up most cargo space
-      state.ship.cargo[TradeItem.Food] = 18; // Leave only 2 spaces
+      // Fill up cargo space completely
+      state.ship.cargo[TradeItem.Food] = 15; // Fill all 15 spaces
       
       const currentSystem: SolarSystem = {
         ...state.solarSystem[0],
@@ -320,19 +320,19 @@ describe('Trading Functions', () => {
       for (let i = 0; i < 10; i++) {
         state.ship.cargo[i] = 1;
       }
-      // Ship now has 10/10 bays filled
+      // Ship now has 10/15 bays filled
       
       const currentSystem: SolarSystem = {
         ...state.solarSystem[0],
         qty: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50], // Plenty available
       };
       
-      // Try to buy more (should get 0 - ship is full)
+      // Try to buy more (should succeed with 5 spaces available)
       const result = buyCargo(state, currentSystem, TradeItem.Water, 5, [100, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
       
-      assert.equal(result.success, false); // Should fail - no space
-      assert.equal(result.reason, 'Insufficient cargo space');
-      assert.equal(getFilledCargoBays(state), 10); // Ship still full
+      assert.equal(result.success, true); // Should succeed - has space
+      assert.equal(result.quantityBought, 5);
+      assert.equal(getFilledCargoBays(state), 15); // Ship now full
     });
   });
 });

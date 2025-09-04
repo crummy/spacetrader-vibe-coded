@@ -135,6 +135,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'buy_ship':
         return await executeBuyShipAction(state, action.parameters);
       
+      case 'combat_continue':
+        return await executeCombatContinueAction(state);
+      
       case 'combat_attack':
       case 'combat_flee':
       case 'combat_surrender':
@@ -876,6 +879,18 @@ function getSpaceActions(state: GameState): AvailableAction[] {
 function getCombatActionsForState(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
+  // First check if combat should auto-resolve (opponent or player destroyed)
+  if (state.opponent.hull <= 0 || state.ship.hull <= 0) {
+    // Combat should end - provide a continue action
+    actions.push({
+      type: 'combat_continue',
+      name: 'Continue',
+      description: 'Continue after combat resolution',
+      available: true
+    });
+    return actions;
+  }
+  
   const combatActions = getCombatActions(state);
   
   for (const combatAction of combatActions) {
@@ -1301,6 +1316,33 @@ async function executeBuyShipAction(state: GameState, parameters: any): Promise<
       message: 'Ship trading available',
       stateChanged: false,
       data: { availableShips }
+    };
+  }
+}
+
+/**
+ * Execute combat continue action (resolve combat when ships are destroyed)
+ */
+async function executeCombatContinueAction(state: GameState): Promise<ActionResult> {
+  // Import combat resolution function
+  const { checkCombatResolution } = await import('../combat/engine.ts');
+  
+  const resolution = checkCombatResolution(state);
+  
+  if (resolution) {
+    return {
+      success: true,
+      message: resolution.message,
+      stateChanged: true,
+      gameOver: resolution.gameOver,
+      newState: state // Return updated state
+    };
+  } else {
+    // Should not happen if we're in this action
+    return {
+      success: false,
+      message: 'Combat continues',
+      stateChanged: false
     };
   }
 }

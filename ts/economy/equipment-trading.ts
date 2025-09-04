@@ -3,6 +3,7 @@
 
 import type { GameState } from '../types.ts';
 import { getWeapon, getShield, getGadget, isWeaponBuyable, isShieldBuyable, isGadgetBuyable } from '../data/equipment.ts';
+import { getShipType } from '../data/shipTypes.ts';
 
 /**
  * Result of an equipment transaction
@@ -43,10 +44,11 @@ function canSystemSellEquipment(systemTechLevel: number, equipmentTechLevel: num
 /**
  * Find first empty weapon slot
  * @param state Game state
- * @returns Slot index (0-2) or -1 if no empty slots
+ * @returns Slot index or -1 if no empty slots
  */
 function findEmptyWeaponSlot(state: GameState): number {
-  for (let i = 0; i < 3; i++) {
+  const shipType = getShipType(state.ship.type);
+  for (let i = 0; i < shipType.weaponSlots; i++) {
     if (state.ship.weapon[i] === -1) {
       return i;
     }
@@ -57,10 +59,11 @@ function findEmptyWeaponSlot(state: GameState): number {
 /**
  * Find first empty shield slot  
  * @param state Game state
- * @returns Slot index (0-2) or -1 if no empty slots
+ * @returns Slot index or -1 if no empty slots
  */
 function findEmptyShieldSlot(state: GameState): number {
-  for (let i = 0; i < 3; i++) {
+  const shipType = getShipType(state.ship.type);
+  for (let i = 0; i < shipType.shieldSlots; i++) {
     if (state.ship.shield[i] === -1) {
       return i;
     }
@@ -71,10 +74,11 @@ function findEmptyShieldSlot(state: GameState): number {
 /**
  * Find first empty gadget slot
  * @param state Game state  
- * @returns Slot index (0-2) or -1 if no empty slots
+ * @returns Slot index or -1 if no empty slots
  */
 function findEmptyGadgetSlot(state: GameState): number {
-  for (let i = 0; i < 3; i++) {
+  const shipType = getShipType(state.ship.type);
+  for (let i = 0; i < shipType.gadgetSlots; i++) {
     if (state.ship.gadget[i] === -1) {
       return i;
     }
@@ -137,7 +141,8 @@ export function buyWeapon(state: GameState, weaponIndex: number): EquipmentTrade
  */
 export function sellWeapon(state: GameState, slotIndex: number): EquipmentTradeResult {
   // Validate slot index
-  if (slotIndex < 0 || slotIndex >= 3) {
+  const shipType = getShipType(state.ship.type);
+  if (slotIndex < 0 || slotIndex >= shipType.weaponSlots) {
     return { success: false, reason: 'Invalid weapon slot' };
   }
 
@@ -216,7 +221,8 @@ export function buyShield(state: GameState, shieldIndex: number): EquipmentTrade
  */
 export function sellShield(state: GameState, slotIndex: number): EquipmentTradeResult {
   // Validate slot index
-  if (slotIndex < 0 || slotIndex >= 3) {
+  const shipType = getShipType(state.ship.type);
+  if (slotIndex < 0 || slotIndex >= shipType.shieldSlots) {
     return { success: false, reason: 'Invalid shield slot' };
   }
 
@@ -295,7 +301,8 @@ export function buyGadget(state: GameState, gadgetIndex: number): EquipmentTrade
  */
 export function sellGadget(state: GameState, slotIndex: number): EquipmentTradeResult {
   // Validate slot index
-  if (slotIndex < 0 || slotIndex >= 3) {
+  const shipType = getShipType(state.ship.type);
+  if (slotIndex < 0 || slotIndex >= shipType.gadgetSlots) {
     return { success: false, reason: 'Invalid gadget slot' };
   }
 
@@ -383,12 +390,13 @@ export function getAvailableEquipment(state: GameState) {
  * @returns Equipment that can be sold with prices
  */
 export function getInstialledEquipmentSellPrices(state: GameState) {
+  const shipType = getShipType(state.ship.type);
   const sellableWeapons = [];
   const sellableShields = [];
   const sellableGadgets = [];
 
   // Check installed weapons
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < shipType.weaponSlots; i++) {
     const weaponIndex = state.ship.weapon[i];
     if (weaponIndex !== -1) {
       const weapon = getWeapon(weaponIndex);
@@ -402,7 +410,7 @@ export function getInstialledEquipmentSellPrices(state: GameState) {
   }
 
   // Check installed shields
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < shipType.shieldSlots; i++) {
     const shieldIndex = state.ship.shield[i];
     if (shieldIndex !== -1) {
       const shield = getShield(shieldIndex);
@@ -418,7 +426,7 @@ export function getInstialledEquipmentSellPrices(state: GameState) {
   }
 
   // Check installed gadgets
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < shipType.gadgetSlots; i++) {
     const gadgetIndex = state.ship.gadget[i];
     if (gadgetIndex !== -1) {
       const gadget = getGadget(gadgetIndex);

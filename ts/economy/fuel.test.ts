@@ -18,14 +18,14 @@ test('Fuel System', async (t) => {
       
       const cost = calculateFullRefuelCost(state);
       
-      // Default ship (Flea) has 20 fuel capacity and costs 1 credit per unit
-      const expectedCost = (20 - 10) * 1; // 10 units needed * 1 credit/unit = 10 credits
+      // Default ship (Gnat) has 14 fuel capacity and costs 2 credits per unit
+      const expectedCost = (14 - 10) * 2; // 4 units needed * 2 credits/unit = 8 credits
       assert.equal(cost, expectedCost);
     });
 
     await t.test('should return zero cost when fuel tanks are full', () => {
       const state = createInitialState();
-      state.ship.fuel = 20; // Full fuel for Flea
+      state.ship.fuel = 14; // Full fuel for Gnat
       
       const cost = calculateFullRefuelCost(state);
       
@@ -48,14 +48,14 @@ test('Fuel System', async (t) => {
       const state = createInitialState();
       state.ship.fuel = 0; // Empty
       
-      // Calculate cost without fuel compactor (Flea = 20 tanks * 1 credit = 20 total)
+      // Calculate cost without fuel compactor (Gnat = 14 tanks * 2 credits = 28 total)
       const costWithout = calculateFullRefuelCost(state);
       console.log(`Cost without fuel compactor: ${costWithout}`);
       
       // Add fuel compactor gadget
       state.ship.gadget[0] = 5; // Fuel compactor
       
-      // Calculate cost with fuel compactor (should be 18 tanks * 1 credit = 18 total)
+      // Calculate cost with fuel compactor (should be 18 tanks * 2 credits = 36 total)
       const costWith = calculateFullRefuelCost(state);
       console.log(`Cost with fuel compactor: ${costWith}`);
       
@@ -69,17 +69,17 @@ test('Fuel System', async (t) => {
     
     await t.test('should calculate affordable fuel within credit limit', () => {
       const state = createInitialState();
-      state.ship.fuel = 5; // Need 15 more fuel
+      state.ship.fuel = 5; // Need 9 more fuel for Gnat
       
       const affordableFuel = calculateAffordableFuel(state, 10); // 10 credits available
       
-      // Can afford 10 units (10 credits / 1 credit per unit)
-      assert.equal(affordableFuel, 10);
+      // Can afford 5 units (10 credits / 2 credits per unit for Gnat)
+      assert.equal(affordableFuel, 5);
     });
 
     await t.test('should limit affordable fuel by tank capacity', () => {
       const state = createInitialState();
-      state.ship.fuel = 18; // Only need 2 more fuel
+      state.ship.fuel = 12; // Only need 2 more fuel for Gnat (14 capacity)
       
       const affordableFuel = calculateAffordableFuel(state, 100); // Lots of credits
       
@@ -89,7 +89,7 @@ test('Fuel System', async (t) => {
 
     await t.test('should handle insufficient credits gracefully', () => {
       const state = createInitialState();
-      state.ship.fuel = 0; // Need full tank (20 units)
+      state.ship.fuel = 0; // Need full tank (14 units for Gnat)
       
       const affordableFuel = calculateAffordableFuel(state, 0); // No credits
       
@@ -98,9 +98,9 @@ test('Fuel System', async (t) => {
 
     await t.test('should handle partial fuel purchases', () => {
       const state = createInitialState();
-      state.ship.fuel = 0; // Need 20 fuel
+      state.ship.fuel = 0; // Need 14 fuel for Gnat
       
-      const affordableFuel = calculateAffordableFuel(state, 7); // Can afford 7 units
+      const affordableFuel = calculateAffordableFuel(state, 14); // Can afford 7 units (14 credits / 2 credits per unit)
       
       assert.equal(affordableFuel, 7);
     });
@@ -110,28 +110,28 @@ test('Fuel System', async (t) => {
     
     await t.test('should successfully buy fuel when conditions are met', () => {
       const state = createInitialState();
-      state.ship.fuel = 10; // Half full
+      state.ship.fuel = 10; // Partially full
       state.credits = 100;
       
-      const result = buyFuel(state, 5); // Buy 5 credits worth
+      const result = buyFuel(state, 4); // Buy 4 credits worth (2 units for Gnat @ 2 credits/unit)
       
       assert.equal(result.success, true);
-      assert.equal(result.fuelBought, 5); // 5 credits / 1 credit per unit = 5 units
-      assert.equal(result.costPaid, 5);
-      assert.equal(state.ship.fuel, 15); // 10 + 5 = 15
-      assert.equal(state.credits, 95); // 100 - 5 = 95
+      assert.equal(result.fuelBought, 2); // 4 credits / 2 credits per unit = 2 units
+      assert.equal(result.costPaid, 4);
+      assert.equal(state.ship.fuel, 12); // 10 + 2 = 12
+      assert.equal(state.credits, 96); // 100 - 4 = 96
     });
 
     await t.test('should fail when fuel tanks are full', () => {
       const state = createInitialState();
-      state.ship.fuel = 20; // Full tank
+      state.ship.fuel = 14; // Full tank for Gnat
       state.credits = 100;
       
       const result = buyFuel(state, 10);
       
       assert.equal(result.success, false);
       assert.ok(result.reason?.includes('already full'));
-      assert.equal(state.ship.fuel, 20); // No change
+      assert.equal(state.ship.fuel, 14); // No change
       assert.equal(state.credits, 100); // No change
     });
 
@@ -149,30 +149,30 @@ test('Fuel System', async (t) => {
 
     await t.test('should limit purchase to available credits', () => {
       const state = createInitialState();
-      state.ship.fuel = 0; // Empty, needs 20 fuel
+      state.ship.fuel = 0; // Empty, needs 14 fuel for Gnat
       state.credits = 5; // Only 5 credits
       
       const result = buyFuel(state, 100); // Try to spend 100 credits
       
       assert.equal(result.success, true);
-      assert.equal(result.fuelBought, 5); // Limited by credits
-      assert.equal(result.costPaid, 5);
-      assert.equal(state.ship.fuel, 5);
-      assert.equal(state.credits, 0);
+      assert.equal(result.fuelBought, 2); // Limited by credits (5 credits / 2 credits per unit = 2 units)
+      assert.equal(result.costPaid, 4); // 2 units * 2 credits per unit = 4 credits
+      assert.equal(state.ship.fuel, 2);
+      assert.equal(state.credits, 1); // 5 - 4 = 1
     });
 
     await t.test('should limit purchase to tank capacity', () => {
       const state = createInitialState();
-      state.ship.fuel = 18; // Almost full (need 2 more)
+      state.ship.fuel = 12; // Almost full for Gnat (need 2 more)
       state.credits = 100; // Lots of money
       
       const result = buyFuel(state, 50); // Try to buy lots of fuel
       
       assert.equal(result.success, true);
       assert.equal(result.fuelBought, 2); // Limited by tank capacity
-      assert.equal(result.costPaid, 2);
-      assert.equal(state.ship.fuel, 20); // Full tank
-      assert.equal(state.credits, 98); // 100 - 2 = 98
+      assert.equal(result.costPaid, 4); // 2 units * 2 credits per unit = 4 credits
+      assert.equal(state.ship.fuel, 14); // Full tank for Gnat
+      assert.equal(state.credits, 96); // 100 - 4 = 96
     });
 
     await t.test('should handle different ship types with different fuel costs', () => {
@@ -213,33 +213,33 @@ test('Fuel System', async (t) => {
       assert.equal(result.success, true);
       assert.ok(result.fuelBought! > 0);
       assert.ok(result.costPaid! > 0);
-      assert.equal(state.ship.fuel, 20); // Should be full (Flea capacity)
+      assert.equal(state.ship.fuel, 14); // Should be full (Gnat capacity)
       assert.equal(state.credits, initialCredits - result.costPaid!);
     });
 
     await t.test('should fail when insufficient credits for full refuel', () => {
       const state = createInitialState();
-      state.ship.fuel = 0; // Empty (needs 20 fuel)
-      state.credits = 10; // Only enough for 10 fuel units
+      state.ship.fuel = 0; // Empty (needs 14 fuel for Gnat)
+      state.credits = 10; // Only enough for 5 fuel units (10 credits / 2 credits per unit)
       
       const result = refuelToFull(state);
       
       assert.equal(result.success, true); // Partial success
-      assert.equal(result.fuelBought, 10); // Only what we can afford
-      assert.equal(state.ship.fuel, 10); // Partially filled
+      assert.equal(result.fuelBought, 5); // Only what we can afford
+      assert.equal(state.ship.fuel, 5); // Partially filled
       assert.equal(state.credits, 0); // All money spent
     });
 
     await t.test('should handle already full tanks', () => {
       const state = createInitialState();
-      state.ship.fuel = 20; // Already full
+      state.ship.fuel = 14; // Already full for Gnat
       state.credits = 1000;
       
       const result = refuelToFull(state);
       
       assert.equal(result.success, false);
       assert.ok(result.reason?.includes('already full'));
-      assert.equal(state.ship.fuel, 20); // No change
+      assert.equal(state.ship.fuel, 14); // No change
       assert.equal(state.credits, 1000); // No change
     });
   });
@@ -248,15 +248,15 @@ test('Fuel System', async (t) => {
     
     await t.test('should provide accurate fuel status information', () => {
       const state = createInitialState();
-      state.ship.fuel = 15; // 75% full
+      state.ship.fuel = 10; // ~71% full (10/14)
       
       const status = getFuelStatus(state);
       
-      assert.equal(status.currentFuel, 15);
-      assert.equal(status.maxFuel, 20); // Flea capacity
-      assert.equal(status.fuelPercentage, 75); // 15/20 * 100
-      assert.equal(status.costPerUnit, 1); // Flea fuel cost
-      assert.equal(status.fullRefuelCost, 5); // 5 units * 1 credit = 5 credits
+      assert.equal(status.currentFuel, 10);
+      assert.equal(status.maxFuel, 14); // Gnat capacity
+      assert.equal(status.fuelPercentage, 71); // 10/14 * 100 = 71.4 -> 71
+      assert.equal(status.costPerUnit, 2); // Gnat fuel cost
+      assert.equal(status.fullRefuelCost, 8); // 4 units * 2 credits = 8 credits
     });
 
     await t.test('should handle empty fuel tanks', () => {
@@ -267,12 +267,12 @@ test('Fuel System', async (t) => {
       
       assert.equal(status.currentFuel, 0);
       assert.equal(status.fuelPercentage, 0);
-      assert.equal(status.fullRefuelCost, 20); // Full tank cost
+      assert.equal(status.fullRefuelCost, 28); // Full tank cost (14 units * 2 credits = 28)
     });
 
     await t.test('should handle full fuel tanks', () => {
       const state = createInitialState();
-      state.ship.fuel = 20; // Full
+      state.ship.fuel = 14; // Full for Gnat
       
       const status = getFuelStatus(state);
       
@@ -302,7 +302,7 @@ test('Fuel System', async (t) => {
     await t.test('should respect fuel compactor gadget effects', () => {
       const state = createInitialState();
       
-      // Test without fuel compactor (Flea = 20 tanks)
+      // Test without fuel compactor (Gnat = 14 tanks)
       state.ship.gadget = [-1, -1, -1]; // No gadgets
       state.ship.fuel = 0;
       const statusWithout = getFuelStatus(state);
@@ -369,15 +369,15 @@ test('Fuel System', async (t) => {
 
     await t.test('should handle fuel overflow correctly', () => {
       const state = createInitialState();
-      state.ship.fuel = 19; // Almost full (only 1 unit needed)
+      state.ship.fuel = 13; // Almost full for Gnat (only 1 unit needed)
       state.credits = 100;
       
       const result = buyFuel(state, 50); // Try to buy way more than needed
       
       assert.equal(result.success, true);
       assert.equal(result.fuelBought, 1); // Only bought what was needed
-      assert.equal(state.ship.fuel, 20); // Full tank
-      assert.equal(state.credits, 99); // Only charged for 1 unit
+      assert.equal(state.ship.fuel, 14); // Full tank for Gnat
+      assert.equal(state.credits, 98); // Only charged for 1 unit (2 credits)
     });
 
     await t.test('should handle edge case where fuel costs more than credits available', () => {
@@ -414,7 +414,7 @@ test('Fuel System', async (t) => {
       
       assert.equal(result.success, true);
       assert.ok(result.message.includes('Refueled'));
-      assert.equal(engine.state.ship.fuel, 20); // Should be full
+      assert.equal(engine.state.ship.fuel, 14); // Should be full for Gnat
       assert.ok(engine.state.credits < 100); // Should have spent money
     });
 
@@ -437,7 +437,7 @@ test('Fuel System', async (t) => {
       const { createGameEngine } = await import('../engine/game.ts');
       const engine = createGameEngine();
       
-      engine.state.ship.fuel = 20; // Full tank
+      engine.state.ship.fuel = 14; // Full tank for Gnat
       engine.state.currentMode = 1; // OnPlanet
       
       const actions = engine.getAvailableActions();
@@ -451,12 +451,12 @@ test('Fuel System', async (t) => {
     
     await t.test('should calculate accurate costs for different scenarios', () => {
       const testCases = [
-        { fuel: 0, expected: 20 },   // Empty tank
-        { fuel: 5, expected: 15 },   // 3/4 empty
-        { fuel: 10, expected: 10 },  // Half empty  
-        { fuel: 15, expected: 5 },   // 1/4 empty
-        { fuel: 19, expected: 1 },   // Almost full
-        { fuel: 20, expected: 0 }    // Full tank
+        { fuel: 0, expected: 28 },   // Empty tank (14 * 2 = 28)
+        { fuel: 3, expected: 22 },   // ~3/4 empty (11 units * 2 = 22)
+        { fuel: 7, expected: 14 },   // Half empty (7 units * 2 = 14)
+        { fuel: 11, expected: 6 },   // ~1/4 empty (3 units * 2 = 6)
+        { fuel: 13, expected: 2 },   // Almost full (1 unit * 2 = 2)
+        { fuel: 14, expected: 0 }    // Full tank
       ];
       
       for (const testCase of testCases) {
@@ -464,7 +464,7 @@ test('Fuel System', async (t) => {
         state.ship.fuel = testCase.fuel;
         
         const cost = calculateFullRefuelCost(state);
-        assert.equal(cost, testCase.expected, `Fuel ${testCase.fuel}/20 should cost ${testCase.expected} credits`);
+        assert.equal(cost, testCase.expected, `Fuel ${testCase.fuel}/14 should cost ${testCase.expected} credits`);
       }
     });
 
@@ -481,22 +481,22 @@ test('Fuel System', async (t) => {
       
       assert.equal(result.success, true);
       assert.equal(result.costPaid, fullCost);
-      assert.equal(state.ship.fuel, 20); // Should be exactly full
+      assert.equal(state.ship.fuel, 14); // Should be exactly full for Gnat
     });
 
     await t.test('should provide consistent fuel status information', () => {
       const state = createInitialState();
       
       // Test at different fuel levels
-      for (let fuelLevel = 0; fuelLevel <= 20; fuelLevel += 5) {
+      for (let fuelLevel = 0; fuelLevel <= 14; fuelLevel += 3) {
         state.ship.fuel = fuelLevel;
         
         const status = getFuelStatus(state);
         
         assert.equal(status.currentFuel, fuelLevel);
-        assert.equal(status.maxFuel, 20); // Flea capacity
-        assert.equal(status.fuelPercentage, Math.floor((fuelLevel / 20) * 100));
-        assert.equal(status.fullRefuelCost, (20 - fuelLevel) * 1); // Cost for remaining fuel
+        assert.equal(status.maxFuel, 14); // Gnat capacity
+        assert.equal(status.fuelPercentage, Math.floor((fuelLevel / 14) * 100));
+        assert.equal(status.fullRefuelCost, (14 - fuelLevel) * 2); // Cost for remaining fuel
       }
     });
   });
@@ -511,7 +511,7 @@ test('Fuel System', async (t) => {
       
       // Perform many fuel operations
       for (let i = 0; i < 1000; i++) {
-        state.ship.fuel = i % 20; // Vary fuel levels
+        state.ship.fuel = i % 14; // Vary fuel levels for Gnat
         calculateFullRefuelCost(state);
         calculateAffordableFuel(state, 100);
         getFuelStatus(state);
