@@ -21,6 +21,7 @@ import { getTradeItems } from './data/tradeItems.ts';
 import { enableActionLogging, enableAllDebug, disableDebug, applyEnvDebugConfig } from './debug.ts';
 import { checkGameEndConditions, type EndGameResult } from './game/endings.ts';
 import { getAllSystemPrices } from './economy/pricing.ts';
+import { getShipTypeName } from './data/shipTypes.ts';
 
 interface TradingSession {
   startTime: number;
@@ -106,18 +107,27 @@ export class IntelligentTraderBot {
 
         // Ensure we're on a planet to start trading cycle
         await this.ensureOnPlanet();
+        if (this.session.gameOver) break;
+        
+        // Repair ship if damaged
+        await this.repairShipIfNeeded();
+        if (this.session.gameOver) break;
         
         // 1. Buy a random good
         await this.buyRandomGood();
+        if (this.session.gameOver) break;
         
         // 2. Travel to a nearby system
         await this.travelToNearbySystem();
+        if (this.session.gameOver) break;
         
         // 3. Sell the good we bought
         await this.sellGoods();
+        if (this.session.gameOver) break;
         
         // 4. Refuel if needed
         await this.refuelIfNeeded();
+        if (this.session.gameOver) break;
         
         // Update session stats
         this.updateSessionStats();
@@ -143,7 +153,17 @@ export class IntelligentTraderBot {
    * Ensure we're docked at a planet for trading
    */
   private async ensureOnPlanet(): Promise<void> {
-    if (this.engine.state.currentMode === GameMode.InSpace) {
+    // Handle combat first if we're in it
+    if (this.engine.state.currentMode === GameMode.InCombat) {
+      await this.handleCombatIfNeeded();
+      if (this.session.gameOver) return;
+    }
+    
+    // Try multiple times to dock if we're in space (may have timing issues after warp)
+    let attempts = 0;
+    while (this.engine.state.currentMode === GameMode.InSpace && attempts < 3) {
+      attempts++;
+      
       const dockAction = await this.engine.executeAction({
         type: 'dock_at_planet',
         parameters: {}
@@ -151,8 +171,51 @@ export class IntelligentTraderBot {
       
       this.session.totalActions++;
       
-      if (this.verbose && !dockAction.success) {
-        console.log('⚠️ Failed to dock at planet:', dockAction.message);
+      if (!dockAction.success) {
+        if (this.verbose) {
+          console.log(`⚠️ Failed to dock at planet (attempt ${attempts}):`, dockAction.message);
+        }
+        // Small delay before retry
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+    
+    // Debug: Log current game mode if still not on planet (but not if game is over)
+    if (this.verbose && this.engine.state.currentMode !== GameMode.OnPlanet && !this.session.gameOver) {
+      console.log(`⚠️ Warning: Expected to be on planet, but mode is ${this.engine.state.currentMode} after ${attempts} attempts`);
+    }
+  }
+
+  /**
+   * Repair ship hull if damaged
+   */
+  private async repairShipIfNeeded(): Promise<void> {
+    // Only attempt repair if we have damage and are on a planet
+    if (this.engine.state.currentMode !== GameMode.OnPlanet) {
+      if (this.verbose) {
+        console.log(`⚠️ Cannot repair - not docked at planet (mode: ${this.engine.state.currentMode})`);
+      }
+      return;
+    }
+
+    const repairResult = await this.engine.executeAction({
+      type: 'repair_ship',
+      parameters: {}
+    });
+    
+    this.session.totalActions++;
+    
+    if (repairResult.success) {
+      if (this.verbose) {
+        console.log(`🔧 ${repairResult.message}`);
+      }
+    } else {
+      // Only log repair failures if it's not because we're already at full health or wrong game mode
+      const isFullHealth = repairResult.message.includes('already at full strength');
+      const isWrongMode = repairResult.message.includes('not available in current game mode');
+      
+      if (this.verbose && !isFullHealth && !isWrongMode) {
+        console.log(`❌ Repair failed: ${repairResult.message}`);
       }
     }
   }
@@ -316,7 +379,65 @@ export class IntelligentTraderBot {
   }
 
   /**
-   * Handle combat encounters - attack until opponent is destroyed
+   * Get encounter type name from encounter type number
+   */
+  private getEncounterTypeName(encounterType: number): string {
+    const encounterNames: { [key: number]: string } = {
+      // Police encounters (0-9)
+      0: 'Police Inspector',
+      1: 'Police (Ignoring)',
+      2: 'Police (Attacking)',
+      3: 'Police (Fleeing)',
+      
+      // Pirate encounters (10-19)
+      10: 'Pirate (Attacking)',
+      11: 'Pirate (Fleeing)',
+      12: 'Pirate (Ignoring)',
+      13: 'Pirate (Surrendering)',
+      
+      // Trader encounters (20-29)
+      20: 'Trader (Passing)',
+      21: 'Trader (Fleeing)',
+      22: 'Trader (Attacking)',
+      23: 'Trader (Surrendering)',
+      24: 'Trader (Selling)',
+      25: 'Trader (Buying)',
+      
+      // Monster encounters (30-39)
+      30: 'Space Monster (Attacking)',
+      31: 'Space Monster (Ignoring)',
+      
+      // Dragonfly encounters (40-49)
+      40: 'Dragonfly (Attacking)',
+      41: 'Dragonfly (Ignoring)',
+      
+      // Scarab encounters (60-69)
+      60: 'Scarab (Attacking)',
+      61: 'Scarab (Ignoring)',
+      
+      // Famous captain encounters (70-79)
+      70: 'Famous Captain',
+      71: 'Famous Captain (Attacking)',
+      72: 'Captain Ahab',
+      73: 'Captain Conrad',
+      74: 'Captain Huie',
+      
+      // Special encounters (80+)
+      80: 'Marie Celeste',
+      81: 'Bottle (Old)',
+      82: 'Bottle (Good)',
+      83: 'Post-Marie Police'
+    };
+    
+    return encounterNames[encounterType] || `Unknown (${encounterType})`;
+  }
+
+  /**
+   * Handle combat encounters with smart strategy:
+   * - Only attack if enemy is attacking us
+   * - Submit to police if they're not attacking
+   * - Ignore traders if they're not attacking
+   * - Flee from others
    */
   private async handleCombatIfNeeded(): Promise<void> {
     let combatRounds = 0;
@@ -326,40 +447,89 @@ export class IntelligentTraderBot {
       this.session.totalCombats++;
       combatRounds++;
       
+      const playerHull = this.engine.state.ship.hull;
+      const opponentHull = this.engine.state.opponent.hull;
+      const encounterType = this.engine.state.encounterType;
+      const encounterTypeName = this.getEncounterTypeName(encounterType);
+      const opponentShipType = getShipTypeName(this.engine.state.opponent.type);
+      
       if (this.verbose) {
-        console.log(`⚔️ Combat round ${combatRounds} - attacking opponent`);
+        console.log(`⚔️ Combat round ${combatRounds} - Player: ${playerHull}HP | ${encounterTypeName} (${opponentShipType}): ${opponentHull}HP`);
       }
 
-      const attackResult = await this.engine.executeAction({
-        type: 'combat_attack',
+      // Determine combat strategy based on encounter type
+      let action: string;
+      let actionDescription: string;
+      
+      const isAttacking = encounterTypeName.includes('Attacking');
+      const isPoliceInspector = encounterType === 0; // POLICEINSPECTION
+      const isPolice = encounterType >= 0 && encounterType <= 9;
+      const isTrader = encounterType >= 20 && encounterType <= 29;
+      
+      if (isAttacking) {
+        action = 'combat_attack';
+        actionDescription = 'attacking back';
+      } else if (isPoliceInspector) {
+        action = 'combat_submit';
+        actionDescription = 'submitting to police inspector';
+      } else if (isPolice || isTrader) {
+        // For police fleeing/ignoring and traders, just ignore them
+        action = 'combat_ignore';
+        actionDescription = isPolice ? 'ignoring police' : 'ignoring trader';
+      } else {
+        action = 'combat_flee';
+        actionDescription = 'fleeing';
+      }
+      
+      if (this.verbose) {
+        console.log(`🎯 Strategy: ${actionDescription}`);
+      }
+
+      const actionResult = await this.engine.executeAction({
+        type: action,
         parameters: {}
       });
       
       this.session.totalActions++;
 
-      if (this.verbose && attackResult.success) {
-        console.log(`✅ Attack result: ${attackResult.message}`);
+      if (this.verbose && actionResult.success) {
+        console.log(`✅ ${actionDescription} result: ${actionResult.message}`);
+      } else if (this.verbose) {
+        console.log(`❌ ${actionDescription} failed: ${actionResult.message}`);
       }
 
-      if (!attackResult.success) {
-        // If attack failed, try to flee as backup
+      // Check for game over conditions after each combat action
+      const gameEndCondition = checkGameEndConditions(this.engine.state);
+      if (gameEndCondition?.isGameOver) {
         if (this.verbose) {
-          console.log('⚠️ Attack failed, attempting to flee');
+          console.log(`💀 Game Over detected during combat: ${gameEndCondition.message}`);
         }
-        
-        const fleeResult = await this.engine.executeAction({
-          type: 'combat_flee',
-          parameters: {}
-        });
-        this.session.totalActions++;
-        
-        if (fleeResult.success) {
+        this.session.gameOver = true;
+        this.session.endCondition = gameEndCondition;
+        return; // Exit combat immediately
+      }
+
+      if (!actionResult.success) {
+        // If primary strategy failed, try to flee as backup
+        if (action !== 'combat_flee') {
           if (this.verbose) {
-            console.log('✅ Successfully fled from combat');
+            console.log('⚠️ Primary strategy failed, attempting to flee as backup');
           }
-          break;
-        } else if (this.verbose) {
-          console.log('❌ Failed to flee');
+          
+          const fleeResult = await this.engine.executeAction({
+            type: 'combat_flee',
+            parameters: {}
+          });
+          this.session.totalActions++;
+          
+          if (fleeResult.success) {
+            if (this.verbose) {
+              console.log('✅ Successfully fled from combat');
+            }
+            break;
+          } else if (this.verbose) {
+            console.log('❌ Failed to flee');
+          }
         }
       }
 
@@ -386,6 +556,12 @@ export class IntelligentTraderBot {
    */
   private async sellGoods(): Promise<void> {
     await this.ensureOnPlanet();
+    
+    // Debug: Check if we're properly docked before selling
+    if (this.verbose && this.engine.state.currentMode !== GameMode.OnPlanet) {
+      console.log(`⚠️ Cannot sell goods - not docked (mode: ${this.engine.state.currentMode})`);
+      return;
+    }
     
     // Try to sell each type of cargo we have
     for (let i = 0; i < this.engine.state.ship.cargo.length; i++) {
