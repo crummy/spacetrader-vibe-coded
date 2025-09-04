@@ -248,7 +248,7 @@ export class IntelligentTraderBot {
     const warpResult = await this.engine.executeAction({
       type: 'warp_to_system',
       parameters: {
-        systemIndex: targetSystem
+        targetSystem: targetSystem
       }
     });
     this.session.totalActions++;
@@ -260,6 +260,9 @@ export class IntelligentTraderBot {
       
       // Handle any combat encounters during travel
       await this.handleCombatIfNeeded();
+      
+      // Ensure we dock at destination after travel/combat
+      await this.ensureOnPlanet();
       
     } else {
       if (this.verbose) {
@@ -274,11 +277,15 @@ export class IntelligentTraderBot {
    * Handle combat encounters - attack until opponent is destroyed
    */
   private async handleCombatIfNeeded(): Promise<void> {
-    while (this.engine.state.currentMode === GameMode.InCombat) {
+    let combatRounds = 0;
+    const maxCombatRounds = 50; // Safety limit to prevent infinite combat
+    
+    while (this.engine.state.currentMode === GameMode.InCombat && combatRounds < maxCombatRounds) {
       this.session.totalCombats++;
+      combatRounds++;
       
       if (this.verbose) {
-        console.log('⚔️ Entered combat - attacking opponent');
+        console.log(`⚔️ Combat round ${combatRounds} - attacking opponent`);
       }
 
       const attackResult = await this.engine.executeAction({
@@ -287,6 +294,10 @@ export class IntelligentTraderBot {
       });
       
       this.session.totalActions++;
+
+      if (this.verbose && attackResult.success) {
+        console.log(`✅ Attack result: ${attackResult.message}`);
+      }
 
       if (!attackResult.success) {
         // If attack failed, try to flee as backup
@@ -301,22 +312,30 @@ export class IntelligentTraderBot {
         this.session.totalActions++;
         
         if (fleeResult.success) {
+          if (this.verbose) {
+            console.log('✅ Successfully fled from combat');
+          }
           break;
+        } else if (this.verbose) {
+          console.log('❌ Failed to flee');
         }
-      }
-
-      // Check if combat is over
-      if (this.engine.state.currentMode !== GameMode.InCombat) {
-        if (this.verbose) {
-          console.log('✅ Combat resolved');
-        }
-        break;
       }
 
       // Safety check to prevent infinite loops
       if (this.session.totalActions >= this.maxActions) {
+        if (this.verbose) {
+          console.log('⚠️ Reached max actions during combat');
+        }
         break;
       }
+    }
+
+    if (combatRounds >= maxCombatRounds && this.verbose) {
+      console.log('⚠️ Combat timeout reached - forcing exit');
+    }
+
+    if (this.engine.state.currentMode !== GameMode.InCombat && this.verbose && combatRounds > 0) {
+      console.log('✅ Combat resolved after', combatRounds, 'rounds');
     }
   }
 
