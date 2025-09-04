@@ -1011,7 +1011,7 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     available: true
   });
 
-  // Warp to systems directly from planet (no need to launch first)
+  // Warp to systems directly from planet
   const possibleSystems: number[] = [];
   for (let i = 0; i < state.solarSystem.length; i++) {
     if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
@@ -1029,11 +1029,11 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     });
   }
 
-  // Launch ship action (for manual space travel without warping)
+  // Track system action (moved from space menu)
   actions.push({
-    type: 'launch_ship',
-    name: 'Launch Ship',
-    description: 'Launch ship and enter space',
+    type: 'track_system',
+    name: 'Track System',
+    description: 'Set a system to track on the galactic map',
     available: true
   });
   
@@ -1043,7 +1043,7 @@ function getPlanetActions(state: GameState): AvailableAction[] {
 function getSpaceActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
-  // Warp to systems when in space
+  // Warp to systems when in space (for manual space travel)
   const possibleSystems: number[] = [];
   for (let i = 0; i < state.solarSystem.length; i++) {
     if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
@@ -1060,14 +1060,6 @@ function getSpaceActions(state: GameState): AvailableAction[] {
       available: state.ship.fuel > 0
     });
   }
-
-  // Track system action
-  actions.push({
-    type: 'track_system',
-    name: 'Track System',
-    description: 'Set a system to track on the galactic map',
-    available: true
-  });
 
   // Return to current planet (dock)
   actions.push({
