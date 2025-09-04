@@ -201,9 +201,9 @@ describe('State Transition Testing', () => {
           parameters: { targetSystem: 49 } // Known working system
         });
         
-        if (testEngine.state.currentMode === GameMode.InCombat) {
+        if ((testEngine.state.currentMode as GameMode) === GameMode.InCombat) {
           encounterTriggered = true;
-          assert.equal(testEngine.state.currentMode, GameMode.InCombat);
+          assert.equal((testEngine.state.currentMode as GameMode), GameMode.InCombat);
           assert.ok(testEngine.state.opponent.hull > 0, 'Opponent should have positive hull');
           console.log(`✅ InSpace → InCombat transition successful (attempt ${attempts})`);
         }
@@ -227,7 +227,7 @@ describe('State Transition Testing', () => {
       });
       
       // Check if combat ended (either immediately or after a continue action)
-      if (engine.state.currentMode === GameMode.InSpace) {
+      if ((engine.state.currentMode as GameMode) === GameMode.InSpace) {
         console.log('✅ InCombat → InSpace transition via direct resolution');
       } else if (engine.state.opponent.hull <= 0) {
         // Should have continue action available

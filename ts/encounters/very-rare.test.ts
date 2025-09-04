@@ -42,14 +42,14 @@ test('Very Rare Encounter System', async (t) => {
       }
     }
     
-    console.log('Very rare encounter types found:', Array.from(encounterTypes).sort((a, b) => a - b));
+    console.log('Very rare encounter types found:', Array.from(encounterTypes).sort((a, b) => (a as number) - (b as number)));
     
     // Should find multiple types of very rare encounters
     assert.ok(encounterTypes.size >= 3, 'Should find multiple types of very rare encounters');
     
     // Check for specific encounter types
     const foundTypes = Array.from(encounterTypes);
-    const hasMarieOrCaptain = foundTypes.some(type => type === 80 || (type >= 72 && type <= 74));
+    const hasMarieOrCaptain = foundTypes.some((type) => (type as number) === 80 || ((type as number) >= 72 && (type as number) <= 74));
     assert.ok(hasMarieOrCaptain, 'Should find Marie Celeste or Famous Captain encounters');
   });
 

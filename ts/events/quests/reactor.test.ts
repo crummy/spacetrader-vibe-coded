@@ -4,6 +4,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert';
 import { createInitialState } from '../../state.ts';
 import { getTotalCargoBays } from '../../economy/trading.ts';
+import type { MutableTradeItemArray } from '../../types.ts';
 import { 
   startReactorQuest,
   advanceReactorQuest,
@@ -20,9 +21,9 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateAtNix = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Nix' },
+      currentSystem: 67, // Nix system index
       credits: 2000,
-      ship: { ...state.ship, type: 2, cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] } // Firefly with 20 cargo bays
+      ship: { ...state.ship, type: 2, cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as MutableTradeItemArray } // Firefly with 20 cargo bays
     };
     
     const result = startReactorQuest(stateAtNix);
@@ -35,11 +36,11 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateWithFullCargo = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Nix' },
+      currentSystem: 67, // Nix system index
       ship: { 
         ...state.ship,
         type: 1, // Gnat with 15 cargo bays 
-        cargo: [2, 2, 2, 2, 2, 1, 1, 1, 1, 1] // 16 units total, only -1 empty (invalid)
+        cargo: [2, 2, 2, 2, 2, 1, 1, 1, 1, 1] as MutableTradeItemArray // 16 units total, only -1 empty (invalid)
       }
     };
     
@@ -52,9 +53,9 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateWithWild = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Nix' },
+      currentSystem: 67, // Nix system index
       wildStatus: 1,
-      ship: { ...state.ship, type: 2, cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] } // Firefly with 20 cargo bays
+      ship: { ...state.ship, type: 2, cargo: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as MutableTradeItemArray } // Firefly with 20 cargo bays
     };
     
     assert.throws(() => {
@@ -156,7 +157,7 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateWithReactor = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Utopia' },
+      currentSystem: 119, // Utopia system index
       reactorStatus: 10,
       credits: 5000
     };
@@ -171,7 +172,7 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateAtNix = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Nix' },
+      currentSystem: 67, // Nix system index
       reactorStatus: 0
     };
     
@@ -189,7 +190,7 @@ describe('Reactor Quest', () => {
     const state = createInitialState();
     const stateAtUtopia = {
       ...state,
-      currentSystem: { ...state.currentSystem, name: 'Utopia' },
+      currentSystem: 119, // Utopia system index
       reactorStatus: 10
     };
     

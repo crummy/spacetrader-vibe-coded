@@ -22,6 +22,7 @@ export interface HighScoreEntry {
   days: number;
   worth: number;
   difficulty: number;
+  finalScore?: number;
 }
 
 /**

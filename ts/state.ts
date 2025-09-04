@@ -81,7 +81,7 @@ export function createEmptySolarSystem(): SolarSystem {
     y: 0,
     specialResources: 0,
     size: 0,
-    qty: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as TradeItemArray,
+    qty: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as MutableTradeItemArray,
     countDown: 0,
     visited: false,
     special: -1, // -1 means no special event

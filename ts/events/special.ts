@@ -932,11 +932,11 @@ function executeScarabDestroyedEvent(state: GameState): EventResult {
 }
 
 function executeHullUpgradeEvent(state: GameState): EventResult {
-  if (state.scarabStatus !== 2) {
+  if (state.scarabStatus < 2) {
     return { success: false, message: 'You must defeat the Scarab first to get a hull upgrade.' };
   }
   
-  if (state.scarabStatus === 3) {
+  if (state.scarabStatus >= 3) {
     return { success: false, message: 'You have already received the hull upgrade.' };
   }
   

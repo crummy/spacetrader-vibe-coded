@@ -4,6 +4,7 @@
 import type { State } from '../../types.ts';
 import { getTotalCargoBays, getFilledCargoBays } from '../../economy/trading.ts';
 import { getShipType } from '../../data/shipTypes.ts';
+import { getSolarSystemName } from '../../data/systems.ts';
 
 /**
  * Reactor Quest Mechanics:
@@ -145,7 +146,7 @@ function escapeWithPod(state: State): State {
  */
 export function isReactorQuestAvailable(state: State): boolean {
   // Available at Nix system when not already started/completed
-  return state.currentSystem.name === 'Nix' &&
+  return getSolarSystemName(state.currentSystem) === 'Nix' &&
          state.reactorStatus === 0;
 }
 
@@ -154,7 +155,7 @@ export function isReactorQuestAvailable(state: State): boolean {
  */
 export function isReactorDeliveryAvailable(state: State): boolean {
   // Available at Utopia when reactor is being carried
-  return state.currentSystem.name === 'Utopia' &&
+  return getSolarSystemName(state.currentSystem) === 'Utopia' &&
          state.reactorStatus > 0 &&
          state.reactorStatus < 21;
 }

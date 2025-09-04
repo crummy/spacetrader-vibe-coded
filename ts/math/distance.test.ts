@@ -18,7 +18,9 @@ function createTestSystem(x: number, y: number): SolarSystem {
     specialResources: 0,
     status: 0,
     visited: false,
-    qty: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    qty: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    countDown: 0,
+    special: -1
   };
 }
 

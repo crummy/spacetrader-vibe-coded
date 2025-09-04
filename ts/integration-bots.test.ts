@@ -130,7 +130,7 @@ test('Integration Bots System', async (t) => {
         console.log(`✅ Advanced integration bot: Travel result - ${warpResult.message}`);
         
         // Handle potential encounter
-        if (engine.state.currentMode === GameMode.InCombat) {
+        if ((engine.state.currentMode as GameMode) === GameMode.InCombat) {
           console.log(`Encounter Type: ${engine.state.encounterType}`);
           
           // Try to flee or ignore
@@ -286,7 +286,7 @@ test('Integration Bots System', async (t) => {
           if (warpResult.success) successfulActions++;
           
           // Handle any encounters
-          if (engine.state.currentMode === GameMode.InCombat) {
+          if ((engine.state.currentMode as GameMode) === GameMode.InCombat) {
             encountersHandled++;
             
             // Try to flee from combat

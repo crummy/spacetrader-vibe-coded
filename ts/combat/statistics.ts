@@ -206,7 +206,7 @@ export function shouldAwardStandardReputation(encounterType: number): boolean {
     EncounterType.CAPTAINAHABENCOUNTER,
     EncounterType.CAPTAINCONRADENCOUNTER, 
     EncounterType.CAPTAINHUIEENCOUNTER
-  ];
+  ] as number[];
   
   return !famousEncounters.includes(encounterType);
 }

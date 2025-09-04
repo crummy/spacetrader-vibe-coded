@@ -397,8 +397,8 @@ describe('Combat System Engine', () => {
       const state = createInitialState();
       state.encounterType = EncounterType.PIRATEATTACK;
       
-      assert.equal(canPerformAction(state, 'invalidAction'), false);
-      assert.equal(canPerformAction(state, ''), false);
+      assert.equal(canPerformAction(state, 'invalidAction' as any), false);
+      assert.equal(canPerformAction(state, '' as any), false);
     });
   });
 });

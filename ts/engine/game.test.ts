@@ -143,7 +143,7 @@ describe('Game Engine Integration', () => {
       assert.equal(result.success, true);
       
       // With the new multi-encounter system, warp might not arrive immediately if there's an encounter
-      if (engine.state.currentMode === GameMode.InCombat) {
+      if (engine.state.currentMode as GameMode === GameMode.InCombat) {
         // Encounter during travel - should still be traveling to target
         assert.equal(engine.state.warpSystem, targetSystem);
         assert.notEqual(engine.state.currentSystem, targetSystem); // Still traveling

@@ -67,7 +67,7 @@ function createTradeParameterPrompt(action: AvailableAction, state: GameState): 
   const allPrices = getAllSystemPrices(currentSystem, state.commanderTrader, state.policeRecordScore);
   
   // Build item list
-  const itemOptions = [];
+  const itemOptions: Array<{index: number, name: string, price: number, maxQuantity?: number, max?: number, description?: string}> = [];
   if (action.type === 'buy_cargo') {
     for (let i = 0; i < tradeItemNames.length; i++) {
       const buyPrice = allPrices[i].buyPrice;
@@ -149,7 +149,7 @@ function createWarpParameterPrompt(action: AvailableAction, state: GameState): A
   const currentSystem = state.solarSystem[state.currentSystem];
   
   // Create system list with distances
-  const systemOptions = [];
+  const systemOptions: Array<{index: number, name: string, distance: number, canAfford: boolean}> = [];
   for (const systemIndex of possibleSystems) {
     const targetSystem = state.solarSystem[systemIndex];
     const distance = calculateDistance(currentSystem, targetSystem);

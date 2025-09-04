@@ -357,6 +357,9 @@ export interface State {
   identifyStartup: boolean;
   rectangularButtonsOn: boolean;
   
+  // Game status
+  gameStatus?: 'ended' | 'active';
+  
   // Current game mode (our addition for managing UI state)
   currentMode: GameMode;
 }

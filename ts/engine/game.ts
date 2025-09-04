@@ -835,7 +835,7 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
     let message = result.message;
     
     // If encounter ended and we're still traveling, automatically continue
-    if (state.currentMode === GameMode.InSpace && state.warpSystem !== state.currentSystem) {
+    if ((state.currentMode as GameMode) === GameMode.InSpace && state.warpSystem !== state.currentSystem) {
       const travelResult = automaticTravelContinuation(state);
       
       if (travelResult.hasEncounter) {
@@ -1289,7 +1289,7 @@ function determinePoliceEncounterType(state: GameState): number {
 
 function determineTraderEncounterType(state: GameState): number {
   // Start with ignore (default)
-  let encounterType = EncounterType.TRADERIGNORE; // 20
+  let encounterType: number = EncounterType.TRADERIGNORE; // 20
   
   const CRIMINALSCORE = -10;
   const ELITESCORE = 1500;
@@ -1529,7 +1529,7 @@ function getPoliceRecordString(score: number): string {
 async function executeBuyEquipmentAction(state: GameState, parameters: any): Promise<ActionResult> {
   // This is a menu action - return the available equipment for UI to display
   const currentSystem = state.solarSystem[state.currentSystem];
-  const availableEquipment = getAvailableEquipment(state, currentSystem);
+  const availableEquipment = getAvailableEquipment(state);
   
   return {
     success: true,

@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { createGameEngine, checkRandomEncountersOnTravel } from '../engine/game.ts';
+import { Difficulty } from '../types.ts';
 
 test('Encounter System Integration', async (t) => {
 
@@ -210,7 +211,7 @@ test('Encounter System Integration', async (t) => {
     const difficulties = [0, 1, 2, 3, 4]; // Beginner to Impossible
     
     for (const difficulty of difficulties) {
-      engine.state.difficulty = difficulty;
+      engine.state.difficulty = difficulty as Difficulty;
       
       let encounters = 0;
       for (let i = 0; i < 100; i++) {

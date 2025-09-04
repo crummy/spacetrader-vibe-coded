@@ -3,7 +3,7 @@
 
 import { test, describe } from 'node:test';
 import { strict as assert } from 'node:assert';
-import type { GameState, SolarSystem } from '../types.ts';
+import type { GameState, SolarSystem, MutableTradeItemArray } from '../types.ts';
 import { createInitialState } from '../state.ts';
 import { 
   calculateDistance, getFuelTanks, getCurrentFuel, calculateWarpCost,
@@ -16,9 +16,9 @@ describe('Warp System', () => {
   describe('Distance Calculations', () => {
     test('should calculate distance between two systems correctly', () => {
       const systemA: SolarSystem = { x: 0, y: 0, nameIndex: 0, size: 0, techLevel: 0, 
-        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) };
+        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) as MutableTradeItemArray, countDown: 0, special: -1 };
       const systemB: SolarSystem = { x: 3, y: 4, nameIndex: 1, size: 0, techLevel: 0,
-        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) };
+        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) as MutableTradeItemArray, countDown: 0, special: -1 };
       
       // 3-4-5 triangle: sqrt(3^2 + 4^2) = sqrt(9 + 16) = sqrt(25) = 5
       assert.equal(calculateDistance(systemA, systemB), 5);
@@ -26,16 +26,16 @@ describe('Warp System', () => {
 
     test('should handle same system distance (zero)', () => {
       const system: SolarSystem = { x: 10, y: 20, nameIndex: 0, size: 0, techLevel: 0,
-        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) };
+        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) as MutableTradeItemArray, countDown: 0, special: -1 };
       
       assert.equal(calculateDistance(system, system), 0);
     });
 
     test('should calculate distance for negative coordinates', () => {
       const systemA: SolarSystem = { x: -3, y: -4, nameIndex: 0, size: 0, techLevel: 0,
-        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) };
+        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) as MutableTradeItemArray, countDown: 0, special: -1 };
       const systemB: SolarSystem = { x: 0, y: 0, nameIndex: 1, size: 0, techLevel: 0,
-        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) };
+        politics: 0, specialResources: 0, status: 0, visited: false, qty: new Array(10).fill(0) as MutableTradeItemArray, countDown: 0, special: -1 };
       
       assert.equal(calculateDistance(systemA, systemB), 5);
     });
@@ -144,7 +144,7 @@ describe('Warp System', () => {
         fighter: 3,
         trader: 3,
         engineer: 3,
-        currentSystem: 0
+        curSystem: 0
       };
       
       const cost = calculateWarpCost(state, 0, 1, false);

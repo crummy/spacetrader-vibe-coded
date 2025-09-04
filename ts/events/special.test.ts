@@ -7,7 +7,7 @@ import type { GameState } from '../types.ts';
 import { createInitialState } from '../state.ts';
 import { 
   // Special Event Constants and Types
-  SpecialEventType,
+  SpecialEventType, type SpecialEventId,
   
   // Event Management
   createSpecialEvent, hasSpecialEvent, removeSpecialEvent,
@@ -289,7 +289,7 @@ describe('Special Events System', () => {
       
       // Add many news events
       for (let i = 0; i < 10; i++) {
-        addNewsEvent(state, i);
+        addNewsEvent(state, i as SpecialEventId);
       }
       
       const newsEvents = getNewsEvents(state);
@@ -393,9 +393,9 @@ describe('Special Events System', () => {
     });
 
     test('should handle invalid event IDs', () => {
-      assert.equal(getEventName(-1), 'Unknown Event');
-      assert.equal(getEventDescription(999), 'No description available');
-      assert.equal(getEventCost(-1), 0);
+      assert.equal(getEventName(-1 as SpecialEventId), 'Unknown Event');
+      assert.equal(getEventDescription(999 as SpecialEventId), 'No description available');
+      assert.equal(getEventCost(-1 as SpecialEventId), 0);
     });
   });
 
@@ -452,7 +452,7 @@ describe('Special Events System', () => {
     test('should handle execution of non-existent events', () => {
       const state = createInitialState();
       
-      const result = executeSpecialEvent(state, 999);
+      const result = executeSpecialEvent(state, 999 as SpecialEventId);
       
       assert.equal(result.success, false);
       assert.ok(result.message.includes('Unknown'));
