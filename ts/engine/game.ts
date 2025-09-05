@@ -19,6 +19,7 @@ import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, ge
 import { purchaseShip, getShipPurchaseInfo } from '../economy/ship-trading.ts';
 import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
 import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, getMercenaryName } from '../data/crew.ts';
+import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 
 // Action System Types
 export type GameAction = {
@@ -156,6 +157,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'fire_crew':
         return await executeFireCrewAction(state, action.parameters);
+      
+      case 'system_scanner':
+        return await executeSystemScannerAction(state, action.parameters);
       
       case 'combat_continue':
         return await executeCombatContinueAction(state);
@@ -1026,6 +1030,14 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     available: true
   });
 
+  // System scanner - view information about systems
+  actions.push({
+    type: 'system_scanner',
+    name: 'System Scanner', 
+    description: 'View information about nearby systems and trade opportunities',
+    available: true
+  });
+
   // Crew management
   const mercenaryIndex = getMercenaryForHire(state);
   const availableQuarters = getAvailableCrewQuarters(state);
@@ -1755,6 +1767,87 @@ async function executeFireCrewAction(state: GameState, parameters: any): Promise
     stateChanged: true,
     newState: state
   };
+}
+
+/**
+ * Execute system scanner action - provides information about nearby systems
+ */
+async function executeSystemScannerAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { scanType = 'nearby' } = parameters;
+  
+  try {
+    let scanResults: string[] = [];
+    let title = '';
+    
+    switch (scanType) {
+      case 'nearby':
+        title = '🔍 NEARBY SYSTEMS SCAN';
+        const nearbyInfo = getNearbySystemsInfo(state);
+        scanResults.push(`Found ${nearbyInfo.length} systems within fuel range:`);
+        nearbyInfo.forEach(info => {
+          scanResults.push(`• ${formatSystemInfo(info)}`);
+          if (info.specialResource) {
+            scanResults.push(`  Special: ${info.specialResource}`);
+          }
+        });
+        break;
+        
+      case 'galactic':
+        title = '🌌 GALACTIC CHART';
+        const galacticInfo = getGalacticChartInfo(state);
+        scanResults.push(`Galaxy contains ${galacticInfo.length} systems:`);
+        galacticInfo.slice(0, 15).forEach(info => {
+          const status = (info.level !== 'unknown' && info.visited) ? '✅' : (info.level === 'detailed' ? '🔍' : '❓');
+          scanResults.push(`${status} ${formatSystemInfo(info)}`);
+        });
+        if (galacticInfo.length > 15) {
+          scanResults.push(`... and ${galacticInfo.length - 15} more systems`);
+        }
+        break;
+        
+      case 'trade':
+        title = '💰 TRADE OPPORTUNITIES';
+        const { tradeItem = 0 } = parameters; // Default to Water
+        const bestBuy = getBestPriceSystemsForItem(state, tradeItem, true);
+        const bestSell = getBestPriceSystemsForItem(state, tradeItem, false);
+        
+        scanResults.push(`Best places to BUY:`);
+        bestBuy.slice(0, 3).forEach(info => {
+          const priceInfo = info.averagePrices[tradeItem];
+          scanResults.push(`• ${info.name} (${info.distance}ly): ${priceInfo.buyPrice} credits`);
+        });
+        
+        scanResults.push(`\nBest places to SELL:`);
+        bestSell.slice(0, 3).forEach(info => {
+          const priceInfo = info.averagePrices[tradeItem];
+          scanResults.push(`• ${info.name} (${info.distance}ly): ${priceInfo.sellPrice} credits`);
+        });
+        break;
+        
+      default:
+        return {
+          success: false,
+          message: 'Invalid scan type. Available: nearby, galactic, trade',
+          stateChanged: false
+        };
+    }
+    
+    const message = `${title}\n${scanResults.join('\n')}`;
+    
+    return {
+      success: true,
+      message,
+      stateChanged: false,
+      data: { scanType, results: scanResults }
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: `Scanner error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      stateChanged: false
+    };
+  }
 }
 
 /**

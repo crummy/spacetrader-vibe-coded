@@ -195,3 +195,38 @@ test('fire crew action appears when crew exists', async () => {
   assert(fireAction, 'Fire crew action should be available when crew exists');
   assert(fireAction.available, 'Fire crew action should be available');
 });
+
+test('fire crew UI integration - parameter prompts', async () => {
+  const { getActionParameterPrompts } = await import('./ui/actions.ts');
+  
+  const state = createInitialState();
+  state.currentMode = GameMode.OnPlanet;
+  state.ship.type = 5; // Beetle with 3 crew quarters
+  state.ship.crew[1] = 5; // Hire a crew member
+  
+  const fireAction = {
+    type: 'fire_crew' as const,
+    name: 'Fire Crew',
+    description: 'Dismiss a crew member', 
+    available: true
+  };
+  
+  const prompt = getActionParameterPrompts(fireAction, state);
+  
+  assert(prompt, 'Should have parameter prompt for fire_crew');
+  assert(prompt.prompts.length === 1, 'Should have one prompt');
+  assert(prompt.prompts[0].question.includes('Chi\'Ti'), 'Should show crew member name');
+  
+  // Test valid input
+  const validResult = prompt.prompts[0].validation('1');
+  assert(validResult.valid, 'Should accept valid crew choice');
+  assert(validResult.value === 1, 'Should return correct crew slot');
+  
+  // Test invalid input
+  const invalidResult = prompt.prompts[0].validation('99');
+  assert(!invalidResult.valid, 'Should reject invalid crew choice');
+  
+  // Test parameter building
+  const params = prompt.buildParameters([1]);
+  assert(params.crewSlot === 1, 'Should build correct parameters');
+});

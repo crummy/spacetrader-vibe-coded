@@ -11,7 +11,10 @@
  * 5. Repeat
  * 
  * Combat Strategy:
- * - If encounters combat during travel, attack until opponent is destroyed
+ * 1. If enemy is attacking and we have greater health, attack
+ * 2. If submit is an option and our hold contains no narcotics or firearms, submit
+ * 3. If opponent is a trader, trade
+ * 4. Otherwise, flee
  */
 
 import { createGameEngine } from './engine/game.ts';
@@ -436,7 +439,7 @@ export class IntelligentTraderBot {
         console.log(`⚔️ Combat round ${combatRounds} - Player: ${playerHull}HP | ${encounterTypeName} (${opponentShipType}): ${opponentHull}HP`);
       }
 
-      // Determine combat strategy based on encounter type
+      // Determine combat strategy with new smart logic
       let action: string;
       let actionDescription: string;
       
@@ -445,19 +448,57 @@ export class IntelligentTraderBot {
       const isPolice = encounterType >= 0 && encounterType <= 9;
       const isTrader = encounterType >= 20 && encounterType <= 29;
       
-      if (isAttacking) {
+      // Check if we have contraband (narcotics or firearms)
+      const hasNarcotics = this.engine.state.ship.cargo[8] > 0; // NARCOTICS = 8
+      const hasFirearms = this.engine.state.ship.cargo[5] > 0; // FIREARMS = 5
+      const hasContraband = hasNarcotics || hasFirearms;
+      
+      // Get available actions to check what's possible
+      const availableActions = this.engine.getAvailableActions();
+      const canSubmit = availableActions.some((a: any) => a.type === 'combat_submit' && a.available);
+      const canTrade = availableActions.some((a: any) => a.type === 'combat_trade' && a.available);
+      const canFlee = availableActions.some((a: any) => a.type === 'combat_flee' && a.available);
+      const canAttack = availableActions.some((a: any) => a.type === 'combat_attack' && a.available);
+      const canIgnore = availableActions.some((a: any) => a.type === 'combat_ignore' && a.available);
+      
+      if (this.verbose) {
+        console.log(`📋 Combat analysis: attacking=${isAttacking}, healthAdvantage=${playerHull > opponentHull}, contraband=${hasContraband}`);
+        console.log(`📋 Available actions: submit=${canSubmit}, trade=${canTrade}, flee=${canFlee}, attack=${canAttack}, ignore=${canIgnore}`);
+      }
+      
+      // New strategic combat logic:
+      // 1. If enemy is attacking and we have greater health, attack
+      if (isAttacking && playerHull > opponentHull && canAttack) {
         action = 'combat_attack';
-        actionDescription = 'attacking back';
-      } else if (isPoliceInspector) {
+        actionDescription = 'attacking (health advantage)';
+      }
+      // 2. If submit is an option and our hold contains no narcotics or firearms, submit
+      else if (canSubmit && !hasContraband) {
         action = 'combat_submit';
-        actionDescription = 'submitting to police inspector';
-      } else if (isPolice || isTrader) {
-        // For police fleeing/ignoring and traders, just ignore them
-        action = 'combat_ignore';
-        actionDescription = isPolice ? 'ignoring police' : 'ignoring trader';
-      } else {
+        actionDescription = 'submitting (no contraband)';
+      }
+      // 3. If opponent is a trader, trade
+      else if (isTrader && canTrade) {
+        action = 'combat_trade';
+        actionDescription = 'trading with trader';
+      }
+      // 4. Otherwise, try to flee, or ignore, or attack as fallbacks
+      else if (canFlee) {
         action = 'combat_flee';
-        actionDescription = 'fleeing';
+        actionDescription = 'fleeing (default strategy)';
+      }
+      else if (canIgnore) {
+        action = 'combat_ignore';
+        actionDescription = 'ignoring (fallback)';
+      }
+      else if (canAttack) {
+        action = 'combat_attack';
+        actionDescription = 'attacking (last resort)';
+      }
+      else {
+        // This should rarely happen, but just in case
+        action = 'combat_flee';
+        actionDescription = 'attempting flee (desperate)';
       }
       
       if (this.verbose) {

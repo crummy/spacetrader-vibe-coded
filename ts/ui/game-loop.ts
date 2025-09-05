@@ -137,7 +137,7 @@ export class FunctionalGameLoop {
     console.log(result.message);
     
     // Show credit changes for economic actions
-    if (action.type === 'buy_cargo' || action.type === 'sell_cargo') {
+    if (action.type === 'buy_cargo' || action.type === 'sell_cargo' || action.type === 'hire_crew') {
       console.log(`Credits: ${creditsBefore} → ${creditsAfter}`);
     }
     

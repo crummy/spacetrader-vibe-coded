@@ -8,6 +8,7 @@ import { getCurrentShipStatus } from '../engine/game.ts';
 import { getSystemsWithinRange } from '../travel/galaxy.ts';
 import { getSolarSystemName } from '../data/systems.ts';
 import { calculateDistance, getCurrentFuel } from '../travel/warp.ts';
+import { getMercenaryName } from '../data/crew.ts';
 
 /**
  * Render available actions as menu text
@@ -43,6 +44,10 @@ export function getActionParameterPrompts(action: AvailableAction, state: GameSt
       return createWarpParameterPrompt(action, state);
     case 'buy_ship':
       return createShipPurchaseParameterPrompt(action, state);
+    case 'fire_crew':
+      return createFireCrewParameterPrompt(action, state);
+    case 'system_scanner':
+      return createSystemScannerParameterPrompt(action, state);
     default:
       return null; // No parameters needed
   }
@@ -251,6 +256,82 @@ Enter ship number (1-${availableShips.length}):`,
         transferCompactor: false,
         transferMorgan: false,
       };
+    }
+  };
+}
+
+function createFireCrewParameterPrompt(action: AvailableAction, state: GameState): ActionParameterPrompt {
+  // Get the current crew roster (skip commander at index 0)
+  const crewMembers: { slot: number, name: string, index: number }[] = [];
+  
+  for (let i = 1; i < state.ship.crew.length; i++) {
+    const crewIndex = state.ship.crew[i];
+    if (crewIndex >= 0) {
+      const name = getMercenaryName(crewIndex);
+      crewMembers.push({ slot: i, name, index: crewIndex });
+    }
+  }
+  
+  return {
+    prompts: [
+      {
+        question: `Which crew member would you like to fire?\n${
+          crewMembers.map((crew, idx) => `${idx + 1}. ${crew.name} (slot ${crew.slot})`).join('\n')
+        }\nEnter your choice (1-${crewMembers.length}):`,
+        validation: (input: string) => {
+          const choice = parseInt(input, 10);
+          if (isNaN(choice) || choice < 1 || choice > crewMembers.length) {
+            return { 
+              valid: false, 
+              errorMessage: `Please enter a number between 1 and ${crewMembers.length}` 
+            };
+          }
+          
+          const selectedCrew = crewMembers[choice - 1];
+          return { 
+            valid: true, 
+            value: selectedCrew.slot // Return the crew slot, not the array index
+          };
+        }
+      }
+    ],
+    buildParameters: (responses: any[]) => {
+      return { crewSlot: responses[0] };
+    }
+  };
+}
+
+function createSystemScannerParameterPrompt(action: AvailableAction, state: GameState): ActionParameterPrompt {
+  const scanOptions = [
+    { type: 'nearby', name: 'Nearby Systems', description: 'Systems within fuel range with detailed info' },
+    { type: 'galactic', name: 'Galactic Chart', description: 'Overview of all known systems' },
+    { type: 'trade', name: 'Trade Analysis', description: 'Find best trade opportunities' }
+  ];
+  
+  return {
+    prompts: [
+      {
+        question: `System Scanner Options:\n${
+          scanOptions.map((option, idx) => `${idx + 1}. ${option.name} - ${option.description}`).join('\n')
+        }\nEnter your choice (1-${scanOptions.length}):`,
+        validation: (input: string) => {
+          const choice = parseInt(input, 10);
+          if (isNaN(choice) || choice < 1 || choice > scanOptions.length) {
+            return { 
+              valid: false, 
+              errorMessage: `Please enter a number between 1 and ${scanOptions.length}` 
+            };
+          }
+          
+          return { 
+            valid: true, 
+            value: scanOptions[choice - 1].type
+          };
+        }
+      }
+    ],
+    buildParameters: (responses: any[]) => {
+      return { scanType: responses[0] };
     }
   };
 }
