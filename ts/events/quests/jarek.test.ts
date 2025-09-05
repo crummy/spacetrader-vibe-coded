@@ -16,7 +16,7 @@ describe('Ambassador Jarek Quest', () => {
   test('isJarekPickupAvailable - available when quest not started and crew quarters available', () => {
     const state = createInitialState();
     state.jarekStatus = 0;
-    // Default ship has crew quarters available
+    state.ship.type = 5; // Beetle with 3 crew quarters (has available quarters)
     
     const result = isJarekPickupAvailable(state);
     assert.equal(result, true);
@@ -43,6 +43,7 @@ describe('Ambassador Jarek Quest', () => {
   test('pickupJarek - successfully picks up Jarek', () => {
     const state = createInitialState();
     state.jarekStatus = 0;
+    state.ship.type = 5; // Beetle with 3 crew quarters
     
     const result = pickupJarek(state);
     
@@ -192,6 +193,7 @@ describe('Ambassador Jarek Quest', () => {
 
   test('getJarekStatus - returns correct status for each quest stage', () => {
     const state = createInitialState();
+    state.ship.type = 5; // Beetle with 3 crew quarters
     
     // Not started but available
     state.jarekStatus = 0;

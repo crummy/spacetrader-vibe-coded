@@ -39,6 +39,7 @@ import type {
 } from './types.ts';
 
 import { generateRandomSolarSystems } from './data/systems.ts';
+import { createCommander, createRandomCrewMember } from './data/crew.ts';
 import { getShipType } from './data/shipTypes.ts';
 import { getTradeItem } from './data/tradeItems.ts';
 import { getPoliticalSystem } from './data/politics.ts';
@@ -69,6 +70,29 @@ export function createEmptyCrewMember(): CrewMember {
     engineer: 0,
     curSystem: 0,
   };
+}
+
+/**
+ * Initialize all mercenaries with commander at index 0 and random mercenaries for the rest
+ */
+function initializeMercenaries(): CrewMember[] {
+  const mercenaries: CrewMember[] = [];
+  
+  // Index 0 is always the commander
+  mercenaries[0] = createCommander();
+  
+  // Initialize regular mercenaries (indices 1 to MAXCREWMEMBER-1)
+  for (let i = 1; i < MAXCREWMEMBER; i++) {
+    // Place each mercenary in a random system
+    const randomSystem = Math.floor(Math.random() * MAXSOLARSYSTEM);
+    mercenaries[i] = createRandomCrewMember(i, randomSystem);
+  }
+  
+  // Index MAXCREWMEMBER (31) is for special mercenaries like Jarek/Wild
+  // Initialize it as empty for now
+  mercenaries[MAXCREWMEMBER] = createEmptyCrewMember();
+  
+  return mercenaries;
 }
 
 // Create an empty solar system
@@ -126,6 +150,9 @@ export function createInitialState(): State {
   const shipType = getShipType(1); // Gnat
   startingShip.fuel = shipType.fuelTanks; // Start with full fuel (matches Palm OS original)
   startingShip.hull = shipType.hullStrength; // Start with full hull
+  
+  // Player starts with commander as crew member
+  startingShip.crew[0] = 0; // Commander is always mercenary index 0
   
   // Player starts with a basic weapon (Pulse Laser - index 0) per Palm OS Traveler.c line 1677
   startingShip.weapon[0] = 0; // Pulse Laser
@@ -198,7 +225,7 @@ export function createInitialState(): State {
     // Game objects
     ship: startingShip,
     opponent: createEmptyShip(),
-    mercenary: Array.from({ length: MAXCREWMEMBER + 1 }, () => createEmptyCrewMember()),
+    mercenary: initializeMercenaries(),
     solarSystem: galaxySystems,
     
     // Equipment and features

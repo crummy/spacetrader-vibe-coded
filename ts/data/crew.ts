@@ -1,8 +1,9 @@
 // Crew System Implementation
 // Port of crew/mercenary system from Palm OS Global.c and Traveler.c
 
-import type { CrewMember } from '../types.ts';
+import type { CrewMember, GameState } from '../types.ts';
 import { MAXCREWMEMBER, MAXSKILL } from '../types.ts';
+import { getShipType } from './shipTypes.ts';
 
 // Mercenary names ported exactly from Palm OS source:
 // char* MercenaryName[MAXCREWMEMBER] = { ... }
@@ -207,4 +208,53 @@ export function getTotalSkillPoints(crewMember: CrewMember): number {
  */
 export function calculateHiringPrice(crewMember: CrewMember): number {
   return getTotalSkillPoints(crewMember) * 3;
+}
+
+/**
+ * Get mercenary available for hire in the current system
+ * Based on Palm OS GetForHire() function
+ * 
+ * @param state Current game state
+ * @returns Index of mercenary for hire, or -1 if none available
+ */
+export function getMercenaryForHire(state: GameState): number {
+  const currentSystem = state.currentSystem;
+  
+  for (let i = 1; i < MAXCREWMEMBER; i++) {
+    // Skip if this mercenary is already hired
+    if (state.ship.crew.includes(i)) {
+      continue;
+    }
+    
+    // Check if mercenary is in current system
+    if (state.mercenary[i].curSystem === currentSystem) {
+      return i;
+    }
+  }
+  
+  return -1; // No mercenary available
+}
+
+/**
+ * Get available crew quarters on current ship
+ * Based on Palm OS AvailableQuarters() function
+ * 
+ * @param state Current game state
+ * @returns Number of available crew quarters
+ */
+export function getAvailableCrewQuarters(state: GameState): number {
+  const shipType = getShipType(state.ship.type);
+  const maxQuarters = shipType.crewQuarters;
+  
+  // Count used quarters - crew members have index >= 0, empty slots are -1
+  const usedQuarters = state.ship.crew.filter(crewIndex => crewIndex >= 0).length;
+  
+  // Account for passengers (Jarek and Wild take quarters when aboard)
+  let passengerQuarters = 0;
+  if (state.jarekStatus === 1) passengerQuarters++; // Jarek aboard
+  if (state.wildStatus === 1) passengerQuarters++; // Wild aboard
+  
+
+  
+  return maxQuarters - usedQuarters - passengerQuarters;
 }

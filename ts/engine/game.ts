@@ -18,6 +18,7 @@ import { EncounterType } from '../combat/engine.ts';
 import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, getAvailableEquipment, getInstialledEquipmentSellPrices } from '../economy/equipment-trading.ts';
 import { purchaseShip, getShipPurchaseInfo } from '../economy/ship-trading.ts';
 import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
+import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, getMercenaryName } from '../data/crew.ts';
 
 // Action System Types
 export type GameAction = {
@@ -149,6 +150,12 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'buy_ship':
         return await executeBuyShipAction(state, action.parameters);
+      
+      case 'hire_crew':
+        return await executeHireCrewAction(state, action.parameters);
+      
+      case 'fire_crew':
+        return await executeFireCrewAction(state, action.parameters);
       
       case 'combat_continue':
         return await executeCombatContinueAction(state);
@@ -1018,6 +1025,36 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     description: 'Set a system to track on the galactic map',
     available: true
   });
+
+  // Crew management
+  const mercenaryIndex = getMercenaryForHire(state);
+  const availableQuarters = getAvailableCrewQuarters(state);
+  
+
+  
+  if (mercenaryIndex !== -1 && availableQuarters > 0) {
+    const mercenary = state.mercenary[mercenaryIndex];
+    const hiringCost = calculateHiringPrice(mercenary);
+    const mercenaryName = getMercenaryName(mercenaryIndex);
+    
+    actions.push({
+      type: 'hire_crew',
+      name: 'Hire Crew',
+      description: `Hire ${mercenaryName} for ${hiringCost} credits`,
+      available: state.credits >= hiringCost
+    });
+  }
+  
+  // Check if any crew can be fired (skip commander at index 0)
+  const canFireCrew = state.ship.crew.slice(1).some(crewIndex => crewIndex !== -1);
+  if (canFireCrew) {
+    actions.push({
+      type: 'fire_crew', 
+      name: 'Fire Crew',
+      description: 'Dismiss a crew member',
+      available: true
+    });
+  }
   
   return actions;
 }
@@ -1607,6 +1644,117 @@ async function executeBuyShipAction(state: GameState, parameters: any): Promise<
       data: { availableShips }
     };
   }
+}
+
+/**
+ * Execute hire crew action
+ */
+async function executeHireCrewAction(state: GameState, parameters: any): Promise<ActionResult> {
+  // Get mercenary available for hire in current system
+  const mercenaryIndex = getMercenaryForHire(state);
+  
+  if (mercenaryIndex === -1) {
+    return {
+      success: false,
+      message: 'No mercenaries available for hire in this system.',
+      stateChanged: false
+    };
+  }
+  
+  // Check if we have crew quarters available
+  const availableQuarters = getAvailableCrewQuarters(state);
+  if (availableQuarters <= 0) {
+    return {
+      success: false,
+      message: 'No crew quarters available. Need a larger ship or fire existing crew.',
+      stateChanged: false
+    };
+  }
+  
+  // Get mercenary details and hiring cost
+  const mercenary = state.mercenary[mercenaryIndex];
+  const hiringCost = calculateHiringPrice(mercenary);
+  const mercenaryName = getMercenaryName(mercenaryIndex);
+  
+  // Check if player can afford to hire
+  if (state.credits < hiringCost) {
+    return {
+      success: false,
+      message: `Cannot afford to hire ${mercenaryName}. Cost: ${hiringCost} credits, you have: ${state.credits} credits.`,
+      stateChanged: false
+    };
+  }
+  
+  // Find first free crew slot
+  let firstFreeSlot = -1;
+  for (let i = 1; i < state.ship.crew.length; i++) { // Start at 1 (skip commander)
+    if (state.ship.crew[i] === -1) {
+      firstFreeSlot = i;
+      break;
+    }
+  }
+  
+  if (firstFreeSlot === -1) {
+    return {
+      success: false,
+      message: 'No free crew slots available.',
+      stateChanged: false
+    };
+  }
+  
+  // Hire the mercenary
+  state.ship.crew[firstFreeSlot] = mercenaryIndex;
+  state.credits -= hiringCost;
+  
+  return {
+    success: true,
+    message: `Hired ${mercenaryName} for ${hiringCost} credits.`,
+    stateChanged: true,
+    newState: state
+  };
+}
+
+/**
+ * Execute fire crew action
+ */
+async function executeFireCrewAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { crewSlot } = parameters;
+  
+  if (typeof crewSlot !== 'number' || crewSlot < 1 || crewSlot >= state.ship.crew.length) {
+    return {
+      success: false,
+      message: 'Invalid crew slot specified.',
+      stateChanged: false
+    };
+  }
+  
+  const crewIndex = state.ship.crew[crewSlot];
+  if (crewIndex === -1) {
+    return {
+      success: false,
+      message: 'No crew member in that slot to fire.',
+      stateChanged: false
+    };
+  }
+  
+  const mercenaryName = getMercenaryName(crewIndex);
+  
+  // Fire the crew member (shift remaining crew up, based on Palm OS logic)
+  if (crewSlot === 1 && state.ship.crew[2] !== -1) {
+    // If firing slot 1 and slot 2 is occupied, move slot 2 to slot 1
+    state.ship.crew[1] = state.ship.crew[2];
+    state.ship.crew[2] = -1;
+  } else {
+    // Just clear the slot
+    state.ship.crew[crewSlot] = -1;
+  }
+  
+  return {
+    success: true,
+    message: `Fired ${mercenaryName}.`,
+    stateChanged: true,
+    newState: state
+  };
 }
 
 /**
