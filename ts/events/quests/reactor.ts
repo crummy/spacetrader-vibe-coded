@@ -5,6 +5,7 @@ import type { State } from '../../types.ts';
 import { getTotalCargoBays, getFilledCargoBays } from '../../economy/trading.ts';
 import { getShipType } from '../../data/shipTypes.ts';
 import { getSolarSystemName } from '../../data/systems.ts';
+import { createEmptyShip } from '../../state.ts';
 
 /**
  * Reactor Quest Mechanics:
@@ -130,13 +131,17 @@ export function completeReactorDelivery(state: State): State {
  * Escape with pod helper function (simplified)
  */
 function escapeWithPod(state: State): State {
+  // Reset to a basic Flea ship
+  const newShip = createEmptyShip();
+  newShip.type = 0; // Flea
+  newShip.hull = 1; // Barely survives the meltdown
+  newShip.fuel = getShipType(0).fuelTanks;
+  newShip.crew[0] = state.ship.crew[0]; // Keep commander
+  
   return {
     ...state,
-    ship: {
-      ...state.ship,
-      hull: 1, // Minimal hull
-      // Reset ship to basic state
-    },
+    ship: newShip,
+    escapePod: false, // Consume escape pod
     credits: Math.max(0, state.credits - 1000), // Escape pod cost
   };
 }

@@ -18,6 +18,7 @@ import { EncounterType } from '../combat/engine.ts';
 import { buyWeapon, sellWeapon, buyShield, sellShield, buyGadget, sellGadget, getAvailableEquipment, getInstialledEquipmentSellPrices } from '../economy/equipment-trading.ts';
 import { purchaseShip, getShipPurchaseInfo } from '../economy/ship-trading.ts';
 import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
+import { getLoan, payBackLoan, calculateMaxLoan } from '../economy/bank.ts';
 import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, getMercenaryName } from '../data/crew.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 
@@ -184,6 +185,22 @@ export async function executeAction(state: GameState, action: GameAction): Promi
           message: 'Available actions retrieved',
           stateChanged: false
         };
+      
+      // Banking actions
+      case 'get_loan':
+        return await executeGetLoan(state, action);
+      
+      case 'pay_back':
+        return await executePayBack(state, action);
+      
+      case 'buy_insurance':
+        return await executeBuyInsurance(state, action);
+      
+      case 'stop_insurance':
+        return await executeStopInsurance(state, action);
+      
+      case 'buy_escape_pod':
+        return await executeBuyEscapePod(state, action);
       
       default:
         return {
@@ -1068,6 +1085,63 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     });
   }
   
+  // Banking actions
+  const maxLoan = calculateMaxLoan(state);
+  const availableLoan = maxLoan - state.debt;
+  
+  if (availableLoan > 0) {
+    actions.push({
+      type: 'get_loan',
+      name: 'Get Loan',
+      description: `Borrow up to ${availableLoan} credits from the bank`,
+      available: true
+    });
+  }
+  
+  if (state.debt > 0) {
+    const maxPayment = Math.min(state.credits, state.debt);
+    actions.push({
+      type: 'pay_back',
+      name: 'Pay Back Loan',
+      description: `Pay back up to ${maxPayment} credits of your ${state.debt} credit debt`,
+      available: state.credits > 0
+    });
+  }
+  
+  // Insurance actions
+  if (!state.insurance) {
+    actions.push({
+      type: 'buy_insurance',
+      name: 'Buy Insurance',
+      description: 'Purchase ship insurance (daily premium will be charged during travel)',
+      available: true
+    });
+  } else {
+    actions.push({
+      type: 'stop_insurance',
+      name: 'Stop Insurance',
+      description: 'Cancel your current insurance policy',
+      available: true
+    });
+  }
+  
+  // Escape pod action
+  if (!state.escapePod) {
+    const currentSystem = state.solarSystem[state.currentSystem];
+    const shipType = getShipType(0); // Flea requirements
+    const canSellPod = currentSystem.techLevel >= shipType.minTechLevel;
+    const ESCAPE_POD_COST = 2000;
+    
+    if (canSellPod) {
+      actions.push({
+        type: 'buy_escape_pod',
+        name: 'Buy Escape Pod',
+        description: `Purchase an escape pod for ${ESCAPE_POD_COST} credits`,
+        available: state.credits >= ESCAPE_POD_COST
+      });
+    }
+  }
+  
   return actions;
 }
 
@@ -1875,4 +1949,156 @@ async function executeCombatContinueAction(state: GameState): Promise<ActionResu
       stateChanged: false
     };
   }
+}
+
+// Banking Action Implementations
+
+/**
+ * Execute get loan action
+ */
+async function executeGetLoan(state: GameState, action: ActionRequest): Promise<ActionResult> {
+  const amount = action.parameters?.amount || 1000;
+  
+  if (typeof amount !== 'number' || amount <= 0) {
+    return {
+      success: false,
+      message: 'Invalid loan amount',
+      stateChanged: false
+    };
+  }
+  
+  const loanResult = getLoan(state, amount);
+  
+  if (loanResult.success) {
+    return {
+      success: true,
+      message: `Loan approved! You received ${loanResult.amountReceived} credits.`,
+      stateChanged: true
+    };
+  } else {
+    return {
+      success: false,
+      message: loanResult.reason || 'Loan denied',
+      stateChanged: false
+    };
+  }
+}
+
+/**
+ * Execute pay back loan action
+ */
+async function executePayBack(state: GameState, action: ActionRequest): Promise<ActionResult> {
+  const amount = action.parameters?.amount || Math.min(state.credits, state.debt);
+  
+  if (typeof amount !== 'number' || amount <= 0) {
+    return {
+      success: false,
+      message: 'Invalid payment amount',
+      stateChanged: false
+    };
+  }
+  
+  const paymentResult = payBackLoan(state, amount);
+  
+  if (paymentResult.success) {
+    return {
+      success: true,
+      message: `Payment successful! You paid back ${paymentResult.amountPaid} credits.`,
+      stateChanged: true
+    };
+  } else {
+    return {
+      success: false,
+      message: paymentResult.reason || 'Payment failed',
+      stateChanged: false
+    };
+  }
+}
+
+/**
+ * Execute buy insurance action
+ */
+async function executeBuyInsurance(state: GameState, action: ActionRequest): Promise<ActionResult> {
+  if (state.insurance) {
+    return {
+      success: false,
+      message: 'You already have an active insurance policy',
+      stateChanged: false
+    };
+  }
+  
+  // No upfront cost for insurance in Space Trader - it's a daily premium
+  state.insurance = true;
+  state.noClaim = 0; // Reset no-claim bonus
+  
+  return {
+    success: true,
+    message: 'Insurance policy activated! Daily premiums will be deducted during travel.',
+    stateChanged: true
+  };
+}
+
+/**
+ * Execute stop insurance action
+ */
+async function executeStopInsurance(state: GameState, action: ActionRequest): Promise<ActionResult> {
+  if (!state.insurance) {
+    return {
+      success: false,
+      message: 'You do not have an active insurance policy',
+      stateChanged: false
+    };
+  }
+  
+  state.insurance = false;
+  state.noClaim = 0; // Reset no-claim bonus
+  
+  return {
+    success: true,
+    message: 'Insurance policy cancelled.',
+    stateChanged: true
+  };
+}
+
+/**
+ * Execute buy escape pod action - From Palm OS Shipyard.c
+ */
+async function executeBuyEscapePod(state: GameState, action: ActionRequest): Promise<ActionResult> {
+  const ESCAPE_POD_COST = 2000; // From Palm OS: 2000 credits
+  
+  if (state.escapePod) {
+    return {
+      success: false,
+      message: 'You already have an escape pod installed',
+      stateChanged: false
+    };
+  }
+  
+  // Check minimum tech level requirement (same as cheapest ship)
+  const currentSystem = state.solarSystem[state.currentSystem];
+  const shipType = getShipType(0); // Flea is ship type 0
+  if (currentSystem.techLevel < shipType.minTechLevel) {
+    return {
+      success: false,
+      message: 'This system does not have the technology to sell escape pods',
+      stateChanged: false
+    };
+  }
+  
+  if (state.credits < ESCAPE_POD_COST) {
+    return {
+      success: false,
+      message: `You need ${ESCAPE_POD_COST} credits for an escape pod`,
+      stateChanged: false
+    };
+  }
+  
+  state.credits -= ESCAPE_POD_COST;
+  state.escapePod = true;
+  
+  return {
+    success: true,
+    message: `Escape pod installed for ${ESCAPE_POD_COST} credits`,
+    stateChanged: true
+  };
 }

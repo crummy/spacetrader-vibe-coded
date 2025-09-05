@@ -23,6 +23,7 @@ export interface HighScoreEntry {
   worth: number;
   difficulty: number;
   finalScore?: number;
+  score?: number; // Legacy field, same as finalScore
 }
 
 /**
@@ -67,19 +68,33 @@ export function processRetirement(state: State): EndGameResult {
 /**
  * Process game end and calculate final score
  */
-function processGameEnd(state: State, endStatus: number, message: string): EndGameResult {
+export function processGameEnd(state: State, endStatus?: number, message?: string): EndGameResult {
+  const actualEndStatus = endStatus ?? (state.moonBought ? MOON : (state.ship.hull <= 0 ? KILLED : RETIRED));
+  const actualMessage = message ?? getEndStatusMessage(actualEndStatus);
   const finalWorth = calculateNetWorth(state);
-  const finalScore = calculateFinalScore(finalWorth, state.days, endStatus, state.difficulty);
+  const finalScore = calculateFinalScore(finalWorth, state.days, actualEndStatus, state.difficulty);
   
   return {
     isGameOver: true,
-    endStatus,
+    endStatus: actualEndStatus,
     finalScore,
     finalWorth,
     days: state.days,
-    message,
+    message: actualMessage,
     highScoreQualified: isHighScoreQualified(finalScore)
   };
+}
+
+/**
+ * Get default end status message
+ */
+function getEndStatusMessage(endStatus: number): string {
+  switch (endStatus) {
+    case KILLED: return 'Your ship has been destroyed! Game Over.';
+    case RETIRED: return 'You have chosen to retire from space trading.';
+    case MOON: return 'You have purchased a moon and achieved ultimate success!';
+    default: return 'Game has ended.';
+  }
 }
 
 /**
@@ -151,7 +166,7 @@ export function isHighScoreQualified(score: number, highScores: HighScoreEntry[]
   }
   
   // Check if score beats lowest entry
-  const lowestScore = Math.min(...highScores.map(entry => entry.finalScore || 0));
+  const lowestScore = Math.min(...highScores.map(entry => entry.finalScore ?? entry.score ?? 0));
   return score > lowestScore;
 }
 

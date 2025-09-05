@@ -23,6 +23,7 @@ export interface WarpCost {
   mercenaryPay: number;
   insurance: number;
   interest: number;
+  fuel: number;
   total: number;
 }
 
@@ -139,12 +140,14 @@ export function calculateWarpCost(state: GameState, fromSystem: number, toSystem
   const mercenaryPay = calculateMercenaryPay(state);
   const insurance = calculateInsurance(state);
   const interest = calculateInterest(state.debt);
+  const fuel = isWormhole ? 0 : calculateDistance(state.solarSystem[fromSystem], state.solarSystem[toSystem]);
   
   return {
     wormholeTax,
     mercenaryPay,
     insurance,
     interest,
+    fuel,
     total: wormholeTax + mercenaryPay + insurance + interest
   };
 }

@@ -82,11 +82,12 @@ export function isCleanRecord(score: number): boolean {
 /**
  * Calculate bribe amount based on difficulty and police record
  * From Encounter.c: Bribe = GetRandom(250) + 250 + GetRandom(250) + 250 + 10 * (IMPOSSIBLE - Difficulty)
+ * Note: The formula means easier difficulty = more expensive bribes
  */
 export function calculateBribeAmount(difficulty: number): number {
   const baseAmount = Math.floor(Math.random() * 250) + 250;
   const bonusAmount = Math.floor(Math.random() * 250) + 250;
-  const difficultyBonus = 10 * (4 - difficulty); // IMPOSSIBLE (4) - current difficulty
+  const difficultyBonus = 10 * (4 - difficulty); // IMPOSSIBLE (4) - difficulty - easier pays more
   
   return baseAmount + bonusAmount + difficultyBonus;
 }
@@ -139,20 +140,20 @@ export function attemptBribery(state: State, bribeAmount: number): { success: bo
   
   const success = Math.random() < finalChance;
   
-  let newState = {
-    ...state,
-    credits: state.credits - bribeAmount
-  };
-
   if (success) {
+    // Successful bribery: deduct credits
+    const newState = {
+      ...state,
+      credits: state.credits - bribeAmount
+    };
     return {
       success: true,
       message: `Bribery successful! The police officer accepts ${bribeAmount} credits and looks the other way.`,
       state: newState
     };
   } else {
-    // Failed bribery makes record worse
-    newState = applyPoliceRecordPenalty(newState, INSPECTOR_BRIBE_PENALTY);
+    // Failed bribery: no credits deducted, but record worsens
+    const newState = applyPoliceRecordPenalty(state, INSPECTOR_BRIBE_PENALTY);
     return {
       success: false,
       message: `Bribery failed! The officer is offended and your police record suffers.`,
