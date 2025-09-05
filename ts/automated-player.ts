@@ -134,7 +134,6 @@ export class AutomatedPlayer {
       
       // Travel and exploration (medium)
       'warp_to_system': 3,
-      'launch_ship': 3,
       
       // Equipment and upgrades (medium)
       'buy_weapon': 2,

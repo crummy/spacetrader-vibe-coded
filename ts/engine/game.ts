@@ -119,9 +119,7 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       case 'read_news':
         return await executeReadNewsAction(state);
       
-      case 'launch_ship':
-        return await executeLaunchShipAction(state);
-      
+
       case 'dock_at_planet':
         return await executeDockAtPlanetAction(state);
       
@@ -417,12 +415,7 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
   }
   
   try {
-    // Auto-launch ship if we're on a planet
-    if (state.currentMode === GameMode.OnPlanet) {
-      state.currentMode = GameMode.InSpace;
-    }
-    
-    // Check if we can warp first (before setting warpSystem)
+    // Check if we can warp first (before any state changes)
     const validation = canWarpTo(state, targetSystem);
     if (!validation.canWarp) {
       return {
@@ -430,6 +423,11 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
         message: validation.reason || 'Warp failed',
         stateChanged: false
       };
+    }
+    
+    // Auto-launch ship if we're on a planet (only after validation passes)
+    if (state.currentMode === GameMode.OnPlanet) {
+      state.currentMode = GameMode.InSpace;
     }
     
     // Set warpSystem for encounter calculations but DON'T move yet
@@ -644,23 +642,7 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
   }
 }
 
-async function executeLaunchShipAction(state: GameState): Promise<ActionResult> {
-  if (state.currentMode !== GameMode.OnPlanet) {
-    return {
-      success: false,
-      message: 'Can only launch ship when docked at planet',
-      stateChanged: false
-    };
-  }
-  
-  state.currentMode = GameMode.InSpace;
-  
-  return {
-    success: true,
-    message: 'Ship launched into space',
-    stateChanged: true
-  };
-}
+
 
 async function executeDockAtPlanetAction(state: GameState): Promise<ActionResult> {
   if (state.currentMode !== GameMode.InSpace) {

@@ -29,8 +29,8 @@ test('Integration Bots System', async (t) => {
       // Test sequence of actions like integration bot would
       const actions = [
         { type: 'refuel_ship', parameters: {} },
-        { type: 'launch_ship', parameters: {} },
-        { type: 'dock_at_planet', parameters: {} }
+        { type: 'track_system', parameters: { systemIndex: 1 } },
+        { type: 'read_news', parameters: {} }
       ];
       
       for (const action of actions) {
@@ -113,11 +113,7 @@ test('Integration Bots System', async (t) => {
       if (reachableSystems.length > 0) {
         const targetSystem = reachableSystems[0];
         
-        // Launch ship
-        await engine.executeAction({ type: 'launch_ship', parameters: {} });
-        assert.equal(engine.state.currentMode, 0); // InSpace
-        
-        // Attempt warp
+        // Attempt warp (this will auto-launch from planet)
         const warpResult = await engine.executeAction({
           type: 'warp_to_system',
           parameters: { targetSystem }
@@ -271,12 +267,7 @@ test('Integration Bots System', async (t) => {
         const reachable = getSystemsWithinRange(engine.state, engine.state.ship.fuel);
         
         if (reachable.length > 0) {
-          // Launch ship
-          await engine.executeAction({ type: 'launch_ship', parameters: {} });
-          totalActions++;
-          successfulActions++; // Launch should always succeed
-          
-          // Try to warp
+          // Try to warp (auto-launches from planet)
           const targetSystem = reachable[Math.floor(Math.random() * Math.min(reachable.length, 5))];
           const warpResult = await engine.executeAction({
             type: 'warp_to_system',

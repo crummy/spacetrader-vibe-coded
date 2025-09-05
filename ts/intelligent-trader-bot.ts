@@ -296,21 +296,7 @@ export class IntelligentTraderBot {
    * Travel to a nearby system within fuel range
    */
   private async travelToNearbySystem(): Promise<void> {
-    // Launch into space first
-    if (this.engine.state.currentMode === GameMode.OnPlanet) {
-      const launchResult = await this.engine.executeAction({
-        type: 'launch_ship',
-        parameters: {}
-      });
-      this.session.totalActions++;
-
-      if (!launchResult.success) {
-        if (this.verbose) {
-          console.log(`❌ Failed to launch: ${launchResult.message}`);
-        }
-        return;
-      }
-    }
+    // Ships now auto-launch with warp_to_system, so no separate launch needed
 
     // Get available warp actions from the engine
     const availableActions = this.engine.getAvailableActions();
