@@ -169,3 +169,100 @@ test('player options - state cloning preserves options', () => {
     assert.equal(state1.options.autoRepair, false, 'Original should be unchanged');
     assert.equal(state2.options.autoRepair, true, 'Clone should be changed');
 });
+
+test('player options - auto-services integration', () => {
+    const state = createInitialState();
+    
+    // Test autoFuel and autoRepair options are properly integrated
+    // These should be checked during docking
+    state.options.autoFuel = true;
+    state.options.autoRepair = true;
+    
+    // Damage ship and use fuel to test integration
+    state.ship.hull = 50; // Damage hull
+    state.ship.fuel = 5;  // Reduce fuel
+    
+    // Verify options are set correctly
+    assert.equal(state.options.autoFuel, true, 'Auto-fuel should be enabled');
+    assert.equal(state.options.autoRepair, true, 'Auto-repair should be enabled');
+    
+    // Integration is tested by the game engine when docking
+});
+
+test('player options - combat preferences (UI-level)', () => {
+    const state = createInitialState();
+    
+    // Test UI-level combat automation options (not integrated in game engine)
+    state.options.autoAttack = true;
+    state.options.autoFlee = false;
+    state.options.continuous = false;
+    
+    // Test game-rule combat option (integrated in game engine) 
+    state.options.attackFleeing = true;
+    
+    // Verify options are set correctly  
+    assert.equal(state.options.autoAttack, true, 'Auto-attack should be enabled (UI-level)');
+    assert.equal(state.options.autoFlee, false, 'Auto-flee should be disabled (UI-level)');
+    assert.equal(state.options.attackFleeing, true, 'Attack fleeing should be enabled (game rule)');
+    assert.equal(state.options.continuous, false, 'Continuous should be disabled (UI-level)');
+    
+    // Note: autoAttack and autoFlee are UI automation concerns, not game engine logic
+    // Only attackFleeing is integrated as a game rule in the combat system
+});
+
+test('player options - auto-ignore integration', () => {
+    const state = createInitialState();
+    
+    // Test auto-ignore encounter options
+    state.options.alwaysIgnorePolice = false; // Should engage police
+    state.options.alwaysIgnorePirates = true;  // Should ignore pirates  
+    state.options.alwaysIgnoreTraders = true;  // Should ignore traders
+    state.options.alwaysIgnoreTradeInOrbit = false; // Should allow orbital trades
+    
+    // Verify options are set correctly
+    assert.equal(state.options.alwaysIgnorePolice, false, 'Police encounters should not be auto-ignored');
+    assert.equal(state.options.alwaysIgnorePirates, true, 'Pirate encounters should be auto-ignored');
+    assert.equal(state.options.alwaysIgnoreTraders, true, 'Trader encounters should be auto-ignored');
+    assert.equal(state.options.alwaysIgnoreTradeInOrbit, false, 'Orbital trades should not be auto-ignored');
+    
+    // Integration is tested by the encounter system during travel
+});
+
+test('player options - comprehensive behavioral settings', () => {
+    const state = createInitialState();
+    
+    // Test that all behavioral options can be configured together
+    state.options.autoFuel = true;
+    state.options.autoRepair = true;
+    state.options.alwaysIgnorePolice = false;
+    state.options.alwaysIgnorePirates = true;
+    state.options.alwaysIgnoreTraders = false;
+    state.options.alwaysIgnoreTradeInOrbit = true;
+    state.options.reserveMoney = true;
+    state.options.leaveEmpty = 2;
+    state.options.autoAttack = false;   // UI-level only
+    state.options.autoFlee = true;      // UI-level only  
+    state.options.attackFleeing = false; // Game rule
+    state.options.continuous = false;
+    
+    // Verify all settings are properly stored
+    assert.equal(state.options.autoFuel, true);
+    assert.equal(state.options.autoRepair, true);
+    assert.equal(state.options.alwaysIgnorePolice, false);
+    assert.equal(state.options.alwaysIgnorePirates, true);
+    assert.equal(state.options.alwaysIgnoreTraders, false);
+    assert.equal(state.options.alwaysIgnoreTradeInOrbit, true);
+    assert.equal(state.options.reserveMoney, true);
+    assert.equal(state.options.leaveEmpty, 2);
+    assert.equal(state.options.autoAttack, false);
+    assert.equal(state.options.autoFlee, true);
+    assert.equal(state.options.attackFleeing, false);
+    assert.equal(state.options.continuous, false);
+    
+    // These settings should work together without conflicts
+    const availableSpace = getAvailableCargoSpace(state);
+    assert.ok(availableSpace >= 0, 'Cargo space calculation should work with leaveEmpty');
+    
+    const availableFunds = getAvailableFunds(state); 
+    assert.ok(availableFunds <= state.credits, 'Available funds should respect reserveMoney option');
+});

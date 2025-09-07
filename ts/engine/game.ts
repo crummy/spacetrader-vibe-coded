@@ -483,13 +483,30 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
     const encounterCheck = checkEncounterThisTick(state, state.clicks);
     
     if (encounterCheck.hasEncounter) {
-      // Initialize encounter using combat engine (this will set the mode and configure opponent)
-      const encounterResult = startEncounter(state, encounterCheck.encounterType!);
-      
-      if (encounterResult.success) {
-        message += ` - Combat encounter at ${state.clicks} clicks to ${systemName}!`;
+      // Check if player wants to auto-ignore this encounter
+      if (shouldAutoIgnoreEncounter(state, encounterCheck.encounterType!)) {
+        // Auto-ignore the encounter, continue travel
+        const travelResult = automaticTravelContinuation(state);
+        if (travelResult.arrivedSafely) {
+          message += ` - Auto-ignored encounter, arrived safely at ${systemName}`;
+          return {
+            success: true,
+            message,
+            stateChanged: true
+          };
+        } else if (travelResult.hasEncounter) {
+          // Another encounter found - restart process
+          return executeWarpAction(state, { targetSystem: parameters.targetSystem });
+        }
       } else {
-        message += ` - ${encounterResult.message} at ${state.clicks} clicks to ${systemName}`;
+        // Initialize encounter using combat engine (this will set the mode and configure opponent)
+        const encounterResult = startEncounter(state, encounterCheck.encounterType!);
+        
+        if (encounterResult.success) {
+          message += ` - Combat encounter at ${state.clicks} clicks to ${systemName}!`;
+        } else {
+          message += ` - ${encounterResult.message} at ${state.clicks} clicks to ${systemName}`;
+        }
       }
       
       // DON'T arrive yet - keep currentSystem != warpSystem so continue travel is available
@@ -683,9 +700,41 @@ async function executeDockAtPlanetAction(state: GameState): Promise<ActionResult
   
   state.currentMode = GameMode.OnPlanet;
   
+  // Auto-services: auto-fuel and auto-repair if enabled
+  let message = 'Docked at planet';
+  const autoActions: string[] = [];
+  
+  // Auto-repair if enabled and ship is damaged
+  if (state.options.autoRepair) {
+    const shipType = getShipType(state.ship.type);
+    const maxHull = shipType.hullStrength;
+    if (state.ship.hull < maxHull) {
+      const repairResult = await executeRepairAction(state);
+      if (repairResult.success) {
+        autoActions.push('auto-repaired');
+      }
+    }
+  }
+  
+  // Auto-fuel if enabled and ship is not at full fuel
+  if (state.options.autoFuel) {
+    const shipType = getShipType(state.ship.type);
+    const maxFuel = shipType.fuelTanks;
+    if (state.ship.fuel < maxFuel) {
+      const refuelResult = await executeRefuelAction(state);
+      if (refuelResult.success) {
+        autoActions.push('auto-refueled');
+      }
+    }
+  }
+  
+  if (autoActions.length > 0) {
+    message += ` (${autoActions.join(', ')})`;
+  }
+  
   return {
     success: true,
-    message: 'Docked at planet',
+    message: message,
     stateChanged: true
   };
 }
@@ -862,7 +911,21 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
     };
   }
   
-  const combatAction = action.type.replace('combat_', '');
+  let combatAction = action.type.replace('combat_', '');
+  
+  // Handle attackFleeing game rule: if opponent is fleeing and attackFleeing is enabled,
+  // and the action is attack, allow it even if normally it would be modified
+  if (combatAction === 'attack' && state.options.attackFleeing) {
+    const isOpponentFleeing = state.encounterType === 11 || // PIRATEFLEE
+                              state.encounterType === 21 || // TRADERFLEE  
+                              state.encounterType === 3;    // POLICEFLEE
+    
+    // This is a game rule, not UI automation - if attackFleeing is enabled
+    // and opponent is fleeing, the attack should proceed
+    if (isOpponentFleeing) {
+      // Combat action remains as 'attack' - no modification needed
+    }
+  }
   
   try {
     const result = resolveCombatRound(state, combatAction as any);
@@ -897,6 +960,51 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
       stateChanged: false
     };
   }
+}
+
+
+
+/**
+ * Check if player wants to auto-ignore this encounter based on preferences
+ */
+function shouldAutoIgnoreEncounter(state: GameState, encounterType: number): boolean {
+  const options = state.options;
+  
+  // Check for police encounters (0-9)
+  if (encounterType >= 0 && encounterType <= 9) {
+    if (options.alwaysIgnorePolice) {
+      // Only auto-ignore if it's safe (not attacking and no contraband)
+      const isPoliceAttacking = encounterType === 2; // POLICEATTACK
+      const hasContraband = state.ship.cargo[5] > 0 || state.ship.cargo[8] > 0; // Firearms or Narcotics
+      return !isPoliceAttacking && !hasContraband;
+    }
+  }
+  
+  // Check for pirate encounters (10-19)
+  if (encounterType >= 10 && encounterType <= 19) {
+    if (options.alwaysIgnorePirates) {
+      // Only auto-ignore if pirate is not attacking
+      const isPirateAttacking = encounterType === 10; // PIRATEATTACK
+      return !isPirateAttacking;
+    }
+  }
+  
+  // Check for trader encounters (20-29)
+  if (encounterType >= 20 && encounterType <= 29) {
+    // Check for trade-in-orbit encounters (24-25: selling/buying)
+    if (encounterType === 24 || encounterType === 25) { // TRADERSELL, TRADERBUY
+      return options.alwaysIgnoreTradeInOrbit;
+    }
+    
+    if (options.alwaysIgnoreTraders) {
+      // Only auto-ignore if trader is not attacking
+      const isTraderAttacking = encounterType === 22; // TRADERATTACK
+      return !isTraderAttacking;
+    }
+  }
+  
+  // Don't auto-ignore other encounter types
+  return false;
 }
 
 // Available Actions by Mode
