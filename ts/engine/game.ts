@@ -1956,7 +1956,7 @@ async function executeCombatContinueAction(state: GameState): Promise<ActionResu
 /**
  * Execute get loan action
  */
-async function executeGetLoan(state: GameState, action: ActionRequest): Promise<ActionResult> {
+async function executeGetLoan(state: GameState, action: GameAction): Promise<ActionResult> {
   const amount = action.parameters?.amount || 1000;
   
   if (typeof amount !== 'number' || amount <= 0) {
@@ -1972,7 +1972,7 @@ async function executeGetLoan(state: GameState, action: ActionRequest): Promise<
   if (loanResult.success) {
     return {
       success: true,
-      message: `Loan approved! You received ${loanResult.amountReceived} credits.`,
+      message: `Loan approved! You received ${loanResult.amountBorrowed} credits.`,
       stateChanged: true
     };
   } else {
@@ -1987,7 +1987,7 @@ async function executeGetLoan(state: GameState, action: ActionRequest): Promise<
 /**
  * Execute pay back loan action
  */
-async function executePayBack(state: GameState, action: ActionRequest): Promise<ActionResult> {
+async function executePayBack(state: GameState, action: GameAction): Promise<ActionResult> {
   const amount = action.parameters?.amount || Math.min(state.credits, state.debt);
   
   if (typeof amount !== 'number' || amount <= 0) {
@@ -2018,7 +2018,7 @@ async function executePayBack(state: GameState, action: ActionRequest): Promise<
 /**
  * Execute buy insurance action
  */
-async function executeBuyInsurance(state: GameState, action: ActionRequest): Promise<ActionResult> {
+async function executeBuyInsurance(state: GameState, action: GameAction): Promise<ActionResult> {
   if (state.insurance) {
     return {
       success: false,
@@ -2041,7 +2041,7 @@ async function executeBuyInsurance(state: GameState, action: ActionRequest): Pro
 /**
  * Execute stop insurance action
  */
-async function executeStopInsurance(state: GameState, action: ActionRequest): Promise<ActionResult> {
+async function executeStopInsurance(state: GameState, action: GameAction): Promise<ActionResult> {
   if (!state.insurance) {
     return {
       success: false,
@@ -2063,7 +2063,7 @@ async function executeStopInsurance(state: GameState, action: ActionRequest): Pr
 /**
  * Execute buy escape pod action - From Palm OS Shipyard.c
  */
-async function executeBuyEscapePod(state: GameState, action: ActionRequest): Promise<ActionResult> {
+async function executeBuyEscapePod(state: GameState, action: GameAction): Promise<ActionResult> {
   const ESCAPE_POD_COST = 2000; // From Palm OS: 2000 credits
   
   if (state.escapePod) {

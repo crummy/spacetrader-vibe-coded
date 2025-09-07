@@ -111,13 +111,13 @@ test('newspaper - cost calculation by difficulty level', async () => {
 
 test('newspaper - auto-pay preference', () => {
     const state = createInitialState();
-    state.newsAutoPay = true;
+    state.options.newsAutoPay = true;
     state.credits = 100;
     state.alreadyPaidForNewspaper = false;
     
     // Auto-pay should automatically purchase when viewing news
     // This would be tested when auto-pay is implemented
-    assert.equal(state.newsAutoPay, true, 'Auto-pay preference should be saved');
+    assert.equal(state.options.newsAutoPay, true, 'Auto-pay preference should be saved');
 });
 
 test('newspaper - content varies by system events', async () => {

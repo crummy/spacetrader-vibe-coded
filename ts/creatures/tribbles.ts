@@ -335,7 +335,7 @@ export function getTribblesOperationalImpact(tribbleCount: number): {
  * Check if player should be warned about tribbles when buying a ship
  */
 export function shouldShowTribbleShipyardWarning(state: State): boolean {
-  return state.ship.tribbles > 0 && !state.tribbleMessage;
+  return state.ship.tribbles > 0 && !state.options.tribbleMessage;
 }
 
 /**
@@ -344,7 +344,10 @@ export function shouldShowTribbleShipyardWarning(state: State): boolean {
 export function markTribbleWarningShown(state: State): State {
   return {
     ...state,
-    tribbleMessage: true
+    options: {
+      ...state.options,
+      tribbleMessage: true
+    }
   };
 }
 

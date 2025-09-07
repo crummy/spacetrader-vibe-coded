@@ -175,7 +175,7 @@ test('bribery - government bribe level affects difficulty', () => {
     ];
 
     governments.forEach(({ politics, name, expectedBribeLevel }) => {
-        state.solarSystem[state.currentSystem].politics = politics;
+        state.solarSystem[state.currentSystem].politics = politics as any;
         
         // In unbribeable governments, bribery should be harder/impossible
         if (expectedBribeLevel === 0) {

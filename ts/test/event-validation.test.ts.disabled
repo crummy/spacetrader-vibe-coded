@@ -1,0 +1,357 @@
+// Comprehensive Event Handler Validation Tests
+// Based on Palm OS Space Trader event validation patterns
+
+import { strict as assert } from 'node:assert';
+import { test, describe } from 'node:test';
+import { createGameEngine } from '../engine/game.ts';
+import { createInitialState } from '../state.ts';
+import type { GameState } from '../types.ts';
+import { GameMode } from '../types.ts';
+import { 
+  executeSpecialEvent, 
+  canExecuteSpecialEvent, 
+  SpecialEventType,
+  checkEventAvailability,
+  getActiveQuests,
+  isQuestCompleted,
+  addNewsEvent,
+  isNewsEvent
+} from '../events/special.ts';
+
+describe('Event Handler Validation Tests', () => {
+  
+  describe('Guard Conditions', () => {
+    test('should validate credit requirements before expensive events', () => {
+      const state = createInitialState();
+      state.credits = 1000;
+      
+      // Moon purchase requires 500,000 credits
+      const moonCheck = canExecuteSpecialEvent(state, SpecialEventType.MOONFORSALE);
+      assert.equal(moonCheck.possible, false);
+      assert.ok(moonCheck.reason.includes('credits') || moonCheck.reason.includes('Insufficient'));
+      
+      // Give enough credits and try again
+      state.credits = 600000;
+      const moonCheckSuccess = canExecuteSpecialEvent(state, SpecialEventType.MOONFORSALE);
+      assert.equal(moonCheckSuccess.possible, true);
+    });
+    
+    test('should validate equipment requirements for transport quests', () => {
+      const state = createInitialState();
+      state.credits = 10000;
+      
+      // Transport Wild requires beam laser
+      const wildCheck = canExecuteSpecialEvent(state, SpecialEventType.TRANSPORTWILD);
+      assert.equal(wildCheck.possible, false);
+      assert.ok(wildCheck.reason.includes('laser') || wildCheck.reason.includes('weapon'));
+      
+      // Add beam laser (weapon ID 1)
+      state.ship.weapon[0] = 1;
+      const wildCheckSuccess = canExecuteSpecialEvent(state, SpecialEventType.TRANSPORTWILD);
+      assert.equal(wildCheckSuccess.possible, true);
+    });
+    
+    test('should validate quest prerequisites for special events', () => {
+      const state = createInitialState();
+      state.credits = 10000;
+      
+      // Medicine delivery requires active Japori quest
+      const medicineCheck = canExecuteSpecialEvent(state, SpecialEventType.MEDICINEDELIVERY);
+      assert.equal(medicineCheck.possible, false);
+      
+      // Activate Japori quest
+      state.japoriDiseaseStatus = 1;
+      const medicineCheckSuccess = canExecuteSpecialEvent(state, SpecialEventType.MEDICINEDELIVERY);
+      assert.equal(medicineCheckSuccess.possible, true);
+    });
+  });
+  
+  describe('State Transition Validation', () => {
+    test('should validate quest state progression', () => {
+      const state = createInitialState();
+      
+      // Test Dragonfly quest progression (states 1-4)
+      state.dragonflyStatus = 0;
+      assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      
+      state.dragonflyStatus = 1;
+      assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      
+      state.dragonflyStatus = 4;
+      assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      
+      state.dragonflyStatus = 5; // Completed
+      assert.equal(isQuestCompleted(state, 'dragonfly'), true);
+    });
+    
+    test('should validate quest exclusivity limits', () => {
+      const state = createInitialState();
+      
+      // Activate multiple quests
+      state.dragonflyStatus = 1;
+      state.japoriDiseaseStatus = 1;
+      state.wildStatus = 1;
+      state.jarekStatus = 1;
+      state.scarabStatus = 1;
+      
+      const activeQuests = getActiveQuests(state);
+      
+      // Should have reasonable quest limit (Palm OS enforced 3-4 max)
+      assert.ok(activeQuests.length <= 5, 'Too many concurrent quests allowed');
+    });
+    
+    test('should validate quest completion rewards', () => {
+      const state = createInitialState();
+      const initialCredits = 5000;
+      state.credits = initialCredits;
+      
+      // Complete Jarek transport quest
+      state.jarekStatus = 1; // Jarek aboard
+      const result = executeSpecialEvent(state, SpecialEventType.JAREKGETSOUT);
+      
+      assert.equal(result.success, true);
+      assert.ok(state.credits > initialCredits, 'Should receive reward credits');
+      assert.equal(state.jarekStatus, 2, 'Quest status should update to completed');
+    });
+  });
+  
+  describe('Resource Constraint Validation', () => {
+    test('should validate cargo space for quest items', () => {
+      const state = createInitialState();
+      
+      // Fill cargo holds (assume 20 bays total)
+      for (let i = 0; i < 10; i++) {
+        state.ship.cargo[i] = 2; // 20 units total
+      }
+      
+      // Try to get reactor (requires 15 bays)
+      const reactorResult = executeSpecialEvent(state, SpecialEventType.GETREACTOR);
+      assert.equal(reactorResult.success, false);
+      assert.ok(reactorResult.message.includes('cargo') || reactorResult.message.includes('bays'));
+      
+      // Clear cargo space
+      state.ship.cargo.fill(0);
+      const reactorResultSuccess = executeSpecialEvent(state, SpecialEventType.GETREACTOR);
+      assert.equal(reactorResultSuccess.success, true);
+      assert.equal(state.reactorStatus, 20, 'Reactor countdown should be set to 20 days');
+    });
+    
+    test('should validate crew quarters for passengers', () => {
+      const state = createInitialState();
+      
+      // Simulate ship with limited crew quarters
+      // (This would depend on ship type validation)
+      state.jarekStatus = 0;
+      state.wildStatus = 0;
+      
+      // Board Jarek first
+      state.jarekStatus = 1;
+      
+      // Try to board Wild when quarters might be full
+      state.wildStatus = 1;
+      
+      // This should be validated in crew management logic
+      // For now, just verify the states can coexist
+      assert.ok(state.jarekStatus === 1 && state.wildStatus === 1);
+    });
+    
+    test('should validate police record requirements', () => {
+      const state = createInitialState();
+      state.credits = 10000;
+      
+      // Set up different police record scenarios
+      state.policeRecordScore = -100; // Criminal
+      
+      // Some events require non-criminal status
+      // (This would be implemented in specific event validation)
+      const availability = checkEventAvailability(state, SpecialEventType.ERASERECORD);
+      
+      // Criminal record erasure should be available to criminals
+      assert.equal(availability.available, true);
+    });
+  });
+  
+  describe('Time-Based Validation', () => {
+    test('should validate quest deadlines', () => {
+      const state = createInitialState();
+      
+      // Set up invasion quest with countdown
+      state.invasionStatus = 6; // 1 day left
+      
+      const activeQuests = getActiveQuests(state);
+      const invasionQuest = activeQuests.find(q => q.id === 'invasion');
+      
+      if (invasionQuest) {
+        assert.ok(invasionQuest.description.includes('day') || 
+                 invasionQuest.description.includes('urgent'));
+      }
+      
+      // Test experiment countdown
+      state.experimentStatus = 10; // 1 day left
+      
+      const activeQuests2 = getActiveQuests(state);
+      const experimentQuest = activeQuests2.find(q => q.id === 'experiment');
+      
+      if (experimentQuest) {
+        assert.ok(experimentQuest.description.includes('day') || 
+                 experimentQuest.description.includes('urgent'));
+      }
+    });
+    
+    test('should validate reactor deterioration', () => {
+      const state = createInitialState();
+      
+      // Set reactor status to near critical
+      state.reactorStatus = 2; // 2 days left
+      
+      // Reactor delivery should still be possible
+      const deliveryResult = executeSpecialEvent(state, SpecialEventType.REACTORDELIVERED);
+      assert.equal(deliveryResult.success, true);
+      assert.equal(state.reactorStatus, 0, 'Reactor should be removed after delivery');
+    });
+  });
+  
+  describe('Input Validation', () => {
+    test('should validate numeric inputs are within valid ranges', () => {
+      const state = createInitialState();
+      
+      // Test skill increase validation
+      state.commanderPilot = 10; // Already maxed
+      state.commanderFighter = 10;
+      state.commanderTrader = 10; 
+      state.commanderEngineer = 10;
+      state.credits = 2000;
+      
+      const skillResult = executeSpecialEvent(state, SpecialEventType.SKILLINCREASE);
+      assert.equal(skillResult.success, false);
+      assert.ok(skillResult.message.includes('maxed') || skillResult.message.includes('already'));
+    });
+    
+    test('should validate state consistency during events', () => {
+      const state = createInitialState();
+      
+      // Create inconsistent state
+      state.ship = null as any;
+      
+      const result = executeSpecialEvent(state, SpecialEventType.TRIBBLE);
+      assert.equal(result.success, false);
+      assert.ok(result.message.includes('Invalid') || result.message.includes('state'));
+    });
+  });
+  
+  describe('Form State Management', () => {
+    test('should validate game mode transitions', () => {
+      const engine = createGameEngine();
+      
+      // Test mode transitions
+      assert.equal(engine.state.currentMode, GameMode.Docked);
+      
+      const availableActions = engine.getAvailableActions();
+      const dockedActions = availableActions.filter(a => a.available);
+      
+      assert.ok(dockedActions.length > 0, 'Should have available actions when docked');
+      
+      // Verify combat actions are not available when docked
+      const combatActions = availableActions.filter(a => a.type.startsWith('combat_'));
+      const availableCombatActions = combatActions.filter(a => a.available);
+      
+      assert.equal(availableCombatActions.length, 0, 'Combat actions should not be available when docked');
+    });
+  });
+  
+  describe('News Event System', () => {
+    test('should validate news event creation and tracking', () => {
+      const state = createInitialState();
+      
+      // Initially no news events
+      assert.equal(isNewsEvent(state, SpecialEventType.MONSTERKILLED), false);
+      
+      // Add news event
+      addNewsEvent(state, SpecialEventType.MONSTERKILLED);
+      
+      // Should now be tracked
+      assert.equal(isNewsEvent(state, SpecialEventType.MONSTERKILLED), true);
+      
+      // Should have news events array
+      assert.ok(Array.isArray(state.newsEvents));
+      assert.equal(state.newsEvents!.length, 1);
+      assert.equal(state.newsEvents![0].id, SpecialEventType.MONSTERKILLED);
+    });
+    
+    test('should validate news event limits', () => {
+      const state = createInitialState();
+      
+      // Add maximum news events (5)
+      for (let i = 0; i < 7; i++) {
+        addNewsEvent(state, i);
+      }
+      
+      // Should be limited to 5 events
+      assert.equal(state.newsEvents!.length, 5);
+    });
+  });
+  
+  describe('Error Recovery', () => {
+    test('should handle invalid event types gracefully', () => {
+      const state = createInitialState();
+      
+      const result = executeSpecialEvent(state, 9999 as any);
+      assert.equal(result.success, false);
+      assert.ok(result.message.includes('Unknown') || result.message.includes('Invalid'));
+    });
+    
+    test('should validate state after failed operations', () => {
+      const state = createInitialState();
+      const originalCredits = state.credits;
+      
+      // Try invalid operation
+      const result = executeSpecialEvent(state, SpecialEventType.MOONFORSALE);
+      assert.equal(result.success, false);
+      
+      // State should remain unchanged after failed operation
+      assert.equal(state.credits, originalCredits);
+      assert.equal(state.moonBought, false);
+    });
+  });
+  
+  describe('Complex Multi-Condition Validation', () => {
+    test('should validate complex event availability like Palm OS system info', () => {
+      const state = createInitialState();
+      
+      // Simulate complex conditions from Palm OS SystemInformationFormHandleEvent
+      // Test CARGOFORSALE event - requires less than 3 empty cargo bays
+      state.ship.cargo.fill(2); // Fill most cargo
+      state.ship.cargo[9] = 0;   // Leave 3 empty slots
+      
+      const availability = checkEventAvailability(state, SpecialEventType.CARGOFORSALE);
+      
+      // With exactly 3 empty bays, should be available
+      assert.equal(availability.available, true);
+      
+      // Fill more cargo to test the boundary
+      state.ship.cargo[9] = 2; // Now only 2 empty slots
+      
+      const availability2 = checkEventAvailability(state, SpecialEventType.CARGOFORSALE);
+      
+      // Implementation would need to check cargo space for this specific validation
+    });
+    
+    test('should validate quest interaction restrictions', () => {
+      const state = createInitialState();
+      
+      // Test the Palm OS logic: can't start new quests when too many are active
+      state.monsterStatus = 1;       // Monster quest active
+      state.dragonflyStatus = 1;     // Dragonfly quest active  
+      state.japoriDiseaseStatus = 1; // Japori quest active
+      state.wildStatus = 1;          // Wild transport active
+      
+      const activeCount = getActiveQuests(state).length;
+      
+      // Should have at least 4 active quests
+      assert.ok(activeCount >= 4);
+      
+      // Additional quest starts should be limited (if quest limit is implemented)
+      // This would be validated in the specific event handlers
+    });
+  });
+});

@@ -62,7 +62,7 @@ describe('Trading Functions', () => {
     test('should return all credits when reserve money is disabled', () => {
       const state = createInitialState();
       state.credits = 5000;
-      state.reserveMoney = false;
+      state.options.reserveMoney = false;
       
       const funds = getAvailableFunds(state);
       assert.equal(funds, 5000);
@@ -71,7 +71,7 @@ describe('Trading Functions', () => {
     test('should reserve money for expenses when enabled', () => {
       const state = createInitialState();
       state.credits = 5000;
-      state.reserveMoney = true;
+      state.options.reserveMoney = true;
       
       // Should reserve money for mercenaries, insurance, etc.
       const funds = getAvailableFunds(state);
@@ -81,7 +81,7 @@ describe('Trading Functions', () => {
     test('should not return negative funds', () => {
       const state = createInitialState();
       state.credits = 10; // Very low credits
-      state.reserveMoney = true;
+      state.options.reserveMoney = true;
       
       const funds = getAvailableFunds(state);
       assert.ok(funds >= 0, 'Funds should never be negative');

@@ -35,7 +35,8 @@ import type {
   ShieldArray,
   GadgetArray,
   CrewArray,
-  WormholeArray
+  WormholeArray,
+  PlayerOptions
 } from './types.ts';
 
 import { generateRandomSolarSystems } from './data/systems.ts';
@@ -190,8 +191,6 @@ export function createInitialState(): State {
     reputationScore: 0, // Harmless
     
     // Settings and flags
-    autoFuel: true,
-    autoRepair: true,
     clicks: 0, // Travel distance from target system, 0 = arrived
     
     // Current encounter
@@ -233,32 +232,49 @@ export function createInitialState(): State {
     insurance: false,
     noClaim: 0,
     
-    // User preferences  
-    inspected: false,
-    alwaysIgnoreTraders: false,
-    alwaysIgnorePolice: false,
-    alwaysIgnorePirates: false,
-    alwaysIgnoreTradeInOrbit: false,
-    textualEncounters: false,
-    continuous: false,
-    attackFleeing: false,
-    reserveMoney: false,
-    priceDifferences: true,
-    aplScreen: false,
-    tribbleMessage: false,
-    alwaysInfo: false,
+    // Player options and preferences
+    options: {
+      // Auto-arrival services
+      autoFuel: false,              // "get full tank on arrival"
+      autoRepair: false,            // "get full hull repair on arrival"
+      
+      // Always ignore when safe
+      alwaysIgnorePolice: true,     // "Always ignore when it is safe: police" (default true)
+      alwaysIgnorePirates: false,   // "Always ignore when it is safe: pirates"
+      alwaysIgnoreTraders: false,   // "Always ignore when it is safe: traders"
+      alwaysIgnoreTradeInOrbit: false, // "ignore dealing traders"
+      
+      // Financial settings
+      reserveMoney: false,          // "reserve money for warp costs"
+      leaveEmpty: 0,                // "cargo bays to leave empty"
+      
+      // Additional game preferences (from Palm OS)
+      textualEncounters: false,     // Use text instead of graphics for encounters
+      continuous: false,            // Continuous mode - auto-continue actions
+      attackFleeing: false,         // Attack fleeing opponents
+      autoAttack: false,            // Auto-attack during combat
+      autoFlee: false,              // Auto-flee from combat  
+      newsAutoPay: false,           // Auto-pay for newspapers
+      remindLoans: true,            // Loan reminder system
+      priceDifferences: true,       // Show price differences
+      alwaysInfo: false,            // Always show additional info
+      tribbleMessage: false,        // Show tribble messages
+      
+      // Hardware and UI
+      useHWButtons: false,          // Hardware button shortcuts
+      rectangularButtonsOn: false,  // Rectangular button UI
+      sharePreferences: false,      // Share preferences between games
+      identifyStartup: false,       // Identify app on startup
+    },
     
-    // Additional auto-flight preferences (Palm OS defaults)
-    autoAttack: false,           // Auto-attack during combat
-    autoFlee: false,             // Auto-flee from combat
-    useHWButtons: false,         // Hardware button shortcuts
-    newsAutoPay: false,          // Auto-pay for newspapers
-    remindLoans: true,           // Loan reminder system
+    // State flags  
+    inspected: false,
     canSuperWarp: false,         // Portable Singularity capability
     attackIconStatus: false,     // Show attack indicators
     possibleToGoThroughRip: false, // Space-time rip travel
     justLootedMarie: false,      // Marie Celeste loot flag
     arrivedViaWormhole: false,   // Wormhole arrival tracking
+    aplScreen: false,
     
     // Special items and features
     wormhole: [0, 0, 0, 0, 0, 0],
@@ -278,12 +294,8 @@ export function createInitialState(): State {
     shortcut4: -1,
     
     // Misc flags
-    leaveEmpty: 0,
     booleanCollection: 0,
     litterWarning: false,
-    sharePreferences: false,
-    identifyStartup: false,
-    rectangularButtonsOn: false,
     
     // Current game mode (our addition)
     currentMode: GameModeValues.OnPlanet, // Start docked at Sol

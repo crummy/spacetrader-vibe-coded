@@ -125,7 +125,7 @@ test('banking actions - insurance purchase and cancellation', async () => {
     assert.ok(buyInsuranceAction, 'Buy insurance action should be available');
     
     // Buy insurance
-    const buyResult = await engine.executeAction({ type: 'buy_insurance' });
+    const buyResult = await engine.executeAction({ type: 'buy_insurance', parameters: {} });
     
     assert.equal(buyResult.success, true);
     assert.equal(state.insurance, true);
@@ -140,7 +140,7 @@ test('banking actions - insurance purchase and cancellation', async () => {
     assert.ok(!buyInsuranceAction2, 'Buy insurance action should not be available when already insured');
     
     // Stop insurance
-    const stopResult = await engine.executeAction({ type: 'stop_insurance' });
+    const stopResult = await engine.executeAction({ type: 'stop_insurance', parameters: {} });
     
     assert.equal(stopResult.success, true);
     assert.equal(state.insurance, false);
@@ -167,7 +167,7 @@ test('banking actions - escape pod purchase', async () => {
     const initialCredits = state.credits;
     
     // Purchase escape pod
-    const result = await engine.executeAction({ type: 'buy_escape_pod' });
+    const result = await engine.executeAction({ type: 'buy_escape_pod', parameters: {} });
     
     assert.equal(result.success, true);
     assert.equal(state.escapePod, true);
@@ -189,7 +189,7 @@ test('banking actions - escape pod purchase fails with insufficient credits', as
     state.escapePod = false;
     state.solarSystem[state.currentSystem].techLevel = 4;
     
-    const result = await engine.executeAction({ type: 'buy_escape_pod' });
+    const result = await engine.executeAction({ type: 'buy_escape_pod', parameters: {} });
     
 
     
@@ -298,7 +298,8 @@ test('banking actions - complete banking lifecycle', async () => {
     
     // 2. Buy insurance
     const insuranceResult = await engine.executeAction({
-        type: 'buy_insurance'
+        type: 'buy_insurance',
+        parameters: {}
     });
     
     assert.equal(insuranceResult.success, true);
@@ -307,7 +308,8 @@ test('banking actions - complete banking lifecycle', async () => {
     // 3. Buy escape pod
     state.solarSystem[state.currentSystem].techLevel = 4; // Ensure high tech
     const podResult = await engine.executeAction({
-        type: 'buy_escape_pod'
+        type: 'buy_escape_pod',
+        parameters: {}
     });
     
     assert.equal(podResult.success, true);

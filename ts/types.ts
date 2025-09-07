@@ -202,6 +202,41 @@ export interface Ship {
   hullUpgrades?: number; // Optional hull upgrades (for special encounters)
 }
 
+// Player Options/Preferences
+export interface PlayerOptions {
+  // Auto-arrival services
+  autoFuel: boolean;              // "get full tank on arrival"
+  autoRepair: boolean;            // "get full hull repair on arrival"
+  
+  // Always ignore when safe
+  alwaysIgnorePolice: boolean;    // "Always ignore when it is safe: police"  
+  alwaysIgnorePirates: boolean;   // "Always ignore when it is safe: pirates"
+  alwaysIgnoreTraders: boolean;   // "Always ignore when it is safe: traders"
+  alwaysIgnoreTradeInOrbit: boolean; // "ignore dealing traders"
+  
+  // Financial settings
+  reserveMoney: boolean;          // "reserve money for warp costs"
+  leaveEmpty: number;             // "cargo bays to leave empty"
+  
+  // Additional game preferences (from Palm OS)
+  textualEncounters: boolean;     // Use text instead of graphics for encounters
+  continuous: boolean;            // Continuous mode - auto-continue actions
+  attackFleeing: boolean;         // Attack fleeing opponents
+  autoAttack: boolean;           // Auto-attack during combat
+  autoFlee: boolean;             // Auto-flee from combat  
+  newsAutoPay: boolean;          // Auto-pay for newspapers
+  remindLoans: boolean;          // Loan reminder system
+  priceDifferences: boolean;     // Show price differences
+  alwaysInfo: boolean;           // Always show additional info
+  tribbleMessage: boolean;       // Show tribble messages
+  
+  // Hardware and UI
+  useHWButtons: boolean;         // Hardware button shortcuts
+  rectangularButtonsOn: boolean; // Rectangular button UI
+  sharePreferences: boolean;     // Share preferences between games
+  identifyStartup: boolean;      // Identify app on startup
+}
+
 // Crew Member
 export interface CrewMember {
   nameIndex: number;
@@ -262,8 +297,6 @@ export interface State {
   reputationScore: number;
   
   // Settings and flags
-  autoFuel: boolean;
-  autoRepair: boolean;
   clicks: number; // Distance from target system, 0 = arrived
   
   // Current encounter
@@ -305,32 +338,17 @@ export interface State {
   insurance: boolean;
   noClaim: number;
   
-  // User preferences
-  inspected: boolean;
-  alwaysIgnoreTraders: boolean;
-  alwaysIgnorePolice: boolean;
-  alwaysIgnorePirates: boolean;
-  alwaysIgnoreTradeInOrbit: boolean;
-  textualEncounters: boolean;
-  continuous: boolean;
-  attackFleeing: boolean;
-  reserveMoney: boolean;
-  priceDifferences: boolean;
-  aplScreen: boolean;
-  tribbleMessage: boolean;
-  alwaysInfo: boolean;
+  // Player options and preferences
+  options: PlayerOptions;
   
-  // Additional auto-flight preferences (from Palm OS)
-  autoAttack: boolean;           // Auto-attack during combat
-  autoFlee: boolean;             // Auto-flee from combat  
-  useHWButtons: boolean;         // Hardware button shortcuts
-  newsAutoPay: boolean;          // Auto-pay for newspapers
-  remindLoans: boolean;          // Loan reminder system
+  // State flags
+  inspected: boolean;
   canSuperWarp: boolean;         // Portable Singularity capability
   attackIconStatus: boolean;     // Show attack indicators
   possibleToGoThroughRip: boolean; // Space-time rip travel
   justLootedMarie: boolean;      // Marie Celeste loot flag
   arrivedViaWormhole: boolean;   // Wormhole arrival tracking
+  aplScreen: boolean;
   
   // Special items and features
   wormhole: MutableWormholeArray;
@@ -350,12 +368,8 @@ export interface State {
   shortcut4: number;
   
   // Misc flags
-  leaveEmpty: number;
   booleanCollection: number;
   litterWarning: boolean;
-  sharePreferences: boolean;
-  identifyStartup: boolean;
-  rectangularButtonsOn: boolean;
   
   // Game status
   gameStatus?: 'ended' | 'active';

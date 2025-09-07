@@ -77,7 +77,7 @@ export function getFilledCargoBays(state: GameState): number {
  * @returns Available credits for spending
  */
 export function getAvailableFunds(state: GameState): number {
-  if (!state.reserveMoney) {
+  if (!state.options.reserveMoney) {
     return state.credits;
   }
   
@@ -125,7 +125,7 @@ export function buyCargo(
   // Check if there's cargo space
   const totalBays = getTotalCargoBays(state);
   const filledBays = getFilledCargoBays(state);
-  const availableSpace = totalBays - filledBays - (state.leaveEmpty || 0);
+  const availableSpace = totalBays - filledBays - (state.options.leaveEmpty || 0);
   
   if (availableSpace <= 0) {
     return {
@@ -305,7 +305,7 @@ export function dumpCargo(
 export function getAvailableCargoSpace(state: GameState): number {
   const totalBays = getTotalCargoBays(state);
   const filledBays = getFilledCargoBays(state);
-  return Math.max(0, totalBays - filledBays - (state.leaveEmpty || 0));
+  return Math.max(0, totalBays - filledBays - (state.options.leaveEmpty || 0));
 }
 
 /**

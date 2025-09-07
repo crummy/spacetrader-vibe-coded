@@ -1,0 +1,449 @@
+// Quest State Machine Comprehensive Test Coverage
+// Tests all quest state transitions, validation rules, and edge cases
+// Based on analysis of Palm OS Space Trader quest logic
+
+import { strict as assert } from 'node:assert';
+import { test, describe } from 'node:test';
+import { createInitialState } from '../state.ts';
+import type { GameState } from '../types.ts';
+import { 
+  executeSpecialEvent, 
+  canExecuteSpecialEvent, 
+  SpecialEventType,
+  getActiveQuests,
+  isQuestCompleted,
+  markQuestCompleted
+} from '../events/special.ts';
+
+describe('Quest State Machine Tests', () => {
+  
+  describe('Dragonfly Quest State Machine', () => {
+    test('should validate complete Dragonfly quest progression', () => {
+      const state = createInitialState();
+      
+      // Initial state - no quest
+      assert.equal(state.dragonflyStatus, 0);
+      assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      
+      // Quest starts (status 1 - go to Baratas)
+      state.dragonflyStatus = 1;
+      let activeQuests = getActiveQuests(state);
+      let dragonflyQuest = activeQuests.find(q => q.id === 'dragonfly');
+      assert.ok(dragonflyQuest);
+      assert.equal(dragonflyQuest.status, 1);
+      assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      
+      // Progress through each stage
+      const stages = [
+        { status: 2, location: 'Melina' },
+        { status: 3, location: 'Regulas' }, 
+        { status: 4, location: 'Zalkon' }
+      ];
+      
+      for (const stage of stages) {
+        state.dragonflyStatus = stage.status;
+        activeQuests = getActiveQuests(state);
+        dragonflyQuest = activeQuests.find(q => q.id === 'dragonfly');
+        assert.ok(dragonflyQuest);
+        assert.equal(dragonflyQuest.status, stage.status);
+        assert.equal(isQuestCompleted(state, 'dragonfly'), false);
+      }
+      
+      // Complete quest (status 5)
+      state.dragonflyStatus = 5;
+      assert.equal(isQuestCompleted(state, 'dragonfly'), true);
+      
+      // Should no longer appear in active quests
+      activeQuests = getActiveQuests(state);
+      dragonflyQuest = activeQuests.find(q => q.id === 'dragonfly');
+      assert.equal(dragonflyQuest, undefined);
+    });
+    
+    test('should validate Dragonfly quest cannot skip stages', () => {
+      const state = createInitialState();
+      
+      // Try to skip from status 1 to status 3
+      state.dragonflyStatus = 1;
+      
+      // In a proper implementation, trying to complete at wrong location should fail
+      // For now, test that status progression is tracked correctly
+      state.dragonflyStatus = 3;
+      const activeQuests = getActiveQuests(state);
+      const dragonflyQuest = activeQuests.find(q => q.id === 'dragonfly');
+      
+      assert.ok(dragonflyQuest);
+      assert.equal(dragonflyQuest.status, 3);
+    });
+  });
+  
+  describe('Reactor Quest State Machine', () => {
+    test('should validate reactor pickup and countdown mechanics', () => {
+      const state = createInitialState();
+      
+      // Initial state - no reactor
+      assert.equal(state.reactorStatus, 0);
+      
+      // Clear cargo space for reactor (15 bays needed)
+      state.ship.cargo.fill(0);
+      state.credits = 1000;
+      
+      // Get reactor
+      const getReactorResult = executeSpecialEvent(state, SpecialEventType.GETREACTOR);
+      assert.equal(getReactorResult.success, true);
+      assert.equal(state.reactorStatus, 20); // 20 day countdown starts
+      
+      // Simulate time progression - reactor deteriorating
+      for (let day = 19; day > 0; day--) {
+        state.reactorStatus = day;
+        
+        // Should still be deliverable
+        const canDeliver = canExecuteSpecialEvent(state, SpecialEventType.REACTORDELIVERED);
+        assert.equal(canDeliver.possible, true);
+      }
+      
+      // Deliver reactor successfully
+      const initialCredits = state.credits;
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.REACTORDELIVERED);
+      assert.equal(deliverResult.success, true);
+      assert.equal(state.reactorStatus, 0); // Quest complete
+      assert.ok(state.credits > initialCredits); // Reward received
+    });
+    
+    test('should validate reactor quest fails without cargo space', () => {
+      const state = createInitialState();
+      
+      // Fill cargo space
+      state.ship.cargo.fill(2); // 20 units in each bay
+      
+      const getReactorResult = executeSpecialEvent(state, SpecialEventType.GETREACTOR);
+      assert.equal(getReactorResult.success, false);
+      assert.ok(getReactorResult.message.includes('cargo') || getReactorResult.message.includes('bays'));
+      assert.equal(state.reactorStatus, 0); // Should remain unchanged
+    });
+    
+    test('should validate reactor delivery fails without reactor', () => {
+      const state = createInitialState();
+      
+      // Try to deliver without having reactor
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.REACTORDELIVERED);
+      assert.equal(deliverResult.success, false);
+      assert.ok(deliverResult.message.includes('reactor') || deliverResult.message.includes('carrying'));
+    });
+  });
+  
+  describe('Scarab Quest State Machine', () => {
+    test('should validate Scarab hunt progression', () => {
+      const state = createInitialState();
+      
+      // Initial state - Scarab not encountered
+      assert.equal(state.scarabStatus, 0);
+      
+      // Scarab hunt begins (status 1 - hunting)
+      state.scarabStatus = 1;
+      
+      // Scarab destroyed (status 2)
+      const destroyResult = executeSpecialEvent(state, SpecialEventType.SCARABDESTROYED);
+      assert.equal(destroyResult.success, true);
+      assert.equal(state.scarabStatus, 2);
+      assert.ok(state.reputationScore > 0); // Reputation increased
+      
+      // Hull upgrade becomes available
+      const upgradeResult = executeSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(upgradeResult.success, true);
+      assert.equal(state.scarabStatus, 3); // Hull upgrade completed
+      assert.ok(state.ship.hull > 100); // Hull strength increased
+    });
+    
+    test('should validate hull upgrade requires Scarab destruction', () => {
+      const state = createInitialState();
+      
+      // Try to get hull upgrade without destroying Scarab
+      const upgradeResult = executeSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(upgradeResult.success, false);
+      assert.ok(upgradeResult.message.includes('Scarab') || upgradeResult.message.includes('defeat'));
+    });
+    
+    test('should validate hull upgrade is one-time only', () => {
+      const state = createInitialState();
+      
+      // Complete Scarab destruction
+      state.scarabStatus = 2;
+      state.ship.hull = 100;
+      
+      // Get first upgrade
+      const firstUpgrade = executeSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(firstUpgrade.success, true);
+      assert.equal(state.scarabStatus, 3);
+      const hullAfterUpgrade = state.ship.hull;
+      
+      // Try to get second upgrade
+      const secondUpgrade = executeSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(secondUpgrade.success, false);
+      assert.ok(secondUpgrade.message.includes('already') || secondUpgrade.message.includes('received'));
+      assert.equal(state.ship.hull, hullAfterUpgrade); // Hull unchanged
+    });
+  });
+  
+  describe('Passenger Transport Quests', () => {
+    test('should validate Jarek transport quest lifecycle', () => {
+      const state = createInitialState();
+      
+      // Jarek not aboard
+      assert.equal(state.jarekStatus, 0);
+      
+      // Jarek boards (status 1)
+      state.jarekStatus = 1;
+      let activeQuests = getActiveQuests(state);
+      let jarekQuest = activeQuests.find(q => q.id === 'jarek');
+      assert.ok(jarekQuest);
+      assert.equal(jarekQuest.status, 1);
+      
+      // Deliver Jarek
+      const initialCredits = state.credits;
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.JAREKGETSOUT);
+      assert.equal(deliverResult.success, true);
+      assert.equal(state.jarekStatus, 2); // Delivered
+      assert.ok(state.credits > initialCredits); // Payment received
+      
+      // Should no longer be in active quests
+      activeQuests = getActiveQuests(state);
+      jarekQuest = activeQuests.find(q => q.id === 'jarek');
+      assert.equal(jarekQuest, undefined);
+    });
+    
+    test('should validate Wild transport quest with equipment requirement', () => {
+      const state = createInitialState();
+      
+      // Try to transport Wild without proper equipment
+      const canTransport = canExecuteSpecialEvent(state, SpecialEventType.TRANSPORTWILD);
+      assert.equal(canTransport.possible, false);
+      
+      // Add beam laser (weapon ID 1)
+      state.ship.weapon[0] = 1;
+      const canTransportWithEquipment = canExecuteSpecialEvent(state, SpecialEventType.TRANSPORTWILD);
+      assert.equal(canTransportWithEquipment.possible, true);
+      
+      // Wild boards
+      state.experimentAndWildStatus = (state.experimentAndWildStatus & 0xFF00) | 1; // Wild status = 1
+      
+      // Deliver Wild
+      const initialCredits = state.credits;
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.WILDGETSOUT);
+      assert.equal(deliverResult.success, true);
+      
+      const wildStatus = state.experimentAndWildStatus & 0xFF;
+      assert.equal(wildStatus, 2); // Delivered
+      assert.ok(state.credits > initialCredits); // Payment received
+    });
+  });
+  
+  describe('Medicine Delivery Quest', () => {
+    test('should validate Japori disease quest progression', () => {
+      const state = createInitialState();
+      
+      // Disease outbreak (status 1)
+      state.japoriDiseaseStatus = 1;
+      
+      let activeQuests = getActiveQuests(state);
+      let japoriQuest = activeQuests.find(q => q.id === 'japori');
+      assert.ok(japoriQuest);
+      assert.equal(japoriQuest.status, 1);
+      
+      // Medicine can be delivered
+      const canDeliver = canExecuteSpecialEvent(state, SpecialEventType.MEDICINEDELIVERY);
+      assert.equal(canDeliver.possible, true);
+      
+      // Complete delivery
+      markQuestCompleted(state, 'japori');
+      assert.equal(state.japoriDiseaseStatus, 3); // Complete
+      
+      // Should no longer be active
+      activeQuests = getActiveQuests(state);
+      japoriQuest = activeQuests.find(q => q.id === 'japori');
+      assert.equal(japoriQuest, undefined);
+    });
+    
+    test('should validate medicine delivery requires active disease', () => {
+      const state = createInitialState();
+      
+      // No active disease
+      assert.equal(state.japoriDiseaseStatus, 0);
+      
+      const canDeliver = canExecuteSpecialEvent(state, SpecialEventType.MEDICINEDELIVERY);
+      assert.equal(canDeliver.possible, false);
+      assert.ok(canDeliver.reason.includes('quest') || canDeliver.reason.includes('Japori'));
+    });
+  });
+  
+  describe('Artifact Quest State Machine', () => {
+    test('should validate artifact pickup and delivery', () => {
+      const state = createInitialState();
+      
+      // No artifact initially
+      assert.equal(state.artifactOnBoard, false);
+      
+      // Pick up artifact
+      state.artifactOnBoard = true;
+      
+      let activeQuests = getActiveQuests(state);
+      let artifactQuest = activeQuests.find(q => q.id === 'artifact');
+      
+      // Should have artifact delivery quest when artifact is aboard
+      // (Implementation may vary)
+      
+      // Deliver artifact
+      const initialCredits = state.credits;
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.ARTIFACTDELIVERY);
+      assert.equal(deliverResult.success, true);
+      assert.equal(state.artifactOnBoard, false); // No longer aboard
+      assert.ok(state.credits > initialCredits); // Reward received
+    });
+    
+    test('should validate artifact delivery fails without artifact', () => {
+      const state = createInitialState();
+      
+      // Try to deliver without artifact
+      const deliverResult = executeSpecialEvent(state, SpecialEventType.ARTIFACTDELIVERY);
+      assert.equal(deliverResult.success, false);
+      assert.ok(deliverResult.message.includes('artifact') || deliverResult.message.includes('carrying'));
+    });
+  });
+  
+  describe('Time-Limited Quests', () => {
+    test('should validate invasion quest countdown', () => {
+      const state = createInitialState();
+      
+      // Invasion starts with 7 days
+      state.invasionStatus = 7;
+      
+      // Should be active
+      let activeQuests = getActiveQuests(state);
+      let invasionQuest = activeQuests.find(q => q.id === 'invasion');
+      
+      if (invasionQuest) {
+        assert.equal(invasionQuest.status, 7);
+      }
+      
+      // Countdown to critical
+      for (let days = 6; days >= 1; days--) {
+        state.invasionStatus = days;
+        
+        activeQuests = getActiveQuests(state);
+        invasionQuest = activeQuests.find(q => q.id === 'invasion');
+        
+        if (invasionQuest) {
+          assert.equal(invasionQuest.status, days);
+          
+          // Should show urgency in description for last day
+          if (days === 1) {
+            assert.ok(invasionQuest.description.includes('tomorrow') || 
+                     invasionQuest.description.includes('urgent') ||
+                     invasionQuest.description.includes('today'));
+          }
+        }
+      }
+    });
+    
+    test('should validate experiment quest countdown', () => {
+      const state = createInitialState();
+      
+      // Experiment starts with countdown from 11
+      const experimentStatus = 11;
+      state.experimentAndWildStatus = (experimentStatus << 8) | (state.experimentAndWildStatus & 0xFF);
+      
+      // Should be active
+      let activeQuests = getActiveQuests(state);
+      let experimentQuest = activeQuests.find(q => q.id === 'experiment');
+      
+      if (experimentQuest) {
+        assert.ok(experimentQuest.status > 0);
+      }
+      
+      // Test experiment completion
+      const stopResult = executeSpecialEvent(state, SpecialEventType.EXPERIMENTSTOPPED);
+      assert.equal(stopResult.success, true);
+      
+      // Experiment should be cleared
+      const finalExperimentStatus = (state.experimentAndWildStatus >> 8) & 0xFF;
+      assert.equal(finalExperimentStatus, 0);
+    });
+  });
+  
+  describe('Quest Interaction and Dependencies', () => {
+    test('should validate multiple concurrent quests', () => {
+      const state = createInitialState();
+      
+      // Activate multiple quests
+      state.dragonflyStatus = 1;
+      state.japoriDiseaseStatus = 1;
+      state.jarekStatus = 1;
+      state.reactorStatus = 10;
+      
+      const activeQuests = getActiveQuests(state);
+      assert.ok(activeQuests.length >= 3, 'Should support multiple concurrent quests');
+      
+      // Verify each quest is properly tracked
+      const questIds = activeQuests.map(q => q.id);
+      assert.ok(questIds.includes('dragonfly'));
+      assert.ok(questIds.includes('japori'));
+      assert.ok(questIds.includes('jarek'));
+    });
+    
+    test('should validate quest completion affects availability', () => {
+      const state = createInitialState();
+      
+      // Complete Scarab quest
+      state.scarabStatus = 2; // Destroyed
+      
+      // Hull upgrade should now be available
+      const canUpgrade = canExecuteSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(canUpgrade.possible, true);
+      
+      // Complete hull upgrade
+      const upgradeResult = executeSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(upgradeResult.success, true);
+      
+      // Second upgrade should not be available
+      const canUpgradeAgain = canExecuteSpecialEvent(state, SpecialEventType.GETHULLUPGRADED);
+      assert.equal(canUpgradeAgain.possible, false);
+    });
+  });
+  
+  describe('Edge Cases and Error Conditions', () => {
+    test('should handle invalid quest states gracefully', () => {
+      const state = createInitialState();
+      
+      // Set invalid status values
+      state.dragonflyStatus = -1;
+      state.japoriDiseaseStatus = 999;
+      
+      const activeQuests = getActiveQuests(state);
+      
+      // Should not crash and should filter invalid states
+      assert.ok(Array.isArray(activeQuests));
+      
+      // Invalid states should not appear as active
+      const invalidQuests = activeQuests.filter(q => 
+        q.status < 0 || q.status > 100
+      );
+      assert.equal(invalidQuests.length, 0);
+    });
+    
+    test('should validate quest state consistency after operations', () => {
+      const state = createInitialState();
+      
+      // Set up quest state
+      state.jarekStatus = 1;
+      const originalCredits = state.credits;
+      
+      // Attempt operation that should fail
+      state.ship = null as any; // Corrupt state
+      
+      const result = executeSpecialEvent(state, SpecialEventType.JAREKGETSOUT);
+      assert.equal(result.success, false);
+      
+      // Quest state should remain unchanged after failed operation
+      // (This would require proper state validation in implementation)
+    });
+  });
+});

@@ -12,10 +12,10 @@ test('time progression - days increment during travel', () => {
   const initialDays = state.days;
   
   // Simulate a warp that should take time
-  const warpResult = performWarp(state, 0, 10, false); // System 0 to 10
+  const warpResult = performWarp(state, 10, false); // To system 10
   
-  if (warpResult.success && warpResult.newState) {
-    assert.ok(warpResult.newState.days >= initialDays, 'Days should not decrease');
+  if (warpResult.success) {
+    assert.ok(state.days >= initialDays, 'Days should not decrease');
     // Days might increment depending on travel time mechanics
   }
 });

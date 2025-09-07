@@ -4,11 +4,11 @@
  * Intelligent Trader Bot for Space Trader
  * 
  * Strategy:
- * 1. Buy a random good
- * 2. Travel to a nearby system 
- * 3. Sell the random good
- * 4. Refuel
- * 5. Repeat
+ * 1. Analyze nearby systems for arbitrage opportunities
+ * 2. Buy the most profitable good we can afford
+ * 3. Travel to the target system with best selling price
+ * 4. Sell the goods for maximum profit
+ * 5. Refuel and repeat
  * 
  * Combat Strategy:
  * 1. If enemy is attacking and we have greater health, attack
@@ -45,6 +45,7 @@ export class IntelligentTraderBot {
   private session: TradingSession;
   private verbose: boolean;
   private maxActions: number;
+  private targetSystemIndex: number | null = null; // Track where we want to sell our cargo
 
   constructor(verbose: boolean = false, maxActions: number = 1000, debugActions: boolean = false) {
     this.engine = createGameEngine();
@@ -116,12 +117,12 @@ export class IntelligentTraderBot {
         await this.repairShipIfNeeded();
         if (this.session.gameOver) break;
         
-        // 1. Buy a random good
-        await this.buyRandomGood();
+        // 1. Buy an intelligent good based on arbitrage
+        await this.buyIntelligentGood();
         if (this.session.gameOver) break;
         
-        // 2. Travel to a nearby system
-        await this.travelToNearbySystem();
+        // 2. Travel to the target system for best selling prices
+        await this.travelToTargetSystem();
         if (this.session.gameOver) break;
         
         // 3. Sell the good we bought
@@ -217,9 +218,9 @@ export class IntelligentTraderBot {
   }
 
   /**
-   * Buy a random trade good that we can afford
+   * Buy an intelligent trade good based on arbitrage opportunities
    */
-  private async buyRandomGood(): Promise<void> {
+  private async buyIntelligentGood(): Promise<void> {
     const tradeItems = getTradeItems();
     const totalCargo = this.engine.state.ship.cargo.reduce((sum: number, qty: number) => sum + qty, 0);
     const shipType = this.engine.state.ship.type;
@@ -232,54 +233,69 @@ export class IntelligentTraderBot {
       return;
     }
 
-    // Get current market prices
+    // Get current system market prices
     const currentSystem = this.engine.state.solarSystem[this.engine.state.currentSystem];
-    const prices = getAllSystemPrices(
+    const currentPrices = getAllSystemPrices(
       currentSystem, 
       this.engine.state.commanderTrader, 
       this.engine.state.policeRecordScore
     );
 
-    // Find items we can actually afford
-    const availableItems = [];
-    const currentCredits = this.engine.state.credits;
-    const availableCargoSpace = maxCargo - totalCargo;
-
-    for (let i = 0; i < prices.length; i++) {
-      const buyPrice = prices[i].buyPrice;
-      
-      // Skip if item not available (buyPrice = 0) or we can't afford even 1 unit
-      if (buyPrice > 0 && buyPrice <= currentCredits) {
-        const maxAffordable = Math.floor(currentCredits / buyPrice);
-        const quantity = Math.min(3, availableCargoSpace, maxAffordable); // Buy up to 3 units
-        
-        if (quantity > 0) {
-          availableItems.push({
-            itemIndex: i,
-            quantity: quantity,
-            totalCost: buyPrice * quantity,
-            unitPrice: buyPrice,
-            itemName: tradeItems[i].name
-          });
-        }
-      }
-    }
-
-    if (availableItems.length === 0) {
+    // Analyze arbitrage opportunities with nearby systems
+    const arbitrageOpportunities = await this.analyzeArbitrageOpportunities(currentPrices);
+    
+    if (arbitrageOpportunities.length === 0) {
       if (this.verbose) {
-        console.log('⚠️ No affordable items available at this system');
+        console.log('⚠️ No profitable arbitrage opportunities found');
       }
       return;
     }
 
-    // Pick a random affordable item
-    const randomChoice = availableItems[Math.floor(Math.random() * availableItems.length)];
+    // Find the most profitable opportunity we can afford
+    const currentCredits = this.engine.state.credits;
+    const availableCargoSpace = maxCargo - totalCargo;
     
+    const affordableOpportunities = arbitrageOpportunities.filter(opp => {
+      const maxAffordable = Math.floor(currentCredits / opp.buyPrice);
+      const maxQuantity = Math.min(maxAffordable, availableCargoSpace);
+      return maxQuantity > 0 && opp.buyPrice <= currentCredits;
+    });
+
+    if (affordableOpportunities.length === 0) {
+      if (this.verbose) {
+        console.log('⚠️ No affordable arbitrage opportunities');
+      }
+      return;
+    }
+
+    // Sort by profit margin (descending) and pick the best one
+    const bestOpportunity = affordableOpportunities
+      .sort((a, b) => b.profitMargin - a.profitMargin)[0];
+
+    // Calculate optimal purchase quantity
+    const maxAffordable = Math.floor(currentCredits / bestOpportunity.buyPrice);
+    const optimalQuantity = Math.min(
+      maxAffordable,
+      availableCargoSpace,
+      3 // Cap at 3 units for risk management
+    );
+
+    const totalCost = bestOpportunity.buyPrice * optimalQuantity;
+    const expectedProfit = (bestOpportunity.sellPrice - bestOpportunity.buyPrice) * optimalQuantity;
+
+    if (this.verbose) {
+      console.log(`🧠 Best arbitrage: ${bestOpportunity.itemName}`);
+      console.log(`   Buy: ${bestOpportunity.buyPrice}c → Sell: ${bestOpportunity.sellPrice}c`);
+      console.log(`   Margin: ${bestOpportunity.profitMargin.toFixed(1)}% | Expected profit: ${expectedProfit}c`);
+      console.log(`   Target: ${bestOpportunity.bestSystem} (${bestOpportunity.distance.toFixed(1)} parsecs)`);
+    }
+
+    // Execute the purchase
     const buyResult = await this.engine.executeAction({
       type: 'buy_cargo',
       parameters: {
-        tradeItem: randomChoice.itemIndex,
-        quantity: randomChoice.quantity
+        tradeItem: bestOpportunity.itemIndex,
+        quantity: optimalQuantity
       }
     });
 
@@ -287,20 +303,230 @@ export class IntelligentTraderBot {
     
     if (buyResult.success) {
       this.session.totalTrades++;
+      // Remember where we want to sell this cargo
+      this.targetSystemIndex = bestOpportunity.bestSystemIndex;
+      
       if (this.verbose) {
-        console.log(`🛒 Bought ${randomChoice.quantity} units of ${randomChoice.itemName} for ${randomChoice.totalCost} credits`);
+        console.log(`🛒 Bought ${optimalQuantity} units of ${bestOpportunity.itemName} for ${totalCost} credits (expected profit: ${expectedProfit}c)`);
       }
     } else if (this.verbose) {
-      console.log(`❌ Failed to buy ${randomChoice.itemName}: ${buyResult.message}`);
+      console.log(`❌ Failed to buy ${bestOpportunity.itemName}: ${buyResult.message}`);
     }
   }
 
   /**
-   * Travel to a nearby system within fuel range
+   * Analyze arbitrage opportunities by looking at nearby systems
    */
-  private async travelToNearbySystem(): Promise<void> {
-    // Ships now auto-launch with warp_to_system, so no separate launch needed
+  private async analyzeArbitrageOpportunities(currentPrices: any[]): Promise<any[]> {
+    const opportunities: any[] = [];
+    const tradeItems = getTradeItems();
+    const currentSystemIndex = this.engine.state.currentSystem;
+    const currentFuel = this.engine.state.ship.fuel;
+    
+    // Get available warp actions to see which systems we can reach
+    const availableActions = this.engine.getAvailableActions();
+    const warpActions = availableActions.filter((action: any) => action.type === 'warp_to_system');
+    
+    if (warpActions.length === 0) {
+      return opportunities;
+    }
 
+    // Get all possible destination systems within fuel range
+    const reachableSystems: number[] = [];
+    for (const warpAction of warpActions) {
+      const possibleSystems = warpAction.parameters?.possibleSystems || [];
+      reachableSystems.push(...possibleSystems);
+    }
+
+    // Remove duplicates and current system
+    const uniqueReachableSystems = [...new Set(reachableSystems)]
+      .filter(systemIndex => systemIndex !== currentSystemIndex);
+
+    if (uniqueReachableSystems.length === 0) {
+      return opportunities;
+    }
+
+    // Analyze each reachable system for arbitrage opportunities
+    for (const targetSystemIndex of uniqueReachableSystems) {
+      const targetSystem = this.engine.state.solarSystem[targetSystemIndex];
+      const targetPrices = getAllSystemPrices(
+        targetSystem,
+        this.engine.state.commanderTrader,
+        this.engine.state.policeRecordScore
+      );
+
+      // Calculate distance between systems
+      const currentSys = this.engine.state.solarSystem[currentSystemIndex];
+      const targetSys = this.engine.state.solarSystem[targetSystemIndex];
+      const distance = Math.sqrt(
+        Math.pow(targetSys.x - currentSys.x, 2) + 
+        Math.pow(targetSys.y - currentSys.y, 2)
+      );
+
+      // Compare prices for each trade item
+      for (let itemIndex = 0; itemIndex < currentPrices.length; itemIndex++) {
+        const buyPrice = currentPrices[itemIndex].buyPrice;
+        const sellPrice = targetPrices[itemIndex].sellPrice;
+
+        // Skip if we can't buy here or can't sell there
+        if (buyPrice <= 0 || sellPrice <= 0) continue;
+
+        const profit = sellPrice - buyPrice;
+        const profitMargin = (profit / buyPrice) * 100;
+
+        // Only consider profitable trades with meaningful margins
+        if (profit > 0 && profitMargin >= 5) { // At least 5% margin
+          opportunities.push({
+            itemIndex: itemIndex,
+            itemName: tradeItems[itemIndex].name,
+            buyPrice: buyPrice,
+            sellPrice: sellPrice,
+            profit: profit,
+            profitMargin: profitMargin,
+            bestSystem: getSolarSystemName(targetSystemIndex),
+            bestSystemIndex: targetSystemIndex,
+            distance: distance,
+            // Score combines profit margin with distance efficiency
+            score: profitMargin * Math.max(0.1, 1 / (distance + 1))
+          });
+        }
+      }
+    }
+
+    // Sort by score (profit margin weighted by distance)
+    return opportunities.sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Travel to the target system where we can sell our cargo profitably
+   */
+  private async travelToTargetSystem(): Promise<void> {
+    // If we have no target system or no cargo, try random travel
+    if (!this.targetSystemIndex || this.getTotalCargo() === 0) {
+      await this.travelToRandomNearbySystem();
+      return;
+    }
+
+    // Get available warp actions from the engine
+    const availableActions = this.engine.getAvailableActions();
+    const warpActions = availableActions.filter((action: any) => action.type === 'warp_to_system');
+    
+    if (warpActions.length === 0) {
+      if (this.verbose) {
+        console.log('⚠️ No systems within range - need to refuel first');
+      }
+      await this.refuelIfNeeded();
+      return;
+    }
+
+    // Check if our target system is reachable
+    let canReachTarget = false;
+    for (const warpAction of warpActions) {
+      const possibleSystems = warpAction.parameters?.possibleSystems || [];
+      if (possibleSystems.includes(this.targetSystemIndex)) {
+        canReachTarget = true;
+        break;
+      }
+    }
+
+    let targetSystem: number;
+    
+    if (canReachTarget) {
+      // Go directly to our target system
+      targetSystem = this.targetSystemIndex;
+      if (this.verbose) {
+        console.log(`🎯 Traveling to target system ${getSolarSystemName(targetSystem)} to sell cargo`);
+      }
+    } else {
+      // Target not reachable, find the best intermediate system
+      targetSystem = this.findBestIntermediateSystem(warpActions);
+      if (this.verbose) {
+        console.log(`🔄 Target unreachable, heading to intermediate system ${getSolarSystemName(targetSystem)}`);
+      }
+    }
+
+    // Execute warp
+    const warpResult = await this.engine.executeAction({
+      type: 'warp_to_system',
+      parameters: {
+        targetSystem: targetSystem
+      }
+    });
+    this.session.totalActions++;
+
+    if (warpResult.success) {
+      if (this.verbose) {
+        console.log(`✅ Successfully warped to ${getSolarSystemName(targetSystem)}`);
+      }
+      
+      // Clear target if we reached it
+      if (targetSystem === this.targetSystemIndex) {
+        this.targetSystemIndex = null;
+      }
+      
+      // Handle any combat encounters during travel
+      await this.handleCombatIfNeeded();
+      
+      // Ensure we dock at destination after travel/combat
+      await this.ensureOnPlanet();
+      
+    } else {
+      if (this.verbose) {
+        console.log(`❌ Warp failed: ${warpResult.message} - staying local`);
+      }
+      // If warp fails, dock back at planet for local trading
+      await this.ensureOnPlanet();
+    }
+  }
+
+  /**
+   * Find the best intermediate system when target is unreachable
+   */
+  private findBestIntermediateSystem(warpActions: any[]): number {
+    // Get all possible destination systems
+    const reachableSystems: number[] = [];
+    for (const warpAction of warpActions) {
+      const possibleSystems = warpAction.parameters?.possibleSystems || [];
+      reachableSystems.push(...possibleSystems);
+    }
+
+    const uniqueReachableSystems = [...new Set(reachableSystems)]
+      .filter(systemIndex => systemIndex !== this.engine.state.currentSystem);
+
+    if (uniqueReachableSystems.length === 0) {
+      return this.engine.state.currentSystem; // Fallback
+    }
+
+    // If we have a target, find the system closest to our target
+    if (this.targetSystemIndex) {
+      const targetSys = this.engine.state.solarSystem[this.targetSystemIndex];
+      let bestSystem = uniqueReachableSystems[0];
+      let minDistance = Infinity;
+
+      for (const systemIndex of uniqueReachableSystems) {
+        const sys = this.engine.state.solarSystem[systemIndex];
+        const distance = Math.sqrt(
+          Math.pow(sys.x - targetSys.x, 2) + 
+          Math.pow(sys.y - targetSys.y, 2)
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestSystem = systemIndex;
+        }
+      }
+      
+      return bestSystem;
+    }
+
+    // No target, pick randomly
+    return uniqueReachableSystems[Math.floor(Math.random() * uniqueReachableSystems.length)];
+  }
+
+  /**
+   * Fall back to random travel when no intelligent target is available
+   */
+  private async travelToRandomNearbySystem(): Promise<void> {
     // Get available warp actions from the engine
     const availableActions = this.engine.getAvailableActions();
     const warpActions = availableActions.filter((action: any) => action.type === 'warp_to_system');
@@ -328,7 +554,7 @@ export class IntelligentTraderBot {
     const targetSystem = possibleSystems[Math.floor(Math.random() * possibleSystems.length)];
 
     if (this.verbose) {
-      console.log(`🚀 Traveling to ${getSolarSystemName(targetSystem)}`);
+      console.log(`🚀 Random travel to ${getSolarSystemName(targetSystem)}`);
     }
 
     // Execute warp
@@ -358,6 +584,13 @@ export class IntelligentTraderBot {
       // If warp fails, dock back at planet for local trading
       await this.ensureOnPlanet();
     }
+  }
+
+  /**
+   * Get total cargo quantity
+   */
+  private getTotalCargo(): number {
+    return this.engine.state.ship.cargo.reduce((sum: number, qty: number) => sum + qty, 0);
   }
 
   /**

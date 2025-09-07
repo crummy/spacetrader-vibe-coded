@@ -52,7 +52,7 @@ test('wormhole system - wormhole travel ignores fuel requirements', () => {
   for (let target = 0; target < 20; target++) {
     if (isWormholeTravel(state, 0, target)) {
       // Test that wormhole travel works even with low fuel
-      const warpResult = performWarp(state, 0, target, false);
+      const warpResult = performWarp(state, target, false);
       
       if (warpResult.success) {
         wormholeFound = true;

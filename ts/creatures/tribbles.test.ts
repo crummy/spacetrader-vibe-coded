@@ -301,12 +301,12 @@ test('Tribble Enhancement System', async (t) => {
     await t.test('should handle tribble warning system', () => {
       let state = createInitialState();
       state.ship.tribbles = 100;
-      state.tribbleMessage = false;
+      state.options.tribbleMessage = false;
       
       assert.equal(shouldShowTribbleShipyardWarning(state), true);
       
       state = markTribbleWarningShown(state);
-      assert.equal(state.tribbleMessage, true);
+      assert.equal(state.options.tribbleMessage, true);
       assert.equal(shouldShowTribbleShipyardWarning(state), false);
     });
 
