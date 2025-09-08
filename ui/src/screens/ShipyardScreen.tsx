@@ -25,6 +25,7 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
   const actualAvailableActions = availableActions || gameEngine.availableActions;
 
   const [selectedShip, setSelectedShip] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
 
@@ -45,7 +46,13 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
 
   const handleShipSelect = (shipTypeIndex: number) => {
     setSelectedShip(shipTypeIndex);
+    setShowModal(true);
     setMessage('');
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedShip(null);
   };
 
   const handleDock = async () => {
@@ -107,9 +114,10 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
       });
 
       if (result.success) {
-        setMessage(`Successfully purchased ${ship.name}! Your old ship was traded in for ${tradeInValue.toLocaleString()} credits.`);
+        setMessage(`Successfully purchased ${ship.name}!`);
         setMessageType('success');
         setSelectedShip(null);
+        setShowModal(false);
       } else {
         setMessage(result.message || 'Purchase failed');
         setMessageType('error');
@@ -140,90 +148,70 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
         </div>
       )}
 
-      {/* Current Ship Info */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-2">Current Ship - {currentShipType.name}:</div>
-        <div className="text-sm text-palm-gray space-y-1">
-          <div className="flex justify-between">
-            <span>Hull:</span>
-            <span>{actualState.ship.hull}/{currentShipType.hullStrength}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Cargo:</span>
-            <span>{filledCargoBays}/{totalCargoBays} bays</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Fuel:</span>
-            <span>{actualState.ship.fuel}/{currentShipType.fuelTanks}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Trade-in Value:</span>
-            <span className="text-neon-green">{tradeInValue.toLocaleString()} cr.</span>
-          </div>
+      {/* Current Ship Info - Compact */}
+      <div className="bg-space-black border border-space-blue rounded p-1 mb-2">
+        <div className="text-xs text-palm-gray">
+          Current: {currentShipType.name} • Hull: {actualState.ship.hull}/{currentShipType.hullStrength} • Trade-in: <span className="text-neon-green">{tradeInValue.toLocaleString()}cr</span>
         </div>
       </div>
 
-      {/* Available Ships */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3">Available Ships:</div>
-        <div className="space-y-2">
-          {!buyShipAvailable ? (
-            <div className="text-palm-gray text-sm">Shipyard unavailable - must be docked at a planet.</div>
-          ) : availableShips.length === 0 ? (
-            <div className="text-palm-gray text-sm">No ships available for purchase.</div>
-          ) : (
-            availableShips.map((ship) => (
-              <button
-                key={ship.shipType}
-                onClick={() => handleShipSelect(ship.shipType)}
-                className={`w-full p-3 text-left rounded border transition-all duration-200 ${
-                  selectedShip === ship.shipType
-                    ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
-                    : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
-                } ${!ship.canAfford ? 'opacity-60' : ''}`}
-                disabled={!ship.canAfford}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <div className="text-neon-cyan font-semibold text-lg">{ship.name}</div>
-                  <div className={`font-bold ${ship.canAfford ? 'text-neon-green' : 'text-red-400'}`}>
-                    {ship.netPrice.toLocaleString()} cr.
-                  </div>
+      {/* Available Ships - Compact List */}
+      <div className="space-y-1">{/* Removed panel wrapper to save space */}
+        {!buyShipAvailable ? (
+          <div className="text-palm-gray text-sm p-2">Shipyard unavailable - must be docked at a planet.</div>
+        ) : availableShips.length === 0 ? (
+          <div className="text-palm-gray text-sm p-2">No ships available for purchase.</div>
+        ) : (
+          availableShips.map((ship) => (
+            <button
+              key={ship.shipType}
+              onClick={() => handleShipSelect(ship.shipType)}
+              className={`w-full p-1 text-left rounded border transition-all duration-200 border-palm-gray hover:border-neon-cyan border-opacity-30 ${!ship.canAfford ? 'opacity-60' : ''}`}
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-neon-cyan text-sm font-semibold">{ship.name}</span>
+                <div className={`font-bold text-sm ${ship.canAfford ? 'text-neon-green' : 'text-red-400'}`}>
+                  {ship.netPrice.toLocaleString()}cr
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-palm-gray">
-                  <div>Cargo: {ship.shipData.cargoBays} bays</div>
-                  <div>Hull: {ship.shipData.hullStrength}</div>
-                  <div>Weapons: {ship.shipData.weaponSlots}</div>
-                  <div>Shields: {ship.shipData.shieldSlots}</div>
-                  <div>Gadgets: {ship.shipData.gadgetSlots}</div>
-                  <div>Crew: {ship.shipData.crewQuarters}</div>
-                </div>
-                {!ship.canAfford && (
-                  <div className="text-red-400 text-xs mt-1">Insufficient funds</div>
-                )}
-              </button>
-            ))
-          )}
-        </div>
+              </div>
+            </button>
+          ))
+        )}
       </div>
 
-      {/* Ship Details */}
-      {selectedShipData && (
-        <div className="space-panel bg-space-black mb-4">
-          <div className="text-neon-amber mb-3">{selectedShipData.name} Details:</div>
-          <div className="text-sm text-palm-gray space-y-2">
-            <div className="grid grid-cols-2 gap-4">
+      {/* Compact Message */}
+      {message && (
+        <div className={`text-xs p-1 rounded mb-1 ${
+          messageType === 'success' ? 'text-green-300 bg-green-900' :
+          messageType === 'error' ? 'text-red-300 bg-red-900' :
+          'text-neon-amber bg-space-black'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      {/* Ship Details Modal */}
+      {showModal && selectedShipData && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={handleCloseModal}>
+          <div className="bg-space-dark border border-neon-cyan rounded p-4 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-neon-amber font-bold">{selectedShipData.name}</h3>
+              <button onClick={handleCloseModal} className="text-palm-gray hover:text-neon-red text-lg">×</button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 text-xs mb-4">
               <div>
-                <div className="text-neon-cyan mb-1">Specifications:</div>
-                <div className="space-y-1 text-xs">
-                  <div>Cargo Bays: {selectedShipData.shipData.cargoBays}</div>
-                  <div>Hull Strength: {selectedShipData.shipData.hullStrength}</div>
-                  <div>Fuel Tanks: {selectedShipData.shipData.fuelTanks}</div>
-                  <div>Crew Quarters: {selectedShipData.shipData.crewQuarters}</div>
+                <div className="text-neon-cyan mb-1">Specs:</div>
+                <div className="space-y-0.5 text-palm-gray">
+                  <div>Cargo: {selectedShipData.shipData.cargoBays} bays</div>
+                  <div>Hull: {selectedShipData.shipData.hullStrength}</div>
+                  <div>Fuel: {selectedShipData.shipData.fuelTanks} tanks</div>
+                  <div>Crew: {selectedShipData.shipData.crewQuarters}</div>
                 </div>
               </div>
               <div>
-                <div className="text-neon-cyan mb-1">Equipment Slots:</div>
-                <div className="space-y-1 text-xs">
+                <div className="text-neon-cyan mb-1">Equipment:</div>
+                <div className="space-y-0.5 text-palm-gray">
                   <div>Weapons: {selectedShipData.shipData.weaponSlots}</div>
                   <div>Shields: {selectedShipData.shipData.shieldSlots}</div>
                   <div>Gadgets: {selectedShipData.shipData.gadgetSlots}</div>
@@ -231,44 +219,36 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
                 </div>
               </div>
             </div>
-            <div className="border-t border-palm-gray border-opacity-30 pt-2 mt-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div>Base Price: {selectedShipData.basePrice.toLocaleString()} cr.</div>
-                  <div>Trade-in Value: -{tradeInValue.toLocaleString()} cr.</div>
+
+            <div className="border-t border-palm-gray border-opacity-30 pt-3 mb-4">
+              <div className="text-xs text-palm-gray space-y-1">
+                <div className="flex justify-between">
+                  <span>Base Price:</span>
+                  <span>{selectedShipData.basePrice.toLocaleString()} cr</span>
                 </div>
-                <div className="text-right">
-                  <div className="text-neon-green font-bold text-lg">
-                    Net Cost: {selectedShipData.netPrice.toLocaleString()} cr.
-                  </div>
+                <div className="flex justify-between">
+                  <span>Trade-in Value:</span>
+                  <span className="text-neon-green">-{tradeInValue.toLocaleString()} cr</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>Net Cost:</span>
+                  <span className="text-neon-green">{selectedShipData.netPrice.toLocaleString()} cr</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={handlePurchase}
-            disabled={!selectedShipData.canAfford || actualState.debt > 0}
-            className="neon-button w-full py-2 font-semibold mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Purchase {selectedShipData.name}
-          </button>
-        </div>
-      )}
-
-      {/* Message Display */}
-      {message && (
-        <div className={`space-panel mb-4 ${
-          messageType === 'success' ? 'bg-green-900 border-green-500' :
-          messageType === 'error' ? 'bg-red-900 border-red-500' :
-          'bg-space-black border-neon-amber'
-        }`}>
-          <div className={`text-sm ${
-            messageType === 'success' ? 'text-green-300' :
-            messageType === 'error' ? 'text-red-300' :
-            'text-neon-amber'
-          }`}>
-            {message}
+            <div className="flex gap-2">
+              <button onClick={handleCloseModal} className="compact-button flex-1">
+                Cancel
+              </button>
+              <button
+                onClick={handlePurchase}
+                disabled={!selectedShipData.canAfford || actualState.debt > 0}
+                className="compact-button flex-1 disabled:opacity-50"
+              >
+                Buy Ship
+              </button>
+            </div>
           </div>
         </div>
       )}

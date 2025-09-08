@@ -196,135 +196,90 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
         </div>
       )}
 
-      {/* Cargo Space Info */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-2">Cargo Bay Status:</div>
-        <div className="text-sm text-palm-gray">
-          <div>Used: {filledCargoBays}/{totalCargoBays} bays</div>
-          <div>Free: {totalCargoBays - filledCargoBays} bays</div>
+      {/* Compact header with cargo status */}
+      <div className="bg-space-black border border-space-blue rounded p-1 mb-2">
+        <div className="text-xs text-palm-gray">
+          Cargo: {filledCargoBays}/{totalCargoBays} • Free: {totalCargoBays - filledCargoBays}
         </div>
       </div>
 
       {/* Cargo Items List */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3">Your Cargo Hold:</div>
-        <div className="space-y-2">
-          {!sellCargoAvailable ? (
-            <div className="text-palm-gray text-sm">
-              {cargoItems.length === 0 
-                ? "Your cargo hold is empty."
-                : "No buyers interested in your cargo at this system."
-              }
-            </div>
-          ) : cargoItems.length === 0 ? (
-            <div className="text-palm-gray text-sm">Your cargo hold is empty.</div>
-          ) : (
-            cargoItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleItemSelect(item.id)}
-                className={`w-full p-2 text-left rounded border transition-all duration-200 ${
-                  selectedItem === item.id
-                    ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
-                    : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-neon-cyan font-semibold">{item.name}</div>
-                    <div className="text-xs text-palm-gray">
-                      Owned: {item.ownedQty} units
-                    </div>
-                  </div>
-                  <div className={item.price > 0 ? "text-neon-green font-bold" : "text-red-400 font-bold"}>
-                    {item.price > 0 ? `${item.price.toLocaleString()} cr.` : 'N/A'}
-                  </div>
+      <div className="space-y-1">{/* Removed panel wrapper to save space */}
+        {!sellCargoAvailable ? (
+          <div className="text-palm-gray text-sm p-2">
+            {cargoItems.length === 0 
+              ? "Your cargo hold is empty."
+              : "No buyers interested in your cargo at this system."
+            }
+          </div>
+        ) : cargoItems.length === 0 ? (
+          <div className="text-palm-gray text-sm p-2">Your cargo hold is empty.</div>
+        ) : (
+          cargoItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleItemSelect(item.id)}
+              className={`w-full p-1 text-left rounded border transition-all duration-200 ${
+                selectedItem === item.id
+                  ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
+                  : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <span className="text-neon-cyan text-sm font-semibold">{item.name}</span>
+                  <span className="text-xs text-palm-gray ml-2">Own: {item.ownedQty}</span>
                 </div>
-              </button>
-            ))
-          )}
-        </div>
+                <div className={item.price > 0 ? "text-neon-green font-bold text-sm" : "text-red-400 font-bold text-sm"}>
+                  {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
+                </div>
+              </div>
+            </button>
+          ))
+        )}
       </div>
 
       {/* Sale Controls */}
       {selectedCargoItem && selectedCargoItem.price > 0 && (
-        <div className="space-panel bg-space-black mb-4">
-          <div className="text-neon-amber mb-3">Sell {selectedCargoItem.name}:</div>
-          
-          <div className="flex items-center gap-4 mb-3">
-            <button 
-              onClick={() => handleQuantityChange(-1)}
-              className="neon-button px-3 py-1 text-sm"
-              disabled={quantity <= 1}
-            >
-              -
-            </button>
-            
-            <div className="text-center">
-              <div className="text-neon-cyan font-bold text-lg">{quantity}</div>
-              <div className="text-xs text-palm-gray">units</div>
-            </div>
-            
-            <button 
-              onClick={() => handleQuantityChange(1)}
-              className="neon-button px-3 py-1 text-sm"
-              disabled={quantity >= selectedCargoItem.ownedQty}
-            >
-              +
-            </button>
-            
-            <button 
-              onClick={handleMaxQuantity}
-              className="neon-button px-3 py-1 text-sm"
-            >
-              All
-            </button>
-          </div>
-
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm text-palm-gray">
-              Total Revenue: <span className="text-neon-green font-bold">
-                {(quantity * selectedCargoItem.price).toLocaleString()} cr.
-              </span>
-            </div>
-            <div className="text-sm text-palm-gray">
-              Max: {getMaxSellable(selectedCargoItem)} units
+        <div className="bg-space-black border border-space-blue rounded p-2 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-neon-amber text-sm">{selectedCargoItem.name}</div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleQuantityChange(-1)} className="compact-button px-2" disabled={quantity <= 1}>-</button>
+              <span className="text-neon-cyan font-bold text-sm w-8 text-center">{quantity}</span>
+              <button onClick={() => handleQuantityChange(1)} className="compact-button px-2" disabled={quantity >= selectedCargoItem.ownedQty}>+</button>
+              <button onClick={handleMaxQuantity} className="compact-button text-xs">All</button>
             </div>
           </div>
-
+          <div className="text-xs text-palm-gray mb-2">
+            Revenue: <span className="text-neon-green">{(quantity * selectedCargoItem.price).toLocaleString()}cr</span> • 
+            Max: {getMaxSellable(selectedCargoItem)}
+          </div>
           <button
             onClick={handleSale}
             disabled={quantity > selectedCargoItem.ownedQty || quantity <= 0}
-            className="neon-button w-full py-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="compact-button w-full disabled:opacity-50"
           >
-            Sell {quantity} {selectedCargoItem.name}
+            Sell {quantity} units
           </button>
         </div>
       )}
 
       {/* No Sale Available */}
       {selectedCargoItem && selectedCargoItem.price <= 0 && (
-        <div className="space-panel bg-red-900 border-red-500 mb-4">
-          <div className="text-red-300 text-sm">
-            {selectedCargoItem.name} cannot be sold at this location.
-          </div>
+        <div className="text-xs p-1 rounded mb-1 text-red-300 bg-red-900">
+          {selectedCargoItem.name} cannot be sold here.
         </div>
       )}
 
-      {/* Message Display */}
+      {/* Compact Message */}
       {message && (
-        <div className={`space-panel mb-4 ${
-          messageType === 'success' ? 'bg-green-900 border-green-500' :
-          messageType === 'error' ? 'bg-red-900 border-red-500' :
-          'bg-space-black border-neon-amber'
+        <div className={`text-xs p-1 rounded mb-1 ${
+          messageType === 'success' ? 'text-green-300 bg-green-900' :
+          messageType === 'error' ? 'text-red-300 bg-red-900' :
+          'text-neon-amber bg-space-black'
         }`}>
-          <div className={`text-sm ${
-            messageType === 'success' ? 'text-green-300' :
-            messageType === 'error' ? 'text-red-300' :
-            'text-neon-amber'
-          }`}>
-            {message}
-          </div>
+          {message}
         </div>
       )}
     </div>

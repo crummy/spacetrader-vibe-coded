@@ -204,124 +204,81 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
         </div>
       )}
 
-      {/* Cargo Space Info */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-2">Cargo Bay Status:</div>
-        <div className="text-sm text-palm-gray">
-          <div>Used: {filledCargoBays}/{totalCargoBays} bays</div>
-          <div>Available: {availableCargoBays} bays</div>
-          {actualState.options.leaveEmpty > 0 && (
-            <div>Reserved: {actualState.options.leaveEmpty} bays</div>
-          )}
+      {/* Compact header with cargo status */}
+      <div className="bg-space-black border border-space-blue rounded p-1 mb-2">
+        <div className="text-xs text-palm-gray">
+          Cargo: {filledCargoBays}/{totalCargoBays} • Available: {availableCargoBays}
+          {actualState.options.leaveEmpty > 0 && ` • Reserved: ${actualState.options.leaveEmpty}`}
         </div>
       </div>
 
       {/* Trade Goods List */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3">Available Trade Goods:</div>
-        <div className="space-y-2">
-          {!buyCargoAvailable ? (
-            <div className="text-palm-gray text-sm">Trading unavailable - must be docked at a planet.</div>
-          ) : tradeGoods.length === 0 ? (
-            <div className="text-palm-gray text-sm">No trade goods available at this location.</div>
-          ) : (
-            tradeGoods.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleItemSelect(item.id)}
-                className={`w-full p-2 text-left rounded border transition-all duration-200 ${
-                  selectedItem === item.id
-                    ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
-                    : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-neon-cyan font-semibold">{item.name}</div>
-                    <div className="text-xs text-palm-gray">
-                      Available: {item.availableQty} | Owned: {item.playerOwned}
-                    </div>
-                  </div>
-                  <div className="text-neon-green font-bold">
-                    {item.price.toLocaleString()} cr.
-                  </div>
+      <div className="space-y-1">{/* Removed panel wrapper to save space */}
+        {!buyCargoAvailable ? (
+          <div className="text-palm-gray text-sm p-2">Trading unavailable - must be docked at a planet.</div>
+        ) : tradeGoods.length === 0 ? (
+          <div className="text-palm-gray text-sm p-2">No trade goods available at this location.</div>
+        ) : (
+          tradeGoods.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleItemSelect(item.id)}
+              className={`w-full p-1 text-left rounded border transition-all duration-200 ${
+                selectedItem === item.id
+                  ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
+                  : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <span className="text-neon-cyan text-sm font-semibold">{item.name}</span>
+                  <span className="text-xs text-palm-gray ml-2">
+                    Avail: {item.availableQty} • Own: {item.playerOwned}
+                  </span>
                 </div>
-              </button>
-            ))
-          )}
-        </div>
+                <div className="text-neon-green font-bold text-sm">
+                  {item.price.toLocaleString()}cr
+                </div>
+              </div>
+            </button>
+          ))
+        )}
       </div>
 
       {/* Purchase Controls */}
       {selectedTradeGood && (
-        <div className="space-panel bg-space-black mb-4">
-          <div className="text-neon-amber mb-3">Purchase {selectedTradeGood.name}:</div>
-          
-          <div className="flex items-center gap-4 mb-3">
-            <button 
-              onClick={() => handleQuantityChange(-1)}
-              className="neon-button px-3 py-1 text-sm"
-              disabled={quantity <= 1}
-            >
-              -
-            </button>
-            
-            <div className="text-center">
-              <div className="text-neon-cyan font-bold text-lg">{quantity}</div>
-              <div className="text-xs text-palm-gray">units</div>
-            </div>
-            
-            <button 
-              onClick={() => handleQuantityChange(1)}
-              className="neon-button px-3 py-1 text-sm"
-              disabled={quantity >= getMaxAffordable(selectedTradeGood)}
-            >
-              +
-            </button>
-            
-            <button 
-              onClick={handleMaxQuantity}
-              className="neon-button px-3 py-1 text-sm"
-            >
-              Max
-            </button>
-          </div>
-
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm text-palm-gray">
-              Total Cost: <span className="text-neon-green font-bold">
-                {(quantity * selectedTradeGood.price).toLocaleString()} cr.
-              </span>
-            </div>
-            <div className="text-sm text-palm-gray">
-              Max Affordable: {getMaxAffordable(selectedTradeGood)}
+        <div className="bg-space-black border border-space-blue rounded p-2 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-neon-amber text-sm">{selectedTradeGood.name}</div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleQuantityChange(-1)} className="compact-button px-2" disabled={quantity <= 1}>-</button>
+              <span className="text-neon-cyan font-bold text-sm w-8 text-center">{quantity}</span>
+              <button onClick={() => handleQuantityChange(1)} className="compact-button px-2" disabled={quantity >= getMaxAffordable(selectedTradeGood)}>+</button>
+              <button onClick={handleMaxQuantity} className="compact-button text-xs">Max</button>
             </div>
           </div>
-
+          <div className="text-xs text-palm-gray mb-2">
+            Cost: <span className="text-neon-green">{(quantity * selectedTradeGood.price).toLocaleString()}cr</span> • 
+            Max: {getMaxAffordable(selectedTradeGood)}
+          </div>
           <button
             onClick={handlePurchase}
             disabled={quantity > getMaxAffordable(selectedTradeGood)}
-            className="neon-button w-full py-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="compact-button w-full disabled:opacity-50"
           >
-            Purchase {quantity} {selectedTradeGood.name}
+            Buy {quantity} units
           </button>
         </div>
       )}
 
-      {/* Message Display */}
+      {/* Compact Message */}
       {message && (
-        <div className={`space-panel mb-4 ${
-          messageType === 'success' ? 'bg-green-900 border-green-500' :
-          messageType === 'error' ? 'bg-red-900 border-red-500' :
-          'bg-space-black border-neon-amber'
+        <div className={`text-xs p-1 rounded mb-1 ${
+          messageType === 'success' ? 'text-green-300 bg-green-900' :
+          messageType === 'error' ? 'text-red-300 bg-red-900' :
+          'text-neon-amber bg-space-black'
         }`}>
-          <div className={`text-sm ${
-            messageType === 'success' ? 'text-green-300' :
-            messageType === 'error' ? 'text-red-300' :
-            'text-neon-amber'
-          }`}>
-            {message}
-          </div>
+          {message}
         </div>
       )}
     </div>
