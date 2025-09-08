@@ -288,15 +288,15 @@ describe('Game Engine Integration', () => {
     test('should handle system transitions properly', async () => {
       const engine = createGameEngine();
       engine.state.currentMode = GameMode.OnPlanet;
-      engine.state.ship.fuel = 20;
       engine.state.credits = 5000; // Ensure sufficient credits for warp
       
       // Warp from planet (auto-launches)
       const { getSystemsWithinRange } = await import('../travel/galaxy.ts');
-      const { getFuelTanks } = await import('../travel/warp.ts');
+      const { getFuelTanks, getCurrentFuel } = await import('../travel/warp.ts');
       // Use the ship's actual fuel capacity for range calculation
       const maxFuel = getFuelTanks(engine.state.ship);
-      const actualFuel = Math.min(engine.state.ship.fuel, maxFuel);
+      engine.state.ship.fuel = maxFuel; // Set to actual tank capacity
+      const actualFuel = getCurrentFuel(engine.state.ship);
       const reachableSystems = getSystemsWithinRange(engine.state, actualFuel);
       
       if (reachableSystems.length > 0) {

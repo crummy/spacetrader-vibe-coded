@@ -263,7 +263,11 @@ describe('State Transition Testing', () => {
     test('should transition from OnPlanet to InSpace when warping', async () => {
       const engine = createGameEngine();
       engine.state.currentMode = GameMode.OnPlanet;
-      engine.state.ship.fuel = 20;
+      
+      // Get the ship's actual fuel tank capacity and set fuel appropriately
+      const { getFuelTanks } = await import('../travel/warp.ts');
+      const maxFuel = getFuelTanks(engine.state.ship);
+      engine.state.ship.fuel = maxFuel; // Use actual tank capacity
       
       // Find a nearby system to warp to using actual current fuel
       const { getSystemsWithinRange } = await import('../travel/galaxy.ts');
