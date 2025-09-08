@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  body {
+    @apply bg-space-black text-palm-gray min-h-screen;
+    margin: 0;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .space-panel {
+    @apply bg-space-dark border border-space-blue rounded-lg p-4;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+  }
+  
+  .neon-button {
+    @apply bg-space-blue border border-neon-cyan text-neon-cyan px-4 py-2 rounded;
+    @apply hover:bg-neon-cyan hover:text-space-black transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-neon-cyan;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+  }
+  
+  .neon-button:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+  }
+  
+  .status-good {
+    @apply text-neon-green;
+  }
+  
+  .status-warning {
+    @apply text-neon-amber;
+  }
+  
+  .status-danger {
+    @apply text-neon-red;
+  }
+  
+  .retro-title {
+    font-family: 'Orbitron', sans-serif;
+    @apply font-bold text-neon-cyan text-shadow;
+    text-shadow: 0 0 10px currentColor;
+  }
+  
+  .game-screen {
+    @apply min-h-screen bg-gradient-to-b from-space-black via-space-dark to-space-black;
+  }
+}

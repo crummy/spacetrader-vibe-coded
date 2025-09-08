@@ -667,7 +667,7 @@ export function checkCombatResolution(state: GameState): { message: string; game
       return { message: 'Both ships destroyed! Your escape pod activates...' };
     } else {
       // Player dies - hull will be 0 for ending system to detect
-      endEncounter(state);
+      state.currentMode = GameMode.GameOver;
       return { message: 'Both ships destroyed! Your ship is destroyed.', gameOver: true };
     }
   } else if (opponentDestroyed) {
@@ -682,7 +682,7 @@ export function checkCombatResolution(state: GameState): { message: string; game
       return { message: 'Your ship is destroyed! Your escape pod activates...' };
     } else {
       // Player dies - keep hull at 0 for ending system to detect
-      endEncounter(state);
+      state.currentMode = GameMode.GameOver;
       return { message: 'Your ship is destroyed! Game Over.', gameOver: true };
     }
   }
