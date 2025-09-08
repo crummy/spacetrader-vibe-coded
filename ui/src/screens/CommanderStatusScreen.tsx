@@ -47,13 +47,6 @@ export function CommanderStatusScreen({ onNavigate, onBack, state, onAction, ava
 
   return (
     <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">COMMANDER</h2>
-        <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
-      </div>
 
       {/* Commander Header */}
       <div className="space-panel bg-space-black mb-4">

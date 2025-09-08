@@ -110,13 +110,6 @@ export function BuyEquipmentScreen({ onNavigate, onBack, state, onAction, availa
 
   return (
     <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">BUY EQUIPMENT</h2>
-        <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
-      </div>
 
       {/* Dock Button if not docked */}
       {!buyEquipmentAvailable && dockAvailable && (

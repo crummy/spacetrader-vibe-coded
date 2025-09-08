@@ -182,13 +182,6 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
 
   return (
     <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">SELL CARGO</h2>
-        <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
-      </div>
 
       {/* Dock Button if not docked */}
       {!sellCargoAvailable && dockAvailable && (
@@ -217,7 +210,12 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
         <div className="text-neon-amber mb-3">Your Cargo Hold:</div>
         <div className="space-y-2">
           {!sellCargoAvailable ? (
-            <div className="text-palm-gray text-sm">Trading unavailable - must be docked at a planet.</div>
+            <div className="text-palm-gray text-sm">
+              {cargoItems.length === 0 
+                ? "Your cargo hold is empty."
+                : "No buyers interested in your cargo at this system."
+              }
+            </div>
           ) : cargoItems.length === 0 ? (
             <div className="text-palm-gray text-sm">Your cargo hold is empty.</div>
           ) : (

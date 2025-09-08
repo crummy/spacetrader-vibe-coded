@@ -240,13 +240,6 @@ export function BankScreen({ onNavigate, onBack, state, onAction, availableActio
 
   return (
     <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">BANK</h2>
-        <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
-      </div>
 
       {/* Dock Button if not docked */}
       {!isDocked && dockAvailable && (

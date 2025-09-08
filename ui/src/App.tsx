@@ -91,12 +91,6 @@ function App() {
               <NewGameScreen onStartGame={handleStartGame} />
             </div>
           </div>
-          <div className="palm-buttons">
-            <div className="palm-button" title="Home"></div>
-            <div className="palm-button" title="Menu"></div>
-            <div className="palm-button" title="Find"></div>
-            <div className="palm-button" title="Calc"></div>
-          </div>
         </div>
         {isLoading && (
           <div className="fixed inset-0 bg-space-black bg-opacity-75 flex items-center justify-center z-50">
@@ -117,12 +111,6 @@ function App() {
               <GameOverScreen state={gameState} onNewGame={handleNewGame} />
             </div>
           </div>
-          <div className="palm-buttons">
-            <div className="palm-button" title="Home"></div>
-            <div className="palm-button" title="Menu"></div>
-            <div className="palm-button" title="Find"></div>
-            <div className="palm-button" title="Calc"></div>
-          </div>
         </div>
       </div>
     );
@@ -141,12 +129,6 @@ function App() {
               />
             </div>
           </div>
-          <div className="palm-buttons">
-            <div className="palm-button" title="Home"></div>
-            <div className="palm-button" title="Menu"></div>
-            <div className="palm-button" title="Find"></div>
-            <div className="palm-button" title="Calc"></div>
-          </div>
         </div>
       </div>
     );
@@ -162,13 +144,6 @@ function App() {
             onAction={handleAction}
             availableActions={availableActions}
           />
-        </div>
-        {/* Hardware buttons */}
-        <div className="palm-buttons">
-          <div className="palm-button" title="Home"></div>
-          <div className="palm-button" title="Menu"></div>
-          <div className="palm-button" title="Find"></div>
-          <div className="palm-button" title="Calc"></div>
         </div>
       </div>
       {isLoading && (

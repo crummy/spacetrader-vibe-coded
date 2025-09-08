@@ -161,14 +161,6 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 px-3 py-2">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">GALAXY CHART</h2>
-        <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
-      </div>
-
       {/* Galaxy Map */}
       <div className="flex-1 flex flex-col px-2">
         <div className="flex justify-center flex-1">

@@ -12,13 +12,6 @@ export function SystemInfoScreen({ onNavigate, onBack }: ScreenProps) {
 
   return (
     <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onBack} className="neon-button">
-          ← Back
-        </button>
-        <h2 className="retro-title text-lg">SYSTEM INFO</h2>
-        <div className="text-neon-green font-bold">{state.credits.toLocaleString()} cr.</div>
-      </div>
 
       <div className="text-center py-8">
         <div className="text-4xl mb-4">🌟</div>
