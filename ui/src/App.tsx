@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Layout, Header, ActionBar } from './components/Layout.tsx';
-import { ScreenRouter } from './components/ScreenRouter.tsx';
+import { PalmInterface } from './components/PalmInterface.tsx';
 import { EncounterScreen } from './components/EncounterScreen.tsx';
 import { NewGameScreen, type NewGameConfig } from './components/NewGameScreen.tsx';
 import { GameOverScreen } from './components/GameOverScreen.tsx';
 import { createGameEngine } from '@game-engine';
 import { createInitialState } from '@game-state';
-import { useNavigation } from './hooks/useNavigation.ts';
 import type { State, Difficulty } from '@game-types';
 import { GameMode } from '@game-types';
 
@@ -15,8 +13,6 @@ function App() {
   const [engine, setEngine] = useState<any>(null);
   const [gameState, setGameState] = useState<State | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { currentScreen, navigate, goBack, canGoBack } = useNavigation();
 
   const availableActions = useMemo(() => {
     return engine?.getAvailableActions() || [];
@@ -66,16 +62,15 @@ function App() {
         
         setGameState({ ...engine.state });
       }
-      console.log('Action result:', result);
       
-      if (!result.success) {
-        alert(`Action failed: ${result.message}`);
+      if (!result.success && result.message) {
+        // Show error in a compact way for Palm interface
+        console.error('Action failed:', result.message);
       }
       
       return result;
     } catch (error) {
       console.error('Action error:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   };
@@ -84,88 +79,104 @@ function App() {
     setGameStarted(false);
     setEngine(null);
     setGameState(null);
-    navigate('planet'); // Reset navigation
   };
 
   // Show new game screen if game hasn't started
   if (!gameStarted || !gameState || !engine) {
-    return <NewGameScreen onStartGame={handleStartGame} />;
+    return (
+      <div className="game-screen">
+        <div className="palm-device">
+          <div className="palm-screen">
+            <div className="palm-content">
+              <NewGameScreen onStartGame={handleStartGame} />
+            </div>
+          </div>
+          <div className="palm-buttons">
+            <div className="palm-button" title="Home"></div>
+            <div className="palm-button" title="Menu"></div>
+            <div className="palm-button" title="Find"></div>
+            <div className="palm-button" title="Calc"></div>
+          </div>
+        </div>
+        {isLoading && (
+          <div className="fixed inset-0 bg-space-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="text-neon-cyan text-sm animate-pulse">LOADING...</div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Show game over screen if game has ended
   if ((gameState.currentMode as any) === 3) { // GameMode.GameOver
-    return <GameOverScreen state={gameState} onNewGame={handleNewGame} />;
-  }
-  
-  return (
-    <Layout
-      header={
-        <Header 
-          systemName={`System ${gameState.currentSystem}`}
-          credits={`${gameState.credits.toLocaleString()} cr.`}
-          status={
-            gameState.currentMode === GameMode.OnPlanet ? 'Docked' : 
-            gameState.currentMode === GameMode.InCombat ? 'In Combat' :
-            (gameState.currentMode as any) === 3 ? 'Game Over' :
-            'In Space'
-          }
-        />
-      }
-      actionBar={
-        // Show action bar only on planet view or if we have actions to display
-        (currentScreen === 'planet' && availableActions.length > 0) ? (
-          <ActionBar 
-            actions={availableActions}
-            onAction={handleAction}
-          />
-        ) : canGoBack ? (
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={goBack}
-              className="neon-button"
-            >
-              ← Back to {currentScreen === 'planet' ? 'Planet' : 'Previous'}
-            </button>
-            <div className="text-sm text-palm-gray">
-              {currentScreen.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-              ).join(' ')}
+    return (
+      <div className="game-screen">
+        <div className="palm-device">
+          <div className="palm-screen">
+            <div className="palm-content">
+              <GameOverScreen state={gameState} onNewGame={handleNewGame} />
             </div>
           </div>
-        ) : undefined
-      }
-    >
-      <div className="max-w-4xl mx-auto">
-        {/* Show encounter screen when in combat */}
-        {gameState.currentMode === GameMode.InCombat ? (
-          <EncounterScreen 
-            state={gameState}
-            onAction={handleAction}
-          />
-        ) : (
-          <ScreenRouter
-            currentScreen={currentScreen}
-            onNavigate={navigate}
-            onBack={goBack}
+          <div className="palm-buttons">
+            <div className="palm-button" title="Home"></div>
+            <div className="palm-button" title="Menu"></div>
+            <div className="palm-button" title="Find"></div>
+            <div className="palm-button" title="Calc"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show encounter screen when in combat
+  if (gameState.currentMode === GameMode.InCombat) {
+    return (
+      <div className="game-screen">
+        <div className="palm-device">
+          <div className="palm-screen">
+            <div className="palm-content">
+              <EncounterScreen 
+                state={gameState}
+                onAction={handleAction}
+              />
+            </div>
+          </div>
+          <div className="palm-buttons">
+            <div className="palm-button" title="Home"></div>
+            <div className="palm-button" title="Menu"></div>
+            <div className="palm-button" title="Find"></div>
+            <div className="palm-button" title="Calc"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Default to Palm interface for other modes
+  return (
+    <div className="game-screen">
+      <div className="palm-device">
+        <div className="palm-screen">
+          <PalmInterface
             state={gameState}
             onAction={handleAction}
             availableActions={availableActions}
-            isLoading={isLoading}
           />
-        )}
-        
-        {isLoading && (
-          <div className="fixed inset-0 bg-space-black bg-opacity-75 flex items-center justify-center z-50">
-            <div className="space-panel text-center">
-              <div className="retro-title text-lg text-neon-cyan animate-pulse">
-                PROCESSING...
-              </div>
-            </div>
-          </div>
-        )}
-
+        </div>
+        {/* Hardware buttons */}
+        <div className="palm-buttons">
+          <div className="palm-button" title="Home"></div>
+          <div className="palm-button" title="Menu"></div>
+          <div className="palm-button" title="Find"></div>
+          <div className="palm-button" title="Calc"></div>
+        </div>
       </div>
-    </Layout>
+      {isLoading && (
+        <div className="fixed inset-0 bg-space-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="text-neon-cyan text-sm animate-pulse">PROCESSING...</div>
+        </div>
+      )}
+    </div>
   );
 }
 

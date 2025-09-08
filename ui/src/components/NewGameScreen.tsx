@@ -67,49 +67,46 @@ export function NewGameScreen({ onStartGame }: NewGameScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-space-black flex items-center justify-center p-4">
-      <div className="space-panel max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="text-4xl mb-2">🚀</div>
-          <h1 className="retro-title text-2xl text-neon-cyan mb-2">SPACE TRADER</h1>
-          <div className="text-sm text-palm-gray">New Commander Setup</div>
-        </div>
+    <div className="palm-content">
+      {/* Header */}
+      <div className="palm-header">
+        <div></div>
+        <div className="retro-title text-xs">NEW GAME</div>
+        <div className="text-xs">🚀</div>
+      </div>
 
+      <div className="palm-main">
         {/* Commander Name */}
-        <div className="space-panel bg-space-black mb-4">
-          <label className="text-neon-amber font-bold mb-2 block">Commander Name:</label>
+        <div className="compact-panel">
+          <div className="compact-title">Commander Name</div>
           <input
             type="text"
             value={commanderName}
             onChange={(e) => setCommanderName(e.target.value)}
-            maxLength={19} // NAMELEN - 1 from Palm OS
-            className="w-full p-2 bg-black border border-neon-cyan rounded text-neon-cyan font-mono focus:border-neon-amber focus:outline-none"
+            maxLength={19}
+            className="w-full p-1.5 text-xs bg-black border border-neon-cyan rounded text-neon-cyan font-mono focus:border-neon-amber focus:outline-none"
             placeholder="Enter your name..."
           />
         </div>
 
         {/* Difficulty Selection */}
-        <div className="space-panel bg-space-black mb-4">
-          <div className="text-neon-amber font-bold mb-3">Difficulty Level:</div>
+        <div className="compact-panel">
+          <div className="compact-title">Difficulty Level</div>
           <div className="flex items-center justify-between">
             <button
               onClick={() => setDifficulty(Math.max(0, difficulty - 1))}
               disabled={difficulty <= 0}
-              className="neon-button px-3 py-1 text-sm disabled:opacity-50"
+              className="compact-button disabled:opacity-50"
             >
               ←
             </button>
-            
             <div className="text-center">
-              <div className="text-neon-cyan font-bold text-lg">{DIFFICULTY_NAMES[difficulty]}</div>
-              <div className="text-xs text-palm-gray">Level {difficulty + 1}</div>
+              <div className="text-neon-cyan font-bold text-sm">{DIFFICULTY_NAMES[difficulty]}</div>
             </div>
-            
             <button
               onClick={() => setDifficulty(Math.min(4, difficulty + 1))}
               disabled={difficulty >= 4}
-              className="neon-button px-3 py-1 text-sm disabled:opacity-50"
+              className="compact-button disabled:opacity-50"
             >
               →
             </button>
@@ -117,139 +114,70 @@ export function NewGameScreen({ onStartGame }: NewGameScreenProps) {
         </div>
 
         {/* Skill Point Distribution */}
-        <div className="space-panel bg-space-black mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-neon-amber font-bold">Skill Points:</div>
-            <div className={`font-bold ${remainingPoints === 0 ? 'text-neon-green' : 'text-neon-red'}`}>
-              {remainingPoints} remaining
+        <div className="compact-panel">
+          <div className="flex items-center justify-between mb-2">
+            <div className="compact-title">Skill Points</div>
+            <div className={`text-xs font-bold ${remainingPoints === 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+              {remainingPoints} left
             </div>
           </div>
           
-          <div className="space-y-3">
-            {/* Pilot Skill */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="text-neon-cyan">Pilot</div>
-                <div className="text-xs text-palm-gray">Ship handling & evasion</div>
+          <div className="space-y-2">
+            {/* Skills in compact rows */}
+            {[
+              { name: 'Pilot', value: pilotSkill, setter: setPilotSkill, desc: 'Ship handling' },
+              { name: 'Fighter', value: fighterSkill, setter: setFighterSkill, desc: 'Combat power' },
+              { name: 'Trader', value: traderSkill, setter: setTraderSkill, desc: 'Better prices' },
+              { name: 'Engineer', value: engineerSkill, setter: setEngineerSkill, desc: 'Ship repair' }
+            ].map((skill) => (
+              <div key={skill.name} className="flex items-center justify-between">
+                <div className="text-xs">
+                  <div className="text-neon-cyan font-semibold">{skill.name}</div>
+                  <div className="text-palm-gray text-xs">{skill.desc}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => adjustSkill(skill.setter, skill.value, -1)}
+                    disabled={!canDecrease(skill.value)}
+                    className="compact-button w-6 h-6 p-0 disabled:opacity-50"
+                  >
+                    −
+                  </button>
+                  <div className="w-6 text-center font-bold text-neon-cyan text-sm">{skill.value}</div>
+                  <button
+                    onClick={() => adjustSkill(skill.setter, skill.value, 1)}
+                    disabled={!canIncrease(skill.value)}
+                    className="compact-button w-6 h-6 p-0 disabled:opacity-50"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => adjustSkill(setPilotSkill, pilotSkill, -1)}
-                  disabled={!canDecrease(pilotSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  −
-                </button>
-                <div className="w-8 text-center font-bold text-neon-cyan">{pilotSkill}</div>
-                <button
-                  onClick={() => adjustSkill(setPilotSkill, pilotSkill, 1)}
-                  disabled={!canIncrease(pilotSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Fighter Skill */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="text-neon-cyan">Fighter</div>
-                <div className="text-xs text-palm-gray">Combat effectiveness</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => adjustSkill(setFighterSkill, fighterSkill, -1)}
-                  disabled={!canDecrease(fighterSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  −
-                </button>
-                <div className="w-8 text-center font-bold text-neon-cyan">{fighterSkill}</div>
-                <button
-                  onClick={() => adjustSkill(setFighterSkill, fighterSkill, 1)}
-                  disabled={!canIncrease(fighterSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Trader Skill */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="text-neon-cyan">Trader</div>
-                <div className="text-xs text-palm-gray">Better prices & deals</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => adjustSkill(setTraderSkill, traderSkill, -1)}
-                  disabled={!canDecrease(traderSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  −
-                </button>
-                <div className="w-8 text-center font-bold text-neon-cyan">{traderSkill}</div>
-                <button
-                  onClick={() => adjustSkill(setTraderSkill, traderSkill, 1)}
-                  disabled={!canIncrease(traderSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Engineer Skill */}
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="text-neon-cyan">Engineer</div>
-                <div className="text-xs text-palm-gray">Ship maintenance & repair</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => adjustSkill(setEngineerSkill, engineerSkill, -1)}
-                  disabled={!canDecrease(engineerSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  −
-                </button>
-                <div className="w-8 text-center font-bold text-neon-cyan">{engineerSkill}</div>
-                <button
-                  onClick={() => adjustSkill(setEngineerSkill, engineerSkill, 1)}
-                  disabled={!canIncrease(engineerSkill)}
-                  className="neon-button px-2 py-1 text-sm disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
 
           {remainingPoints > 0 && (
             <div className="text-neon-red text-xs mt-2 text-center">
-              ⚠ You must allocate all {remainingPoints} remaining skill points
+              Allocate all {remainingPoints} points to start
             </div>
           )}
         </div>
 
         {/* Start Game Button */}
-        <button
-          onClick={handleStartGame}
-          disabled={remainingPoints !== 0 || commanderName.trim().length === 0}
-          className="neon-button w-full h-12 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {remainingPoints === 0 && commanderName.trim().length > 0 ? 
-            '🚀 Begin Your Adventure' : 
-            'Complete Setup First'
-          }
-        </button>
-
-        {/* Footer */}
-        <div className="text-xs text-palm-gray text-center mt-4 space-y-1">
-          <div>Distribute {totalSkillPoints} skill points among four specializations</div>
-          <div>Each skill affects different aspects of gameplay</div>
+        <div className="compact-panel">
+          <button
+            onClick={handleStartGame}
+            disabled={remainingPoints !== 0 || commanderName.trim().length === 0}
+            className="compact-button w-full py-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {remainingPoints === 0 && commanderName.trim().length > 0 ? 
+              '🚀 Begin Adventure' : 
+              'Complete Setup'
+            }
+          </button>
+          <div className="text-xs text-palm-gray text-center mt-1">
+            Total: {totalSkillPoints} points to distribute
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 // System Chart Screen - Interactive 2D galaxy map
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getShipType } from '@game-data/shipTypes.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
@@ -11,9 +11,9 @@ import type { SolarSystem } from '@game-types';
 const GALAXY_WIDTH = 150;
 const GALAXY_HEIGHT = 110;
 
-// SVG display constants
-const SVG_WIDTH = 600;
-const SVG_HEIGHT = 440; // Maintains 150:110 aspect ratio (600:440 = 15:11)
+// SVG display constants - larger to fill more space
+const SVG_WIDTH = 280;
+const SVG_HEIGHT = 300;
 
 interface SystemChartScreenProps extends ScreenProps {}
 
@@ -25,6 +25,14 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
 
   const [selectedSystem, setSelectedSystem] = useState<number | null>(null);
   const [hoveredSystem, setHoveredSystem] = useState<number | null>(null);
+  
+  // Pan and zoom state
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const shipType = getShipType(actualState.ship.type);
   const currentSystem = actualState.solarSystem[actualState.currentSystem];
@@ -58,7 +66,47 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
   // Range circle radius in SVG coordinates
   const rangeRadius = (currentFuel / GALAXY_WIDTH) * SVG_WIDTH;
 
-  const handleSystemClick = (systemIndex: number) => {
+  // Pan and zoom handlers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.5, Math.min(10, zoom * delta));
+    
+    if (svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Zoom toward mouse position
+      const zoomRatio = newZoom / zoom;
+      const newPanX = mouseX - (mouseX - panX) * zoomRatio;
+      const newPanY = mouseY - (mouseY - panY) * zoomRatio;
+      
+      setZoom(newZoom);
+      setPanX(newPanX);
+      setPanY(newPanY);
+    }
+  }, [zoom, panX, panY]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
+  }, [panX, panY]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setPanX(e.clientX - dragStart.x);
+    setPanY(e.clientY - dragStart.y);
+  }, [isDragging, dragStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleSystemClick = useCallback((systemIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (systemIndex === actualState.currentSystem) {
       return; // Already at this system
     }
@@ -68,7 +116,21 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
     }
     
     setSelectedSystem(systemIndex);
-  };
+  }, [actualState.currentSystem, systemsInRange]);
+
+  const centerOnCurrentSystem = useCallback(() => {
+    const currentX = scaleX(currentSystem.x);
+    const currentY = scaleY(currentSystem.y);
+    setPanX(SVG_WIDTH / 2 - currentX);
+    setPanY(SVG_HEIGHT / 2 - currentY);
+    setZoom(1);
+  }, [currentSystem]);
+
+  const resetView = useCallback(() => {
+    setPanX(0);
+    setPanY(0);
+    setZoom(1);
+  }, []);
 
   const handleWarpToSystem = async () => {
     if (selectedSystem === null || !actualExecuteAction) return;
@@ -98,8 +160,8 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
   const selectedSystemData = selectedSystem !== null ? actualState.solarSystem[selectedSystem] : null;
 
   return (
-    <div className="space-panel">
-      <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 px-3 py-2">
         <button onClick={onBack} className="neon-button">
           ← Back
         </button>
@@ -107,37 +169,26 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
         <div className="text-neon-green font-bold">{actualState.credits.toLocaleString()} cr.</div>
       </div>
 
-      {/* Current Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="space-panel bg-space-black">
-          <div className="text-neon-amber mb-2">Current Location:</div>
-          <div className="text-sm text-palm-gray space-y-1">
-            <div>• System: {getSolarSystemName(actualState.currentSystem)}</div>
-            <div>• Coordinates: ({currentSystem.x}, {currentSystem.y})</div>
-          </div>
-        </div>
-        
-        <div className="space-panel bg-space-black">
-          <div className="text-neon-amber mb-2">Ship Status:</div>
-          <div className="text-sm text-palm-gray space-y-1">
-            <div>• Fuel: {actualState.ship.fuel}/{shipType.fuelTanks}</div>
-            <div>• Range: {currentFuel} parsecs</div>
-            <div>• Systems in Range: {systemsInRange.size - 1}</div>
-          </div>
-        </div>
-      </div>
-
       {/* Galaxy Map */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3 text-center">GALAXY MAP</div>
-        <div className="flex justify-center">
-          <div className="relative bg-black border border-neon-cyan rounded" style={{ width: SVG_WIDTH, height: SVG_HEIGHT }}>
+      <div className="flex-1 flex flex-col px-2">
+        <div className="flex justify-center flex-1">
+          <div 
+            className="relative bg-black border border-neon-cyan rounded overflow-hidden w-full" 
+            style={{ maxWidth: SVG_WIDTH, height: SVG_HEIGHT, cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
             <svg 
+              ref={svgRef}
               width={SVG_WIDTH} 
               height={SVG_HEIGHT}
               className="absolute inset-0"
               style={{ background: 'radial-gradient(ellipse at center, #001122 0%, #000000 100%)' }}
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
             >
+              <g transform={`translate(${panX}, ${panY}) scale(${zoom})`}>
               {/* Background grid */}
               <defs>
                 <pattern id="grid" width="30" height="22" patternUnits="userSpaceOnUse">
@@ -177,29 +228,39 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                 else if (isVisited) color = '#888888'; // Gray for visited out-of-range
                 
                 const radius = isCurrent ? 4 : (isInRange ? 3 : 2);
+                const hoverRadius = radius * 4; // 4x bigger hover target
                 
                 return (
-                  <circle
-                    key={index}
-                    cx={x}
-                    cy={y}
-                    r={radius}
-                    fill={color}
-                    stroke={isCurrent ? '#ffffff' : (isSelected ? '#ffffff' : 'none')}
-                    strokeWidth={isCurrent || isSelected ? 2 : 0}
-                    className="cursor-pointer"
-                    onClick={() => handleSystemClick(index)}
-                    onMouseEnter={() => setHoveredSystem(index)}
-                    onMouseLeave={() => setHoveredSystem(null)}
-                    style={{ filter: isHovered ? 'brightness(150%)' : 'none' }}
-                  >
-                    <title>
-                      {getSolarSystemName(index)}
-                      {isCurrent && ' (Current)'}
-                      {isInRange && !isCurrent && ' (In Range)'}
-                      {!isInRange && ' (Out of Range)'}
-                    </title>
-                  </circle>
+                  <g key={index}>
+                    {/* Invisible larger circle for easier clicking/hovering */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={hoverRadius}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onClick={(e) => handleSystemClick(index, e)}
+                      onMouseEnter={() => setHoveredSystem(index)}
+                      onMouseLeave={() => setHoveredSystem(null)}
+                    >
+                      <title>
+                        {getSolarSystemName(index)}
+                        {isCurrent && ' (Current)'}
+                        {isInRange && !isCurrent && ' (In Range)'}
+                        {!isInRange && ' (Out of Range)'}
+                      </title>
+                    </circle>
+                    {/* Visible system dot */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={radius}
+                      fill={color}
+                      stroke={isCurrent ? '#ffffff' : (isSelected ? '#ffffff' : 'none')}
+                      strokeWidth={isCurrent || isSelected ? 2 : 0}
+                      style={{ filter: isHovered ? 'brightness(150%)' : 'none', pointerEvents: 'none' }}
+                    />
+                  </g>
                 );
               })}
               
@@ -216,36 +277,22 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                   strokeDasharray="3,3"
                 />
               )}
+              </g>
             </svg>
-          </div>
-        </div>
-        
-        {/* Map legend */}
-        <div className="text-xs text-palm-gray mt-3 grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span>Current System</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-            <span>Visited (In Range)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-            <span>Unvisited (In Range)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-            <span>Out of Range</span>
+            
+            {/* Zoom indicator */}
+            <div className="absolute top-2 right-2 bg-space-dark border border-space-blue rounded px-2 py-1 text-xs">
+              {(zoom * 100).toFixed(0)}%
+            </div>
           </div>
         </div>
       </div>
 
       {/* System Information */}
       {(hoveredSystem !== null || selectedSystem !== null) && (
-        <div className="space-panel bg-space-black">
-          <div className="text-neon-amber mb-2">
-            {selectedSystem !== null ? 'Selected System:' : 'System Information:'}
+        <div className="bg-space-black border border-space-blue rounded p-2 mx-2 mb-2">
+          <div className="text-neon-amber mb-1 text-xs">
+            {selectedSystem !== null ? 'Selected:' : 'System:'}
           </div>
           {(() => {
             const systemIndex = selectedSystem !== null ? selectedSystem : hoveredSystem!;
@@ -255,38 +302,24 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
             const inRange = systemsInRange.has(systemIndex);
             
             return (
-              <div className="text-sm space-y-2">
+              <div className="text-xs space-y-1">
                 <div className="text-neon-cyan font-bold">
                   {getSolarSystemName(systemIndex)}
                 </div>
-                <div className="text-palm-gray space-y-1">
-                  <div>• Coordinates: ({system.x}, {system.y})</div>
-                  <div>• Distance: {distance.toFixed(1)} parsecs</div>
-                  <div>• Tech Level: {system.techLevel}</div>
-                  <div>• Status: {inRange ? 'In Range' : 'Out of Range'}</div>
-                  {system.visited && <div className="text-neon-green">• Previously Visited</div>}
+                <div className="text-palm-gray space-y-0.5">
+                  <div>({system.x}, {system.y}) • {distance.toFixed(1)}p • TL{system.techLevel}</div>
+                  <div className={inRange ? 'text-neon-green' : 'text-neon-red'}>
+                    {inRange ? 'In Range' : 'Out of Range'}
+                  </div>
                 </div>
                 
                 {selectedSystem !== null && inRange && selectedSystem !== actualState.currentSystem && (
-                  <div className="pt-2">
-                    <button
-                      onClick={handleWarpToSystem}
-                      className="neon-button w-full"
-                    >
-                      🚀 Warp to {getSolarSystemName(selectedSystem)}
-                    </button>
-                  </div>
-                )}
-                
-                {selectedSystem !== null && selectedSystem !== actualState.currentSystem && (
-                  <div className="pt-2">
-                    <button
-                      onClick={() => setSelectedSystem(null)}
-                      className="neon-button w-full bg-transparent border-gray-500 text-gray-400"
-                    >
-                      Cancel Selection
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleWarpToSystem}
+                    className="compact-button w-full mt-1"
+                  >
+                    🚀 Warp
+                  </button>
                 )}
               </div>
             );
