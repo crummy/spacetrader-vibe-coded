@@ -42,22 +42,21 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
     [currentSystem, actualState.commanderTrader, actualState.policeRecordScore]
   );
 
-  // Build cargo items list (only items the player owns)
+  // Build cargo items list - show ALL goods
   const cargoItems: CargoItem[] = useMemo(() => {
     const items: CargoItem[] = [];
     for (let i = 0; i < 10; i++) { // 10 trade items total
       const ownedQty = actualState.ship.cargo[i];
-      if (ownedQty > 0) { // Only show items player owns
-        const tradeItem = getTradeItem(i);
-        const price = allPrices[i].sellPrice;
-        
-        items.push({
-          id: i,
-          name: tradeItem.name,
-          ownedQty,
-          price
-        });
-      }
+      const tradeItem = getTradeItem(i);
+      const price = allPrices[i].sellPrice;
+      
+      // Show all items, regardless of ownership
+      items.push({
+        id: i,
+        name: tradeItem.name,
+        ownedQty,
+        price
+      });
     }
     return items;
   }, [actualState.ship.cargo, allPrices]);
@@ -215,27 +214,35 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
         ) : cargoItems.length === 0 ? (
           <div className="text-palm-gray text-sm p-2">Your cargo hold is empty.</div>
         ) : (
-          cargoItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleItemSelect(item.id)}
-              className={`w-full p-1 text-left rounded border transition-all duration-200 ${
-                selectedItem === item.id
-                  ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
-                  : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  <span className="text-neon-cyan text-sm font-semibold">{item.name}</span>
-                  <span className="text-xs text-palm-gray ml-2">Own: {item.ownedQty}</span>
+          cargoItems.map((item) => {
+            const canSell = item.ownedQty > 0 && item.price > 0;
+            return (
+              <button
+                key={item.id}
+                onClick={() => canSell ? handleItemSelect(item.id) : undefined}
+                disabled={!canSell}
+                className={`w-full p-1 text-left rounded border transition-all duration-200 ${
+                  !canSell 
+                    ? 'border-space-gray border-opacity-30 opacity-50 cursor-not-allowed'
+                    : selectedItem === item.id
+                      ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
+                      : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <span className={`text-sm font-semibold ${canSell ? 'text-neon-cyan' : 'text-space-gray'}`}>
+                      {item.name}
+                    </span>
+                    <span className="text-xs text-palm-gray ml-2">Own: {item.ownedQty}</span>
+                  </div>
+                  <div className={canSell ? "text-neon-green font-bold text-sm" : "text-space-gray font-bold text-sm"}>
+                    {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
+                  </div>
                 </div>
-                <div className={item.price > 0 ? "text-neon-green font-bold text-sm" : "text-red-400 font-bold text-sm"}>
-                  {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
-                </div>
-              </div>
-            </button>
-          ))
+              </button>
+            );
+          })
         )}
       </div>
 

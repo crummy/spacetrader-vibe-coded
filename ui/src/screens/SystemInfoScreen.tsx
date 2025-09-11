@@ -201,9 +201,9 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
           {state.alreadyPaidForNewspaper || newsContent ? (
             <div className="compact-panel">
               <div className="compact-title">📰 {systemName} Daily News</div>
-              <div className="max-h-32 overflow-y-auto">
+              <div>
                 <pre className="whitespace-pre-wrap text-xs text-palm-gray font-mono leading-relaxed">
-                  {newsContent || 'Loading news...'}
+                  {newsContent ? newsContent.replace('Re-reading (already paid)\n\n', '') : 'Loading news...'}
                 </pre>
               </div>
             </div>
@@ -237,37 +237,9 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
           )}
         </div>
 
-        {/* Location Context */}
-        <div className="compact-panel">
-          <div className="compact-title">Location</div>
-          <div className="text-xs text-palm-gray">
-            {uiFields.primary || `Docked at ${systemName}`}
-          </div>
-          {uiFields.location?.statusMessage && (
-            <div className="text-xs text-palm-gray mt-1">
-              {uiFields.location.statusMessage}
-            </div>
-          )}
-        </div>
 
-        {/* System Coordinates (for debugging/info) */}
-        <div className="compact-panel">
-          <div className="compact-title">Navigation</div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span className="text-neon-cyan">Coordinates:</span>
-              <span className="text-palm-gray ml-1">
-                {currentSystem.x}, {currentSystem.y}
-              </span>
-            </div>
-            <div>
-              <span className="text-neon-cyan">Visited:</span>
-              <span className="text-palm-gray ml-1">
-                {currentSystem.visited ? 'Yes' : 'No'}
-              </span>
-            </div>
-          </div>
-        </div>
+
+
       </div>
     </div>
   );

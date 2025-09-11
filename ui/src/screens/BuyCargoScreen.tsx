@@ -44,7 +44,7 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
     [currentSystem, actualState.commanderTrader, actualState.policeRecordScore]
   );
 
-  // Build trade goods list
+  // Build trade goods list - show ALL goods
   const tradeGoods: TradeGood[] = useMemo(() => {
     const goods: TradeGood[] = [];
     for (let i = 0; i < 10; i++) { // 10 trade items total
@@ -53,15 +53,14 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
       const price = allPrices[i].buyPrice;
       const playerOwned = actualState.ship.cargo[i];
 
-      if (price > 0) { // Only show items available for purchase
-        goods.push({
-          id: i,
-          name: tradeItem.name,
-          availableQty,
-          price,
-          playerOwned
-        });
-      }
+      // Show all items, regardless of availability
+      goods.push({
+        id: i,
+        name: tradeItem.name,
+        availableQty,
+        price,
+        playerOwned
+      });
     }
     return goods;
   }, [currentSystem, allPrices, actualState.ship.cargo]);
@@ -219,29 +218,37 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
         ) : tradeGoods.length === 0 ? (
           <div className="text-palm-gray text-sm p-2">No trade goods available at this location.</div>
         ) : (
-          tradeGoods.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleItemSelect(item.id)}
-              className={`w-full p-1 text-left rounded border transition-all duration-200 ${
-                selectedItem === item.id
-                  ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
-                  : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  <span className="text-neon-cyan text-sm font-semibold">{item.name}</span>
-                  <span className="text-xs text-palm-gray ml-2">
-                    Avail: {item.availableQty} • Own: {item.playerOwned}
-                  </span>
+          tradeGoods.map((item) => {
+            const isAvailable = item.price > 0 && item.availableQty > 0;
+            return (
+              <button
+                key={item.id}
+                onClick={() => isAvailable ? handleItemSelect(item.id) : undefined}
+                disabled={!isAvailable}
+                className={`w-full p-1 text-left rounded border transition-all duration-200 ${
+                  !isAvailable 
+                    ? 'border-space-gray border-opacity-30 opacity-50 cursor-not-allowed'
+                    : selectedItem === item.id
+                      ? 'border-neon-cyan bg-neon-cyan bg-opacity-10'
+                      : 'border-palm-gray hover:border-neon-cyan border-opacity-30'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <span className={`text-sm font-semibold ${isAvailable ? 'text-neon-cyan' : 'text-space-gray'}`}>
+                      {item.name}
+                    </span>
+                    <span className="text-xs text-palm-gray ml-2">
+                      Avail: {item.availableQty} • Own: {item.playerOwned}
+                    </span>
+                  </div>
+                  <div className={`font-bold text-sm ${isAvailable ? 'text-neon-green' : 'text-space-gray'}`}>
+                    {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
+                  </div>
                 </div>
-                <div className="text-neon-green font-bold text-sm">
-                  {item.price.toLocaleString()}cr
-                </div>
-              </div>
-            </button>
-          ))
+              </button>
+            );
+          })
         )}
       </div>
 

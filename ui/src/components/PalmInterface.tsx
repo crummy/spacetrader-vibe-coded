@@ -99,7 +99,7 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
 
       {/* Main content area */}
       <div className="palm-main">
-        <div className="h-full p-2" style={{ paddingBottom: '80px' }}>
+        <div className="h-full p-2">
           {screens[activeTab]}
         </div>
       </div>
