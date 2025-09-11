@@ -146,14 +146,11 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
               <span className="text-neon-cyan">Resources:</span>
               <span className="text-palm-gray ml-1">{SPECIAL_RESOURCES[currentSystem.specialResources]}</span>
             </div>
-          </div>
-        </div>
-
-        {/* System Status */}
-        <div className="compact-panel">
-          <div className="compact-title">System Status</div>
-          <div className="text-xs text-palm-gray">
-            This system is <span className="text-neon-amber">{SYSTEM_STATUS[currentSystem.status]}</span>.
+            <div className="col-span-2 pt-1 border-t border-space-blue">
+              <span className="text-palm-gray">
+                This system is <span className="text-neon-amber">{SYSTEM_STATUS[currentSystem.status]}</span>.
+              </span>
+            </div>
           </div>
         </div>
 
