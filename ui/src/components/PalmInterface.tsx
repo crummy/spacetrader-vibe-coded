@@ -5,22 +5,36 @@ import { SellCargoScreen } from '../screens/SellCargoScreen';
 import { BuyEquipmentScreen } from '../screens/BuyEquipmentScreen';
 import { SellEquipmentScreen } from '../screens/SellEquipmentScreen';
 import { ShipyardScreen } from '../screens/ShipyardScreen';
+import { ShipPurchaseScreen } from '../screens/ShipPurchaseScreen';
 import { PersonnelScreen } from '../screens/PersonnelScreen';
 import { BankScreen } from '../screens/BankScreen';
 import { CommanderStatusScreen } from '../screens/CommanderStatusScreen';
 import { SystemInfoScreen } from '../screens/SystemInfoScreen';
 import { SystemChartScreen } from '../screens/SystemChartScreen';
-
-type MainTab = 'system-info' | 'buy-cargo' | 'sell-cargo' | 'shipyard' | 'map' | 'buy-equipment' | 'sell-equipment' | 'personnel' | 'bank' | 'commander';
+import { GameMenu } from './GameMenu';
+import { useEffect } from 'react';
+type MainTab = 'system-info' | 'buy-cargo' | 'sell-cargo' | 'shipyard' | 'ship-purchase' | 'map' | 'buy-equipment' | 'sell-equipment' | 'personnel' | 'bank' | 'commander';
 
 interface PalmInterfaceProps {
   state: any;
   onAction: (action: any) => Promise<any>;
   availableActions: any[];
+  onNewGame?: () => void;
 }
 
-export function PalmInterface({ state, onAction, availableActions }: PalmInterfaceProps) {
+export function PalmInterface({ state, onAction, availableActions, onNewGame }: PalmInterfaceProps) {
   const [activeTab, setActiveTab] = useState<MainTab>('system-info');
+  const [showGameMenu, setShowGameMenu] = useState(false);
+  const [showSaveIndicator, setShowSaveIndicator] = useState(false);
+
+  // Show save indicator briefly when state changes (indicating auto-save)
+  useEffect(() => {
+    if (state) {
+      setShowSaveIndicator(true);
+      const timer = setTimeout(() => setShowSaveIndicator(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.days, state.credits]); // Trigger when key game state changes
 
   const screenProps = {
     state,
@@ -30,11 +44,19 @@ export function PalmInterface({ state, onAction, availableActions }: PalmInterfa
     onNavigate: (screen: string) => setActiveTab(screen as MainTab)
   };
 
+  // Special props for SystemInfoScreen that needs state and onAction directly
+  const systemInfoProps = {
+    ...screenProps,
+    state,
+    onAction
+  };
+
   const screens = {
-    'system-info': <SystemInfoScreen {...screenProps} />,
+    'system-info': <SystemInfoScreen {...systemInfoProps} />,
     'buy-cargo': <BuyCargoScreen {...screenProps} />,
     'sell-cargo': <SellCargoScreen {...screenProps} />,
     'shipyard': <ShipyardScreen {...screenProps} />,
+    'ship-purchase': <ShipPurchaseScreen {...screenProps} />,
     'map': <SystemChartScreen {...screenProps} />,
     'buy-equipment': <BuyEquipmentScreen {...screenProps} />,
     'sell-equipment': <SellEquipmentScreen {...screenProps} />,
@@ -43,13 +65,36 @@ export function PalmInterface({ state, onAction, availableActions }: PalmInterfa
     'commander': <CommanderStatusScreen {...screenProps} />
   };
 
+  // Show game menu if active
+  if (showGameMenu) {
+    return (
+      <GameMenu
+        state={state}
+        onAction={onAction}
+        onNewGame={onNewGame || (() => {})}
+        onClose={() => setShowGameMenu(false)}
+      />
+    );
+  }
+
   // Main interface with tabs
   return (
     <div className="palm-content">
       {/* Header */}
       <div className="palm-header">
         <div className="retro-title text-sm">SPACE TRADER</div>
-        <div className="text-neon-green text-xs font-bold">{state.credits.toLocaleString()} cr</div>
+        <div className="flex items-center gap-2">
+          {showSaveIndicator && (
+            <div className="text-neon-amber text-xs animate-pulse">💾</div>
+          )}
+          <div className="text-neon-green text-xs font-bold">{state.credits.toLocaleString()} cr</div>
+          <button 
+            onClick={() => setShowGameMenu(true)}
+            className="text-neon-cyan text-xs hover:text-neon-green font-bold border border-neon-cyan px-2 py-1 rounded"
+          >
+            Menu
+          </button>
+        </div>
       </div>
 
       {/* Main content area */}

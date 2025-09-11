@@ -100,17 +100,26 @@ describe('Ship Pricing System', () => {
     assert(netPrice > 0, 'Upgrading to more expensive ship should cost money');
   });
 
-  test('calculateShipNetPrice - cheaper ship might be free or profitable', () => {
+  test('calculateShipNetPrice - should return negative value when trade-in exceeds purchase price', () => {
     const state = createTestState();
-    state.ship.type = 9; // Start with expensive Wasp
+    state.ship.type = 9; // Start with expensive Wasp (high trade-in value)
     state.ship.hull = getShipTypes()[9].hullStrength;
     state.ship.fuel = getShipTypes()[9].fuelTanks;
     
-    // Trade down to Flea
-    const netPrice = calculateShipNetPrice(state, 0); // Flea
+    // Add valuable equipment to increase trade-in value
+    state.ship.weapon = [2, 3, -1]; // High-value weapons
+    state.ship.shield = [1, -1, -1]; // High-value shield
+    state.ship.gadget = [2, 3, -1];  // High-value gadgets
     
-    assert(netPrice >= 0, 'Net price should not be negative');
-    // Could be 0 if trade-in value exceeds purchase price
+    // Trade down to much cheaper Flea
+    const netPrice = calculateShipNetPrice(state, 0); // Flea
+    const tradeInValue = calculateShipTradeInValue(state, false);
+    const basePrice = calculateShipBasePrice(state, 0);
+    
+    // Trade-in should exceed purchase price, resulting in negative net price (cash back)
+    assert(tradeInValue > basePrice, `Trade-in value (${tradeInValue}) should exceed base price (${basePrice})`);
+    assert(netPrice < 0, `Net price should be negative (cash back), but got ${netPrice}`);
+    assert.equal(netPrice, basePrice - tradeInValue, 'Net price should be basePrice - tradeInValue');
   });
 
   test('getAvailableShipsForPurchase - excludes current ship', () => {
@@ -184,5 +193,25 @@ describe('Ship Pricing System', () => {
     
     assert(!result.canPurchase, 'Should not allow ship sale with unstable reactor');
     assert(result.reason?.includes('reactor'), 'Should explain reactor restriction');
+  });
+
+  test('getAvailableShipsForPurchase - cash back ships are always affordable', () => {
+    const state = createTestState();
+    
+    // Start with expensive ship with valuable equipment to create cash back scenario
+    state.ship.type = 9; // Wasp
+    state.ship.hull = getShipTypes()[9].hullStrength;
+    state.ship.fuel = getShipTypes()[9].fuelTanks;
+    state.ship.weapon = [2, 3, -1]; // High-value weapons
+    state.ship.shield = [1, -1, -1]; // High-value shield
+    state.ship.gadget = [2, 3, -1];  // High-value gadgets
+    state.credits = 100; // Very low credits
+    
+    const availableShips = getAvailableShipsForPurchase(state);
+    const fleaShip = availableShips.find(s => s.shipType === 0); // Flea
+    
+    assert(fleaShip, 'Should find Flea in available ships');
+    assert(fleaShip.netPrice < 0, 'Flea should have negative price (cash back)');
+    assert(fleaShip.canAfford === true, 'Cash back ships should always be affordable');
   });
 });

@@ -103,6 +103,7 @@ export function calculateShipBasePrice(state: GameState, shipTypeIndex: number):
 /**
  * Calculate the net cost to buy a ship (base price minus trade-in value)
  * Based on Palm OS DetermineShipPrices function
+ * Returns negative values when trade-in exceeds purchase price (cash back to player)
  */
 export function calculateShipNetPrice(state: GameState, shipTypeIndex: number): number {
   if (!isShipTypeBuyable(shipTypeIndex)) {
@@ -116,14 +117,8 @@ export function calculateShipNetPrice(state: GameState, shipTypeIndex: number): 
   const basePrice = calculateShipBasePrice(state, shipTypeIndex);
   const tradeInValue = calculateShipTradeInValue(state, false);
   
-  let netPrice = basePrice - tradeInValue;
-
-  // Minimum price is 1 credit (unless it would be free/profitable)
-  if (netPrice <= 0 && basePrice > tradeInValue) {
-    netPrice = 1;
-  }
-
-  return Math.max(0, netPrice);
+  // Net price can be negative (cash back when trade-in exceeds purchase price)
+  return basePrice - tradeInValue;
 }
 
 /**
@@ -150,7 +145,7 @@ export function getAvailableShipsForPurchase(state: GameState): Array<{
       netPrice,
       basePrice,
       tradeInValue,
-      canAfford: netPrice <= availableCash,
+      canAfford: netPrice <= 0 || netPrice <= availableCash, // Always affordable if cash back (negative price)
     };
   }).filter(ship => ship.shipType !== state.ship.type); // Exclude current ship
 }

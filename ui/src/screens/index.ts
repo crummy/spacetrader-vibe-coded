@@ -9,3 +9,4 @@ export { BankScreen } from './BankScreen.tsx';
 export { SystemInfoScreen } from './SystemInfoScreen.tsx';
 export { CommanderStatusScreen } from './CommanderStatusScreen.tsx';
 export { SystemChartScreen } from './SystemChartScreen.tsx';
+export { OptionsScreen } from './OptionsScreen.tsx';

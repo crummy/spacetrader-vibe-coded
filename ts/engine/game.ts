@@ -63,13 +63,20 @@ export type GameEngine = {
 // Core Game Engine Functions
 
 export function createGameEngine(initialState?: GameState): GameEngine {
-  const state = initialState || createInitialState();
+  let state = initialState || createInitialState();
   
   return {
-    state,
+    get state() { return state; },
     
     async executeAction(action: GameAction): Promise<ActionResult> {
-      return await executeAction(state, action);
+      const result = await executeAction(state, action);
+      
+      // Update internal state if action returns new state
+      if (result.newState) {
+        state = result.newState;
+      }
+      
+      return result;
     },
     
     getAvailableActions(): AvailableAction[] {
@@ -201,6 +208,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'buy_escape_pod':
         return await executeBuyEscapePod(state, action);
+      
+      case 'update_options':
+        return await executeUpdateOptionsAction(state, action.parameters);
       
       default:
         return {
@@ -2207,6 +2217,32 @@ async function executeBuyEscapePod(state: GameState, action: GameAction): Promis
   return {
     success: true,
     message: `Escape pod installed for ${ESCAPE_POD_COST} credits`,
+    stateChanged: true
+  };
+}
+
+/**
+ * Execute update options action - Update player preferences
+ */
+async function executeUpdateOptionsAction(state: GameState, parameters: any): Promise<ActionResult> {
+  if (!parameters.options) {
+    return {
+      success: false,
+      message: 'No options provided for update',
+      stateChanged: false
+    };
+  }
+
+  // Update only the provided options
+  Object.keys(parameters.options).forEach(key => {
+    if (key in state.options) {
+      (state.options as any)[key] = parameters.options[key];
+    }
+  });
+
+  return {
+    success: true,
+    message: 'Options updated successfully',
     stateChanged: true
   };
 }

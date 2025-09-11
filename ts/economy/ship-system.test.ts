@@ -101,4 +101,31 @@ describe('Ship Trading Integration', () => {
     assert(!result.stateChanged, 'Menu action should not change state');
     assert(result.data?.availableShips, 'Should return available ships data');
   });
+
+  test('engine state updates after successful ship purchase', async () => {
+    const engine = createGameEngine();
+    const state = engine.state;
+    state.currentMode = GameMode.OnPlanet;
+    state.credits = 20000; // Sufficient credits
+    state.debt = 0; // No debt
+    
+    const originalShipType = state.ship.type;
+    const originalCredits = state.credits;
+    
+    // Purchase a different ship (Firefly)
+    const result = await engine.executeAction({
+      type: 'buy_ship',
+      parameters: {
+        shipType: 2 // Firefly
+      }
+    });
+    
+    assert(result.success, 'Ship purchase should succeed');
+    assert(result.stateChanged, 'State should be marked as changed');
+    
+    // Verify engine's internal state was updated
+    assert.equal(engine.state.ship.type, 2, 'Engine state should show new ship type');
+    assert(engine.state.credits !== originalCredits, 'Engine state should show updated credits');
+    assert(originalShipType !== engine.state.ship.type, 'Ship type should actually change');
+  });
 });

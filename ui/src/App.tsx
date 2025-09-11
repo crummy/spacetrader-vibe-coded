@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PalmInterface } from './components/PalmInterface.tsx';
 import { EncounterScreen } from './components/EncounterScreen.tsx';
 import { NewGameScreen, type NewGameConfig } from './components/NewGameScreen.tsx';
@@ -7,16 +7,63 @@ import { createGameEngine } from '@game-engine';
 import { createInitialState } from '@game-state';
 import type { State, Difficulty } from '@game-types';
 import { GameMode } from '@game-types';
+import { saveGameState, loadGameState, autoSaveGameState, hasSavedGame, getSaveInfo } from './utils/gameStorage.ts';
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [engine, setEngine] = useState<any>(null);
   const [gameState, setGameState] = useState<State | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSave, setHasSave] = useState(false);
 
   const availableActions = useMemo(() => {
     return engine?.getAvailableActions() || [];
   }, [engine, gameState]);
+
+  const loadSavedGame = () => {
+    setIsLoading(true);
+    
+    try {
+      const savedGame = loadGameState();
+      if (!savedGame) {
+        console.log('No saved game found or failed to load');
+        setIsLoading(false);
+        return;
+      }
+
+      // Create game engine with loaded state
+      const newEngine = createGameEngine(savedGame.gameState);
+      
+      setEngine(newEngine);
+      setGameState(newEngine.state);
+      setGameStarted(true);
+      
+      console.log(`Loaded game: Commander ${savedGame.gameState.nameCommander}, Day ${savedGame.gameState.days}`);
+    } catch (error) {
+      console.error('Failed to load saved game:', error);
+      // Don't show alert on auto-load failure, just continue to new game screen
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Check for saved games on app load and auto-load if available
+  useEffect(() => {
+    const hasExistingSave = hasSavedGame();
+    setHasSave(hasExistingSave);
+    
+    if (hasExistingSave) {
+      // Automatically load the saved game
+      loadSavedGame();
+    }
+  }, []);
+
+  // Auto-save game state when it changes
+  useEffect(() => {
+    if (gameState && engine && gameStarted) {
+      autoSaveGameState(gameState, { /* additional engine state if needed */ });
+    }
+  }, [gameState, engine, gameStarted]);
 
   const handleStartGame = (config: NewGameConfig) => {
     setIsLoading(true);
@@ -39,6 +86,7 @@ function App() {
       setEngine(newEngine);
       setGameState(newEngine.state);
       setGameStarted(true);
+      setHasSave(true); // Mark that we now have a save
     } catch (error) {
       console.error('Failed to start new game:', error);
       alert('Failed to start new game. Please try again.');
@@ -79,6 +127,7 @@ function App() {
     setGameStarted(false);
     setEngine(null);
     setGameState(null);
+    setHasSave(hasSavedGame()); // Check if there's still a save after reset
   };
 
   // Show new game screen if game hasn't started
@@ -143,6 +192,7 @@ function App() {
             state={gameState}
             onAction={handleAction}
             availableActions={availableActions}
+            onNewGame={handleNewGame}
           />
         </div>
       </div>

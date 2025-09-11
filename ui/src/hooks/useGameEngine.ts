@@ -21,9 +21,11 @@ export function useGameEngine() {
     setIsLoading(true);
     try {
       const result = await engine.executeAction(action);
-      if (result.stateChanged) {
-        setGameState({ ...engine.state }); // Force React re-render with new state
-      }
+      
+      // Always sync React state with engine state after any action
+      const newState = { ...engine.state };
+      setGameState(newState);
+      
       return result;
     } catch (error) {
       console.error('Action execution failed:', error);
@@ -35,7 +37,7 @@ export function useGameEngine() {
     } finally {
       setIsLoading(false);
     }
-  }, [engine]);
+  }, [engine, gameState]);
   
   const availableActions = useMemo(() => {
     try {

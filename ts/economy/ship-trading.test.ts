@@ -127,6 +127,32 @@ describe('Ship Trading System', () => {
     assert(!result.success, 'Should not allow buying same ship type');
     assert(result.error?.includes('Already own'), 'Should explain already owning this ship');
   });
+  
+  test('purchaseShip - trade-in value exceeds purchase price gives cash back', () => {
+    const state = createTestState();
+    
+    // Start with expensive ship with valuable equipment
+    state.ship.type = 9; // Wasp (expensive ship)
+    state.ship.hull = getShipTypes()[9].hullStrength; // Full hull
+    state.ship.fuel = getShipTypes()[9].fuelTanks; // Full fuel
+    state.ship.weapon = [2, 3, -1]; // High-value weapons
+    state.ship.shield = [1, -1, -1]; // High-value shield
+    state.ship.gadget = [2, 3, -1];  // High-value gadgets
+    state.credits = 10000; // Starting credits
+    
+    // Trade down to cheap Flea
+    const result = purchaseShip(state, 0); // Flea
+    
+    assert(result.success, 'Purchase should succeed');
+    assert(result.newState, 'Should return new state');
+    
+    // Player should have received cash back (more credits than they started with)
+    assert(result.newState.credits > state.credits, 
+      `Player should have more credits after trade (had ${state.credits}, now has ${result.newState.credits})`);
+    
+    // Ship should be changed to Flea
+    assert.equal(result.newState.ship.type, 0, 'Ship should be Flea');
+  });
 
   test('purchaseShip - non-buyable ship', () => {
     const state = createTestState();

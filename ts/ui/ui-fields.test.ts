@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { getUiFields } from './ui-fields.ts';
 import { createInitialState } from '../state.ts';
-import { GameMode } from '../types.ts';
+import { GameMode, SystemStatus } from '../types.ts';
 
 test('ui fields - planet mode basic information', () => {
     const state = createInitialState();
@@ -34,14 +34,14 @@ test('ui fields - system status messages', () => {
     
     // Test different system statuses
     const statusTests = [
-        { status: 0, expected: 'under no particular pressure' },
-        { status: 1, expected: 'at war' },
-        { status: 2, expected: 'ravaged by a plague' },
-        { status: 3, expected: 'suffering from a drought' },
-        { status: 4, expected: 'suffering from extreme boredom' },
-        { status: 5, expected: 'suffering from a cold spell' },
-        { status: 6, expected: 'suffering from a crop failure' },
-        { status: 7, expected: 'lacking enough workers' }
+        { status: SystemStatus.Uneventful, expected: 'under no particular pressure' },
+        { status: SystemStatus.War, expected: 'at war' },
+        { status: SystemStatus.Plague, expected: 'ravaged by a plague' },
+        { status: SystemStatus.Drought, expected: 'suffering from a drought' },
+        { status: SystemStatus.Boredom, expected: 'suffering from extreme boredom' },
+        { status: SystemStatus.Cold, expected: 'suffering from a cold spell' },
+        { status: SystemStatus.CropFailure, expected: 'suffering from a crop failure' },
+        { status: SystemStatus.LackOfWorkers, expected: 'lacking enough workers' }
     ];
     
     statusTests.forEach(({ status, expected }) => {

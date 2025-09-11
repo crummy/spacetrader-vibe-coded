@@ -5,6 +5,7 @@ export type ScreenType =
   | 'buy-cargo'
   | 'sell-cargo'
   | 'shipyard'
+  | 'ship-purchase'
   | 'buy-equipment'
   | 'sell-equipment'
   | 'personnel'
