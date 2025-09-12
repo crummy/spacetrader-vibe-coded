@@ -530,6 +530,10 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
       const result = performWarp(state, targetSystem, true); // Use viaSingularity=true to skip resource consumption
       if (result.success) {
         state.currentMode = GameMode.OnPlanet;
+        
+        // Advance time by 1 day for normal warp (from Palm OS Traveler.c line 564: IncDays(1))
+        advanceTime(state, 1);
+        
         message = `Arrived safely at ${systemName}`;
         
         if (result.fuelConsumed && result.fuelConsumed > 0) {
@@ -594,6 +598,10 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
     state.currentSystem = state.warpSystem;
     state.currentMode = GameMode.OnPlanet;
     state.clicks = 0; // Reset travel clicks
+    
+    // Advance time by 1 day for normal warp (from Palm OS Traveler.c line 564: IncDays(1))
+    advanceTime(state, 1);
+    
     // Reset newspaper payment flag when arriving at new system
     state.alreadyPaidForNewspaper = false;
     return { 

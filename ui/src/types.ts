@@ -2,6 +2,7 @@
 export type ScreenType = 
   | 'galaxy-chart'
   | 'system-info'  
+  | 'destination'
   | 'buy-cargo'
   | 'sell-cargo'
   | 'shipyard'

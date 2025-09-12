@@ -6,18 +6,24 @@ import { createInitialState } from '../state.ts';
 import { GameMode } from '../types.ts';
 import { performWarp } from '../travel/warp.ts';
 
-test('time progression - days increment during travel', () => {
-  const state = createInitialState();
-  state.currentMode = GameMode.InSpace;
-  const initialDays = state.days;
+test('time progression - days increment during travel via game engine', async () => {
+  const { GameEngine } = await import('../engine/game.ts');
+  const engine = new GameEngine();
   
-  // Simulate a warp that should take time
-  const warpResult = performWarp(state, 10, false); // To system 10
+  // Give ship enough fuel for travel  
+  engine.state.ship.fuel = 50;
+  engine.state.credits = 10000;
   
-  if (warpResult.success) {
-    assert.ok(state.days >= initialDays, 'Days should not decrease');
-    // Days might increment depending on travel time mechanics
-  }
+  const initialDays = engine.state.days;
+  
+  // Use the game engine to perform warp (this should advance time)
+  const result = await engine.executeAction({
+    type: 'warp_to_system',
+    parameters: { targetSystem: 10 }
+  });
+  
+  assert.ok(result.success, 'Warp should succeed');
+  assert.equal(engine.state.days, initialDays + 1, 'Days should increment by 1 during game engine warp');
 });
 
 test('time progression - day counter starts at zero', () => {

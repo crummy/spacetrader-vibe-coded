@@ -4,6 +4,7 @@ import { getUiFields } from '@game-ui';
 import { getSolarSystemName } from '@game-data/systems.ts';
 import { getPoliticalSystem } from '@game-data/politics.ts';
 import { getMercenaryForHire, getMercenaryName } from '@game-data/crew.ts';
+import { getTradeItemName } from '@game-data/tradeItems.ts';
 import { getSystemSpecialEvent, canExecuteSpecialEvent, executeSpecialEvent } from '../../../ts/events/special.ts';
 import type { ScreenProps } from '../types.ts';
 
@@ -180,7 +181,7 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
             <div className="text-xs space-y-1">
               <div>
                 <span className="text-neon-cyan">Wanted Trade Good:</span>
-                <span className="text-palm-gray ml-1">{politics.wanted}</span>
+                <span className="text-palm-gray ml-1">{getTradeItemName(politics.wanted)}</span>
               </div>
               {!politics.drugsOK && (
                 <div className="text-red-400">⚠ Drugs are illegal here</div>

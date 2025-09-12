@@ -4,6 +4,7 @@ import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getShipType } from '@game-data/shipTypes.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
 import { calculateDistance, getCurrentFuel } from '../../../ts/travel/warp.ts';
+import { DestinationScreen } from './DestinationScreen.tsx';
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
 
@@ -25,17 +26,24 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
 
   const [selectedSystem, setSelectedSystem] = useState<number | null>(null);
   const [hoveredSystem, setHoveredSystem] = useState<number | null>(null);
+  const [showDestination, setShowDestination] = useState(false);
   
-  // Pan and zoom state
-  const [zoom, setZoom] = useState(1);
-  const [panX, setPanX] = useState(0);
-  const [panY, setPanY] = useState(0);
+  const shipType = getShipType(actualState.ship.type);
+  const currentSystem = actualState.solarSystem[actualState.currentSystem];
+  
+  // Calculate centered position for current system
+  const currentSystemX = (currentSystem.x / GALAXY_WIDTH) * SVG_WIDTH;
+  const currentSystemY = (currentSystem.y / GALAXY_HEIGHT) * SVG_HEIGHT;
+  const centerX = SVG_WIDTH / 2;
+  const centerY = SVG_HEIGHT / 2;
+  
+  // Pan and zoom state - start at 300% zoom centered on current system
+  const [zoom, setZoom] = useState(3);
+  const [panX, setPanX] = useState(centerX - currentSystemX * 3);
+  const [panY, setPanY] = useState(centerY - currentSystemY * 3);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
-
-  const shipType = getShipType(actualState.ship.type);
-  const currentSystem = actualState.solarSystem[actualState.currentSystem];
   const currentFuel = getCurrentFuel(actualState.ship);
   
   // Calculate systems within range
@@ -64,29 +72,17 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
   const currentY = scaleY(currentSystem.y);
   
   // Range circle radius in SVG coordinates
-  const rangeRadius = (currentFuel / GALAXY_WIDTH) * SVG_WIDTH;
+  // Scale fuel range (parsecs) to SVG coordinates - same as distance scaling
+  const rangeRadius = currentFuel * (SVG_WIDTH / GALAXY_WIDTH);
 
-  // Pan and zoom handlers
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.5, Math.min(10, zoom * delta));
-    
-    if (svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      // Zoom toward mouse position
-      const zoomRatio = newZoom / zoom;
-      const newPanX = mouseX - (mouseX - panX) * zoomRatio;
-      const newPanY = mouseY - (mouseY - panY) * zoomRatio;
-      
-      setZoom(newZoom);
-      setPanX(newPanX);
-      setPanY(newPanY);
-    }
-  }, [zoom, panX, panY]);
+  // Zoom toggle handler - switch between 100% and 300%
+  const toggleZoom = useCallback(() => {
+    const newZoom = zoom === 3 ? 1 : 3;
+    setZoom(newZoom);
+    // Center current system when toggling zoom (account for zoom factor)
+    setPanX(centerX - currentSystemX * newZoom);
+    setPanY(centerY - currentSystemY * newZoom);
+  }, [zoom, centerX, centerY, currentSystemX, currentSystemY]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,6 +112,7 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
     }
     
     setSelectedSystem(systemIndex);
+    setShowDestination(true);
   }, [actualState.currentSystem, systemsInRange]);
 
   const centerOnCurrentSystem = useCallback(() => {
@@ -159,6 +156,19 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
 
   const selectedSystemData = selectedSystem !== null ? actualState.solarSystem[selectedSystem] : null;
 
+  // Show destination screen if a system was selected
+  if (showDestination && selectedSystem !== null) {
+    return (
+      <DestinationScreen
+        initialSystemIndex={selectedSystem}
+        onNavigate={onNavigate}
+        onBack={() => setShowDestination(false)}
+        state={actualState}
+        onAction={actualExecuteAction}
+      />
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Galaxy Map */}
@@ -174,7 +184,7 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
               height={SVG_HEIGHT}
               className="absolute inset-0"
               style={{ background: 'radial-gradient(ellipse at center, #001122 0%, #000000 100%)' }}
-              onWheel={handleWheel}
+
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -272,10 +282,13 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
               </g>
             </svg>
             
-            {/* Zoom indicator */}
-            <div className="absolute top-2 right-2 bg-space-dark border border-space-blue rounded px-2 py-1 text-xs">
-              {(zoom * 100).toFixed(0)}%
-            </div>
+            {/* Zoom toggle */}
+            <button 
+              onClick={toggleZoom}
+              className="absolute top-2 right-2 bg-space-dark border border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-space-black rounded px-2 py-1 text-xs font-bold transition-colors"
+            >
+              {zoom === 3 ? '300%' : '100%'}
+            </button>
           </div>
         </div>
       </div>
