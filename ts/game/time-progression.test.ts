@@ -7,22 +7,35 @@ import { GameMode } from '../types.ts';
 import { performWarp } from '../travel/warp.ts';
 
 test('time progression - days increment during travel via game engine', async () => {
-  const { GameEngine } = await import('../engine/game.ts');
-  const engine = new GameEngine();
+  const { createGameEngine } = await import('../engine/game.ts');
+  const { getShipType } = await import('../data/shipTypes.ts');
+  const engine = createGameEngine();
   
-  // Give ship enough fuel for travel  
-  engine.state.ship.fuel = 50;
+  // Set ship to max fuel capacity to ensure we can reach some system
+  const shipType = getShipType(engine.state.ship.type);
+  engine.state.ship.fuel = shipType.fuelTanks;
   engine.state.credits = 10000;
   
   const initialDays = engine.state.days;
   
-  // Use the game engine to perform warp (this should advance time)
+  // Find a system within range
+  const { getSystemsWithinRange } = await import('../travel/galaxy.ts');
+  const { getCurrentFuel } = await import('../travel/warp.ts');
+  
+  const fuelRange = getCurrentFuel(engine.state.ship);
+  const systemsInRange = getSystemsWithinRange(engine.state, fuelRange);
+  
+  // Should have at least one system in range with max fuel
+  assert.ok(systemsInRange.length > 0, 'Should have systems in range with max fuel');
+  
+  const targetSystem = systemsInRange[0];
+  
   const result = await engine.executeAction({
     type: 'warp_to_system',
-    parameters: { targetSystem: 10 }
+    parameters: { targetSystem }
   });
   
-  assert.ok(result.success, 'Warp should succeed');
+  assert.ok(result.success, `Warp should succeed. Error: ${result.message || 'Unknown'}`);
   assert.equal(engine.state.days, initialDays + 1, 'Days should increment by 1 during game engine warp');
 });
 
