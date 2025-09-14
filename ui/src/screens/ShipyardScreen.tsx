@@ -112,31 +112,8 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
   return (
     <div className="space-panel">
       
-      {/* Ship Status */}
-      <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3">Current Ship Status:</div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-neon-cyan">{currentShipType.name}</div>
-            <div className="text-palm-gray">Hull: {actualState.ship.hull}/{currentShipType.hullStrength}</div>
-          </div>
-          <div>
-            <div className="text-neon-cyan">Fuel Status</div>
-            <div className="text-palm-gray">
-              {fuelStatus.currentFuel}/{fuelStatus.maxFuel} units
-              {fuelStatus.currentFuel < fuelStatus.maxFuel && (
-                <div className="text-neon-amber text-xs">
-                  Refill cost: {fuelStatus.fullRefuelCost} cr.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Services */}
       <div className="space-panel bg-space-black mb-4">
-        <div className="text-neon-amber mb-3">Shipyard Services:</div>
         <div className="space-y-3">
           
           {/* Refuel */}
