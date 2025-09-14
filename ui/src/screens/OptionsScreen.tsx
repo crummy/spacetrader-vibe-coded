@@ -14,22 +14,22 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
     setOptions((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async () => {
+  const handleBack = async () => {
+    // Auto-save options when going back
     setIsSaving(true);
     try {
-      const result = await onAction({
-        type: 'update_options',
-        parameters: { options }
+      // Directly update the state options instead of using action system
+      Object.keys(options).forEach(key => {
+        if (key in state.options) {
+          (state.options as any)[key] = options[key];
+        }
       });
       
-      if (result.success) {
-        onBack();
-      } else {
-        alert(result.message || 'Failed to update options');
-      }
+      onBack();
     } catch (error) {
       console.error('Error updating options:', error);
-      alert('Failed to update options');
+      // Still go back even if there was an error
+      onBack();
     } finally {
       setIsSaving(false);
     }
@@ -70,14 +70,15 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
       <div className="palm-header">
         <div className="retro-title text-sm">OPTIONS</div>
         <button 
-          onClick={onBack}
-          className="text-neon-cyan text-xs hover:text-neon-green"
+          onClick={handleBack}
+          disabled={isSaving}
+          className="text-neon-cyan text-xs hover:text-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ← Back
+          {isSaving ? 'SAVING...' : '← Back'}
         </button>
       </div>
 
-      <div className="p-2 space-y-4 overflow-y-auto" style={{ height: '300px' }}>
+      <div className="p-2 space-y-4 overflow-y-auto">
         {/* Auto Services */}
         <div>
           <div className="text-neon-green text-xs font-bold mb-2 border-b border-neon-green">AUTO SERVICES</div>
@@ -131,16 +132,7 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="p-2 border-t border-space-blue">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="w-full palm-button bg-neon-cyan text-space-black font-bold disabled:opacity-50"
-        >
-          {isSaving ? 'SAVING...' : 'SAVE OPTIONS'}
-        </button>
-      </div>
+
     </div>
   );
 }

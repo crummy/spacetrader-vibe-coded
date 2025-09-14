@@ -13,6 +13,7 @@ import { SystemInfoScreen } from '../screens/SystemInfoScreen';
 import { SystemChartScreen } from '../screens/SystemChartScreen';
 import { GameMenu } from './GameMenu';
 import { useEffect } from 'react';
+import { getSolarSystemName } from '@game-data/systems.ts';
 type MainTab = 'system-info' | 'buy-cargo' | 'sell-cargo' | 'shipyard' | 'ship-purchase' | 'map' | 'buy-equipment' | 'sell-equipment' | 'personnel' | 'bank' | 'commander';
 
 interface PalmInterfaceProps {
@@ -23,7 +24,7 @@ interface PalmInterfaceProps {
 }
 
 export function PalmInterface({ state, onAction, availableActions, onNewGame }: PalmInterfaceProps) {
-  const [activeTab, setActiveTab] = useState<MainTab>('system-info');
+  const [activeTab, setActiveTab] = useState<MainTab>('buy-cargo');
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
 
@@ -40,7 +41,7 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
     state,
     onAction,
     availableActions,
-    onBack: () => setActiveTab('system-info'),
+    onBack: () => setActiveTab('buy-cargo'),
     onNavigate: (screen: string) => setActiveTab(screen as MainTab)
   };
 
@@ -82,7 +83,12 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
     <div className="palm-content">
       {/* Header */}
       <div className="palm-header">
-        <div className="retro-title text-sm">SPACE TRADER</div>
+        <button
+          onClick={() => setActiveTab('system-info')}
+          className="retro-title text-sm hover:text-neon-green cursor-pointer bg-transparent border-none"
+        >
+          {getSolarSystemName(state.currentSystem)}
+        </button>
         <div className="flex items-center gap-2">
           {showSaveIndicator && (
             <div className="text-neon-amber text-xs animate-pulse">💾</div>
@@ -109,7 +115,6 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
         {/* Primary tabs */}
         <div className="flex border-b border-space-blue">
           {[
-            { id: 'system-info', name: 'System', icon: 'ℹ️' },
             { id: 'buy-cargo', name: 'Buy', icon: '📦' },
             { id: 'sell-cargo', name: 'Sell', icon: '💰' },
             { id: 'shipyard', name: 'Ships', icon: '🚀' },
