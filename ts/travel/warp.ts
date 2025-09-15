@@ -218,7 +218,17 @@ export function canWarpTo(state: GameState, toSystem: number): WarpValidation {
   // Check if can afford costs
   const cost = calculateWarpCost(state, fromSystem, toSystem, isWormhole);
   if (cost.total > state.credits) {
-    return { canWarp: false, reason: 'Insufficient credits' };
+    const costBreakdown = [];
+    if (cost.mercenaryPay > 0) costBreakdown.push(`Crew pay: ${cost.mercenaryPay}`);
+    if (cost.insurance > 0) costBreakdown.push(`Insurance: ${cost.insurance}`);
+    if (cost.interest > 0) costBreakdown.push(`Debt interest: ${cost.interest}`);
+    if (cost.wormholeTax > 0) costBreakdown.push(`Wormhole tax: ${cost.wormholeTax}`);
+    
+    const breakdown = costBreakdown.length > 0 ? ` (${costBreakdown.join(', ')})` : '';
+    return { 
+      canWarp: false, 
+      reason: `Insufficient credits: need ${cost.total}, have ${state.credits}${breakdown}` 
+    };
   }
   
   return { canWarp: true };

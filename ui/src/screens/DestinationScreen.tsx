@@ -23,6 +23,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
   
   const [selectedSystemIndex, setSelectedSystemIndex] = useState(initialSystemIndex);
   const [showRelativePrices, setShowRelativePrices] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const currentSystem = actualState.solarSystem[actualState.currentSystem];
   const selectedSystem = actualState.solarSystem[selectedSystemIndex];
@@ -75,20 +76,24 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
     setSelectedSystemIndex(nextSystemIndex);
   }, [getNextSystem]);
   
-  const handleWarpToSystem = useCallback(() => {
+  const handleWarpToSystem = useCallback(async () => {
     if (!actualExecuteAction) return;
     
     console.log('Attempting to warp to system:', selectedSystemIndex, getSolarSystemName(selectedSystemIndex));
     
     try {
-      actualExecuteAction({
+      const result = await actualExecuteAction({
         type: 'warp_to_system',
         parameters: { targetSystem: selectedSystemIndex }
       });
       
-      onBack?.(selectedSystemIndex); // Return to previous screen after warp
+      if (result.success) {
+        onBack?.(selectedSystemIndex); // Return to previous screen after warp
+      } else {
+        setErrorMessage(result.message || 'Warp failed');
+      }
     } catch (error) {
-      console.error('Warp failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Warp failed');
     }
   }, [selectedSystemIndex, actualExecuteAction, onBack]);
   
@@ -281,6 +286,22 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           🚀 Warp to {getSolarSystemName(selectedSystemIndex)}
         </button>
       </div>
+
+      {/* Error Modal */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-space-dark border border-neon-red rounded p-4 max-w-sm mx-4">
+            <div className="text-neon-red font-bold mb-2">Warp Failed</div>
+            <div className="text-palm-gray text-sm mb-4">{errorMessage}</div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="compact-button w-full bg-neon-red text-white hover:bg-red-700"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

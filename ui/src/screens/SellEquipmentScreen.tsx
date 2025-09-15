@@ -4,6 +4,7 @@ import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getUiFields } from '@game-ui';
 import { getInstialledEquipmentSellPrices } from '../../../ts/economy/equipment-trading.ts';
 import { getShipType } from '@game-data/shipTypes.ts';
+import { GameMode } from '../../../ts/types.ts';
 import type { ScreenProps } from '../types.ts';
 
 type EquipmentType = 'weapons' | 'shields' | 'gadgets';
@@ -97,6 +98,7 @@ export function SellEquipmentScreen({ onNavigate, onBack, state, onAction, avail
 
   const sellEquipmentAvailable = actualAvailableActions.some(a => a.type === 'sell_equipment' && a.available);
   const dockAvailable = actualAvailableActions.some(a => a.type === 'dock_at_planet' && a.available);
+  const isDocked = actualState.currentMode === GameMode.OnPlanet;
 
   const currentEquipment = installedEquipment[selectedCategory];
 
@@ -104,7 +106,7 @@ export function SellEquipmentScreen({ onNavigate, onBack, state, onAction, avail
     <div className="space-panel">
 
       {/* Dock Button if not docked */}
-      {!sellEquipmentAvailable && dockAvailable && (
+      {!isDocked && dockAvailable && (
         <div className="space-panel bg-space-black mb-4">
           <div className="text-neon-amber mb-2">Not Docked:</div>
           <div className="text-sm text-palm-gray mb-3">
@@ -149,7 +151,7 @@ export function SellEquipmentScreen({ onNavigate, onBack, state, onAction, avail
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded border transition-all duration-200 ${
+              className={`px-2 py-2 rounded border transition-all duration-200 ${
                 selectedCategory === category
                   ? 'border-neon-cyan bg-neon-cyan bg-opacity-20 text-neon-cyan'
                   : 'border-palm-gray border-opacity-30 text-palm-gray hover:border-neon-cyan'
@@ -165,7 +167,7 @@ export function SellEquipmentScreen({ onNavigate, onBack, state, onAction, avail
       <div className="space-panel bg-space-black mb-4">
         <div className="text-neon-amber mb-3">Installed {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}:</div>
         <div className="space-y-2">
-          {!sellEquipmentAvailable ? (
+          {!isDocked ? (
             <div className="text-palm-gray text-sm">Equipment store unavailable - must be docked at a planet.</div>
           ) : currentEquipment.length === 0 ? (
             <div className="text-palm-gray text-sm">No {selectedCategory} installed.</div>

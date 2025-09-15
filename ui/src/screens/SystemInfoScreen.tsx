@@ -181,7 +181,9 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
             <div className="text-xs space-y-1">
               <div>
                 <span className="text-neon-cyan">Wanted Trade Good:</span>
-                <span className="text-palm-gray ml-1">{getTradeItemName(politics.wanted)}</span>
+                <span className="text-palm-gray ml-1">
+                  {politics.wanted === -1 ? 'None' : getTradeItemName(politics.wanted)}
+                </span>
               </div>
               {!politics.drugsOK && (
                 <div className="text-red-400">⚠ Drugs are illegal here</div>

@@ -727,7 +727,7 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
     const { getSolarSystemName } = await import('../data/systems.ts');
     const systemName = getSolarSystemName(state.currentSystem);
     
-    let newsContent = `\n=== ${systemName} Daily News ===\n`;
+    let newsContent = '';
     if (actualCost > 0) {
       newsContent += `Cost: ${actualCost} credits\n\n`;
     } else {
@@ -752,8 +752,6 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
       const randomHeadline = fillerHeadlines[Math.floor(Math.random() * fillerHeadlines.length)];
       newsContent += `• ${randomHeadline}\n`;
     }
-    
-    newsContent += '\nPress Enter to continue...';
     
     return {
       success: true,
@@ -1211,23 +1209,14 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     available: true
   });
 
-  // Warp to systems directly from planet
-  const possibleSystems: number[] = [];
-  for (let i = 0; i < state.solarSystem.length; i++) {
-    if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
-      possibleSystems.push(i);
-    }
-  }
-  
-  if (possibleSystems.length > 0) {
-    actions.push({
-      type: 'warp_to_system',
-      name: 'Warp to System',
-      description: 'Launch ship and warp to another solar system',
-      parameters: { possibleSystems },
-      available: state.ship.fuel > 0
-    });
-  }
+  // Warp to systems directly from planet - always available, validation during execution
+  actions.push({
+    type: 'warp_to_system',
+    name: 'Warp to System',
+    description: 'Launch ship and warp to another solar system',
+    parameters: {},
+    available: true
+  });
 
   // Track system action (moved from space menu)
   actions.push({

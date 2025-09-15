@@ -49,6 +49,13 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
     }
   }, [state?.message]);
 
+  // Switch to system info tab when arriving at a new system
+  useEffect(() => {
+    if (state && state.currentMode === GameMode.OnPlanet) {
+      setActiveTab('system-info');
+    }
+  }, [state?.currentSystem]);
+
   const screenProps = {
     state,
     onAction,
