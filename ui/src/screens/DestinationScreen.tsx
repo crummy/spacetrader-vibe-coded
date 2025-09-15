@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
-import { calculateDistance, getCurrentFuel } from '../../../ts/travel/warp.ts';
+import { calculateDistance, getCurrentFuel, getWormholeDestinations } from '../../../ts/travel/warp.ts';
 import { getTradeItemName } from '@game-data/tradeItems.ts';
 import { MAXTRADEITEM } from '@game-types';
 import { calculateStandardPrice } from '../../../ts/economy/pricing.ts';
@@ -26,9 +26,11 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
   const selectedSystem = actualState.solarSystem[selectedSystemIndex];
   const currentFuel = getCurrentFuel(actualState.ship);
   
-  // Calculate systems within range (same logic as SystemChartScreen)
+  // Calculate systems within range (includes both fuel range and wormhole destinations)
   const systemsWithinRange = React.useMemo(() => {
     const inRange: number[] = [];
+    
+    // Add systems within fuel range
     for (let i = 0; i < actualState.solarSystem.length; i++) {
       if (i === actualState.currentSystem) continue; // Skip current system
       
@@ -37,8 +39,17 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
         inRange.push(i);
       }
     }
+    
+    // Add systems accessible via wormhole from current system
+    const wormholeDestinations = getWormholeDestinations(actualState, actualState.currentSystem);
+    for (const destination of wormholeDestinations) {
+      if (!inRange.includes(destination)) {
+        inRange.push(destination);
+      }
+    }
+    
     return inRange.sort(); // Sort by system index for consistent navigation
-  }, [actualState.solarSystem, actualState.currentSystem, currentFuel]);
+  }, [actualState.solarSystem, actualState.currentSystem, currentFuel, actualState]);
   
   // Find next/previous system within range
   const getNextSystem = useCallback((direction: 'next' | 'prev') => {
@@ -102,6 +113,11 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
   const sizeName = sizeNames[selectedSystem.size] || 'Unknown';
   const techName = techNames[selectedSystem.techLevel] || 'Unknown';
   const systemDescription = `${sizeName} ${techName} ${politics.name}`;
+  
+  // Activity levels for police and pirates (same as SystemInfoScreen)
+  const ACTIVITY_LEVELS = ['Absent', 'Minimal', 'Few', 'Some', 'Moderate', 'Many', 'Abundant', 'Swarms'];
+  const policeActivity = ACTIVITY_LEVELS[politics.strengthPolice] || 'Unknown';
+  const pirateActivity = ACTIVITY_LEVELS[politics.strengthPirates] || 'Unknown';
     
   // Calculate trade prices for this system
   const tradePrices = React.useMemo(() => {
@@ -169,10 +185,13 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           
           <div className="text-center">
             <div className="text-neon-cyan text-sm font-bold">
-              {getSolarSystemName(selectedSystemIndex)} • {distance.toFixed(1)}p
+              {getSolarSystemName(selectedSystemIndex)} • {Math.round(distance)}p
             </div>
             <div className="text-palm-gray text-xs">
               {systemDescription}
+            </div>
+            <div className="text-palm-gray text-xs mt-1">
+              Police: {policeActivity} • Pirates: {pirateActivity}
             </div>
           </div>
           
