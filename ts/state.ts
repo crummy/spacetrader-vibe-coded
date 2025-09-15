@@ -36,6 +36,7 @@ import type {
   GadgetArray,
   CrewArray,
   WormholeArray,
+  MutableWormholeArray,
   PlayerOptions
 } from './types.ts';
 
@@ -140,10 +141,10 @@ function initializeTradeItems(system: SolarSystem): void {
 // Create initial/default game state
 export function createInitialState(): State {
   // Generate the galaxy with a fixed seed for consistent testing
-  const galaxySystems = generateRandomSolarSystems(12345);
+  const galaxyData = generateRandomSolarSystems(12345);
   
   // Initialize trade items for all systems
-  galaxySystems.forEach(system => initializeTradeItems(system));
+  galaxyData.systems.forEach(system => initializeTradeItems(system));
   
   // Create starting ship with proper fuel
   const startingShip = createEmptyShip();
@@ -225,7 +226,7 @@ export function createInitialState(): State {
     ship: startingShip,
     opponent: createEmptyShip(),
     mercenary: initializeMercenaries(),
-    solarSystem: galaxySystems,
+    solarSystem: galaxyData.systems,
     
     // Equipment and features
     escapePod: false,
@@ -277,7 +278,7 @@ export function createInitialState(): State {
     aplScreen: false,
     
     // Special items and features
-    wormhole: [0, 0, 0, 0, 0, 0],
+    wormhole: galaxyData.wormhole as MutableWormholeArray,
     artifactOnBoard: false,
     alreadyPaidForNewspaper: false,
     

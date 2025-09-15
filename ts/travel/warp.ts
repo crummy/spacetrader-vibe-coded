@@ -85,6 +85,28 @@ export function isWormholeTravel(state: GameState, fromSystem: number, toSystem:
   return false;
 }
 
+// Get all wormhole destinations for a system
+export function getWormholeDestinations(state: GameState, systemIndex: number): number[] {
+  const destinations: number[] = [];
+  for (let i = 0; i < MAXWORMHOLE; i++) {
+    const wormholeA = state.wormhole[i];
+    const wormholeB = state.wormhole[(i + 1) % MAXWORMHOLE];
+    
+    if (wormholeA === systemIndex) {
+      destinations.push(wormholeB);
+    } else if (wormholeB === systemIndex) {
+      destinations.push(wormholeA);
+    }
+  }
+  return destinations;
+}
+
+// Get the primary wormhole destination for a system (first one found), or null if no wormhole
+export function getWormholeDestination(state: GameState, systemIndex: number): number | null {
+  const destinations = getWormholeDestinations(state, systemIndex);
+  return destinations.length > 0 ? destinations[0] : null;
+}
+
 // Calculate wormhole tax
 // From Palm OS Traveler.c WormholeTax()
 export function calculateWormholeTax(ship: Ship): number {

@@ -118,14 +118,16 @@ describe('Solar Systems', () => {
 
   describe('System Generation', () => {
     test('should generate exactly 120 systems', () => {
-      const systems = generateRandomSolarSystems(12345); // Use seed for deterministic test
+      const galaxyData = generateRandomSolarSystems(12345); // Use seed for deterministic test
+  const systems = galaxyData.systems;
       
       assert.equal(systems.length, MAXSOLARSYSTEM);
       assert.equal(systems.length, 120);
     });
 
     test('should generate systems with valid properties', () => {
-      const systems = generateRandomSolarSystems(12345); // Use seed for deterministic test
+      const galaxyData = generateRandomSolarSystems(12345); // Use seed for deterministic test
+  const systems = galaxyData.systems;
       const constants = getSystemConstants();
       
       systems.forEach((system, index) => {
@@ -165,7 +167,8 @@ describe('Solar Systems', () => {
     });
 
     test('should place wormhole systems in designated regions', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       const constants = getSystemConstants();
       
       // First 6 systems should be wormhole systems with special placement
@@ -185,8 +188,10 @@ describe('Solar Systems', () => {
     });
 
     test('should generate deterministic results with same seed', () => {
-      const systems1 = generateRandomSolarSystems(54321);
-      const systems2 = generateRandomSolarSystems(54321);
+      const galaxyData1 = generateRandomSolarSystems(54321);
+      const galaxyData2 = generateRandomSolarSystems(54321);
+      const systems1 = galaxyData1.systems;
+      const systems2 = galaxyData2.systems;
       
       assert.equal(systems1.length, systems2.length);
       
@@ -199,11 +204,16 @@ describe('Solar Systems', () => {
         assert.equal(systems1[i].specialResources, systems2[i].specialResources, `System ${i} specialResources should match`);
         assert.equal(systems1[i].status, systems2[i].status, `System ${i} status should match`);
       }
+      
+      // Also check wormhole data matches
+      assert.deepEqual(galaxyData1.wormhole, galaxyData2.wormhole, 'Wormhole data should match');
     });
 
     test('should generate different results with different seeds', () => {
-      const systems1 = generateRandomSolarSystems(11111);
-      const systems2 = generateRandomSolarSystems(22222);
+      const galaxyData1 = generateRandomSolarSystems(11111);
+      const galaxyData2 = generateRandomSolarSystems(22222);
+      const systems1 = galaxyData1.systems;
+      const systems2 = galaxyData2.systems;
       
       // At least some systems should be different
       let differenceCount = 0;
@@ -219,7 +229,8 @@ describe('Solar Systems', () => {
     });
 
     test('should avoid placing systems too close to each other', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       // Check that no two systems are at exactly the same coordinates
       const coordinates = new Set();
@@ -235,7 +246,8 @@ describe('Solar Systems', () => {
 
   describe('System Access', () => {
     test('should provide access to individual systems', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       const system0 = getSolarSystem(systems, 0);
       const system92 = getSolarSystem(systems, 92); // Sol system
@@ -248,7 +260,8 @@ describe('Solar Systems', () => {
     });
 
     test('should throw error for invalid system index access', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       assert.throws(() => getSolarSystem(systems, -1));
       assert.throws(() => getSolarSystem(systems, 120));
@@ -257,7 +270,8 @@ describe('Solar Systems', () => {
 
   describe('Special Resources Distribution', () => {
     test('should have roughly 40% of systems with special resources', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       const systemsWithResources = systems.filter(s => s.specialResources > 0);
       const percentage = (systemsWithResources.length / systems.length) * 100;
@@ -271,7 +285,8 @@ describe('Solar Systems', () => {
 
   describe('Status Distribution', () => {
     test('should have roughly 15% of systems with special status', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       const systemsWithStatus = systems.filter(s => s.status !== SystemStatus.Uneventful);
       const percentage = (systemsWithStatus.length / systems.length) * 100;
@@ -286,7 +301,8 @@ describe('Solar Systems', () => {
     test('should respect politics tech level constraints', () => {
       // This test would require the politics data to validate constraints
       // For now, just test that they're within valid ranges
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       systems.forEach((system, index) => {
         assert.ok(system.techLevel >= 0 && system.techLevel < 8, 
@@ -299,7 +315,8 @@ describe('Solar Systems', () => {
 
   describe('Trade Item Quantities', () => {
     test('should initialize all systems with zero trade item quantities', () => {
-      const systems = generateRandomSolarSystems(12345);
+      const galaxyData = generateRandomSolarSystems(12345);
+  const systems = galaxyData.systems;
       
       systems.forEach((system, index) => {
         // Trade item quantities should be initialized separately

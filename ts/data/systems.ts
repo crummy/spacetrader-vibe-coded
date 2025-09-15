@@ -256,9 +256,9 @@ export function getSolarSystem(systems: readonly SolarSystem[], index: number): 
  * Generate random solar systems based on Palm OS algorithm
  * From Traveler.c GenerateUniverse function
  * @param seed Random seed for deterministic generation
- * @returns Array of all 120 solar systems
+ * @returns Object containing systems array and wormhole array
  */
-export function generateRandomSolarSystems(seed: number): SolarSystem[] {
+export function generateRandomSolarSystems(seed: number): { systems: SolarSystem[], wormhole: number[] } {
   const rng = new SeededRandom(seed);
   const systems: SolarSystem[] = [];
 
@@ -360,5 +360,5 @@ export function generateRandomSolarSystems(seed: number): SolarSystem[] {
     }
   }
 
-  return systems;
+  return { systems, wormhole };
 }

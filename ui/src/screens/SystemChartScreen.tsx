@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getShipType } from '@game-data/shipTypes.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
-import { calculateDistance, getCurrentFuel } from '../../../ts/travel/warp.ts';
+import { calculateDistance, getCurrentFuel, getWormholeDestination, getWormholeDestinations } from '../../../ts/travel/warp.ts';
 import { DestinationScreen } from './DestinationScreen.tsx';
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
@@ -115,6 +115,19 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
     setShowDestination(true);
   }, [actualState.currentSystem, systemsInRange]);
 
+  const handleWormholeClick = useCallback((systemIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const wormholeDestinations = getWormholeDestinations(actualState, systemIndex);
+    
+    if (wormholeDestinations.length === 0 || systemIndex !== actualState.currentSystem) {
+      return; // No wormhole or not at current system
+    }
+    
+    // For now, always use the first destination. In the future, we could cycle through them or show a menu
+    setSelectedSystem(wormholeDestinations[0]);
+    setShowDestination(true);
+  }, [actualState]);
+
   const centerOnCurrentSystem = useCallback(() => {
     const currentX = scaleX(currentSystem.x);
     const currentY = scaleY(currentSystem.y);
@@ -220,6 +233,9 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                 const isSelected = index === selectedSystem;
                 const isHovered = index === hoveredSystem;
                 const isVisited = system.visited;
+                const wormholeDestinations = getWormholeDestinations(actualState, index);
+                const hasWormhole = wormholeDestinations.length > 0;
+                const primaryWormholeDestination = wormholeDestinations.length > 0 ? wormholeDestinations[0] : null;
                 
                 let color = '#666666'; // Default: unvisited, out of range
                 if (isCurrent) color = '#00ff00'; // Green for current
@@ -250,6 +266,7 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                         {isCurrent && ' (Current)'}
                         {isInRange && !isCurrent && ' (In Range)'}
                         {!isInRange && ' (Out of Range)'}
+                        {hasWormhole && ` • Wormhole (${wormholeDestinations.length} connection${wormholeDestinations.length > 1 ? 's' : ''})`}
                       </title>
                     </circle>
                     {/* Visible system dot */}
@@ -262,6 +279,42 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                       strokeWidth={isCurrent || isSelected ? 2 : 0}
                       style={{ filter: isHovered ? 'brightness(150%)' : 'none', pointerEvents: 'none' }}
                     />
+                    
+                    {/* Wormhole dot - only show if system has a wormhole */}
+                    {hasWormhole && (
+                      <g>
+                        {/* Invisible larger circle for easier wormhole clicking */}
+                        <circle
+                          cx={x + radius + 6}
+                          cy={y}
+                          r={8}
+                          fill="transparent"
+                          className={isCurrent ? "cursor-pointer" : ""}
+                          onClick={isCurrent ? (e) => handleWormholeClick(index, e) : undefined}
+                          onMouseEnter={() => setHoveredSystem(index)}
+                          onMouseLeave={() => setHoveredSystem(null)}
+                        >
+                          <title>
+                            {isCurrent ? 
+                              wormholeDestinations.length > 1 ? 
+                                `Wormhole to: ${wormholeDestinations.map(dest => getSolarSystemName(dest)).join(', ')}` :
+                                `Wormhole to ${getSolarSystemName(primaryWormholeDestination!)}` :
+                              'Wormhole (only accessible from current system)'
+                            }
+                          </title>
+                        </circle>
+                        {/* Visible wormhole dot */}
+                        <circle
+                          cx={x + radius + 6}
+                          cy={y}
+                          r={2}
+                          fill={isCurrent ? '#ff00ff' : '#660066'}
+                          stroke={isCurrent ? '#ffffff' : 'none'}
+                          strokeWidth={isCurrent ? 1 : 0}
+                          style={{ filter: isHovered && isCurrent ? 'brightness(150%)' : 'none', pointerEvents: 'none' }}
+                        />
+                      </g>
+                    )}
                   </g>
                 );
               })}
