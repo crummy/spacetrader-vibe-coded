@@ -7,11 +7,13 @@ import { getTradeItemName } from '@game-data/tradeItems.ts';
 import { MAXTRADEITEM } from '@game-types';
 import { calculateStandardPrice } from '../../../ts/economy/pricing.ts';
 import { getPoliticalSystem } from '../../../ts/data/politics.ts';
+import { getFilledCargoBays, getTotalCargoBays } from '../../../ts/economy/trading.ts';
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
 
 interface DestinationScreenProps extends ScreenProps {
   initialSystemIndex: number;
+  onBack?: (finalSystemIndex?: number) => void;
 }
 
 export function DestinationScreen({ onNavigate, onBack, state, onAction, initialSystemIndex }: DestinationScreenProps) {
@@ -84,7 +86,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
         parameters: { targetSystem: selectedSystemIndex }
       });
       
-      onBack?.(); // Return to previous screen after warp
+      onBack?.(selectedSystemIndex); // Return to previous screen after warp
     } catch (error) {
       console.error('Warp failed:', error);
     }
@@ -177,7 +179,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
       <div className="bg-space-dark border-b border-space-blue p-2">
         <div className="flex items-center justify-between">
           <button 
-            onClick={onBack}
+            onClick={() => onBack?.(selectedSystemIndex)}
             className="compact-button"
           >
             ← Back
@@ -261,6 +263,13 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
         {tradePrices.length === 0 && (
           <div className="text-palm-gray text-xs">No trade data available</div>
         )}
+        
+        {/* Cargo Bays */}
+        <div className="mt-2 pt-2 border-t border-space-blue">
+          <div className="flex justify-end text-xs text-palm-gray">
+            Bays: {getFilledCargoBays(actualState)}/{getTotalCargoBays(actualState)}
+          </div>
+        </div>
       </div>
       
       {/* Actions */}

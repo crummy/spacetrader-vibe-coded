@@ -496,7 +496,7 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
       // Check if player wants to auto-ignore this encounter
       if (shouldAutoIgnoreEncounter(state, encounterCheck.encounterType!)) {
         // Auto-ignore the encounter, continue travel
-        const travelResult = automaticTravelContinuation(state);
+        const travelResult = await automaticTravelContinuation(state);
         if (travelResult.arrivedSafely) {
           message += ` - Auto-ignored encounter, arrived safely at ${systemName}`;
           return {
@@ -543,6 +543,37 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
           message += ` (cost: ${result.costPaid})`;
         }
         
+        // Auto-services on arrival (from Palm OS Traveler.c lines 2328-2348)
+        const autoActions: string[] = [];
+        
+        // Auto-fuel if enabled and ship is not at full fuel
+        if (state.options.autoFuel) {
+          const shipType = getShipType(state.ship.type);
+          const maxFuel = shipType.fuelTanks;
+          if (state.ship.fuel < maxFuel) {
+            const refuelResult = await executeRefuelAction(state);
+            if (refuelResult.success) {
+              autoActions.push('auto-refueled');
+            }
+          }
+        }
+        
+        // Auto-repair if enabled and ship is damaged  
+        if (state.options.autoRepair) {
+          const shipType = getShipType(state.ship.type);
+          const maxHull = shipType.hullStrength;
+          if (state.ship.hull < maxHull) {
+            const repairResult = await executeRepairAction(state);
+            if (repairResult.success) {
+              autoActions.push('auto-repaired');
+            }
+          }
+        }
+        
+        if (autoActions.length > 0) {
+          message += ` (${autoActions.join(', ')})`;
+        }
+        
         return {
           success: true,
           message,
@@ -566,7 +597,7 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
 }
 
 // Helper function to automatically continue travel after encounter resolution
-export function automaticTravelContinuation(state: GameState): { hasEncounter: boolean; encounterType?: number; arrivedSafely: boolean; message: string } {
+export async function automaticTravelContinuation(state: GameState): Promise<{ hasEncounter: boolean; encounterType?: number; arrivedSafely: boolean; message: string }> {
   if (state.warpSystem === state.currentSystem) {
     // Already at destination - ensure we're on the planet
     state.currentMode = GameMode.OnPlanet;
@@ -587,7 +618,7 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
         hasEncounter: true, 
         encounterType: encounterCheck.encounterType,
         arrivedSafely: false,
-        message: `En route to ${systemName} - Another encounter at ${state.clicks} clicks to ${systemName}!`
+        message: ""
       };
     }
   }
@@ -604,10 +635,43 @@ export function automaticTravelContinuation(state: GameState): { hasEncounter: b
     
     // Reset newspaper payment flag when arriving at new system
     state.alreadyPaidForNewspaper = false;
+    
+    // Auto-services on arrival (from Palm OS Traveler.c lines 2328-2348)
+    let message = `Arrived safely at ${systemName}`;
+    const autoActions: string[] = [];
+    
+    // Auto-fuel if enabled and ship is not at full fuel
+    if (state.options.autoFuel) {
+      const shipType = getShipType(state.ship.type);
+      const maxFuel = shipType.fuelTanks;
+      if (state.ship.fuel < maxFuel) {
+        const refuelResult = await executeRefuelAction(state);
+        if (refuelResult.success) {
+          autoActions.push('auto-refueled');
+        }
+      }
+    }
+    
+    // Auto-repair if enabled and ship is damaged  
+    if (state.options.autoRepair) {
+      const shipType = getShipType(state.ship.type);
+      const maxHull = shipType.hullStrength;
+      if (state.ship.hull < maxHull) {
+        const repairResult = await executeRepairAction(state);
+        if (repairResult.success) {
+          autoActions.push('auto-repaired');
+        }
+      }
+    }
+    
+    if (autoActions.length > 0) {
+      message += ` (${autoActions.join(', ')})`;
+    }
+    
     return { 
       hasEncounter: false, 
       arrivedSafely: true,
-      message: `Arrived safely at ${systemName}`
+      message
     };
   }
   
@@ -951,17 +1015,17 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
     
     // If encounter ended, automatically continue travel (whether we have clicks remaining or arrived)
     if ((state.currentMode as GameMode) === GameMode.InSpace) {
-      const travelResult = automaticTravelContinuation(state);
+      const travelResult = await automaticTravelContinuation(state);
       
       if (travelResult.hasEncounter) {
-        // Another encounter found - start it
+        // Another encounter found - start it and replace message entirely
         const encounterResult = startEncounter(state, travelResult.encounterType!);
         if (encounterResult.success) {
-          message += ` ${travelResult.message}`;
+          message = travelResult.message; // Replace, don't append
         }
       } else if (travelResult.arrivedSafely) {
-        // Arrived at destination
-        message += ` ${travelResult.message}`;
+        // Arrived at destination - show clean arrival message
+        message = message ? `${message} ${travelResult.message}` : travelResult.message;
       }
     }
     

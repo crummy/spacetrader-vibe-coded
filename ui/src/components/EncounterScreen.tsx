@@ -1,6 +1,8 @@
 // Encounter Screen - Handle combat and encounters
 import React, { useState, useEffect } from 'react';
-import { getCurrentEncounter } from '../../../ts/combat/engine.ts';
+import { getCurrentEncounter, getAvailableActions } from '../../../ts/combat/engine.ts';
+import { getSolarSystemName } from '@game-data/systems.ts';
+import { getShipType } from '@game-data/shipTypes.ts';
 import type { State } from '@game-types';
 
 interface EncounterScreenProps {
@@ -14,6 +16,91 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
   const encounter = getCurrentEncounter(state);
   const opponentShip = state.opponent;
   const playerShip = state.ship;
+  const availableActions = getAvailableActions(state);
+  
+  // Get ship type information
+  const playerShipType = getShipType(playerShip.type);
+  const opponentShipType = getShipType(opponentShip.type);
+  
+  // Calculate hull percentages
+  const playerHullPercent = Math.round((playerShip.hull / playerShipType.hullStrength) * 100);
+  const opponentHullPercent = Math.round((opponentShip.hull / opponentShipType.hullStrength) * 100);
+  
+  // Calculate shield status
+  const playerMaxShields = playerShip.shieldStrength.reduce((a, b) => a + b, 0);
+  const playerCurrentShields = playerShip.shieldStrength.reduce((a, b) => Math.max(a, b), 0);
+  const opponentMaxShields = opponentShip.shieldStrength.reduce((a, b) => a + b, 0);
+  const opponentCurrentShields = opponentShip.shieldStrength.reduce((a, b) => Math.max(a, b), 0);
+  
+  const playerShieldPercent = playerMaxShields > 0 ? Math.round((playerCurrentShields / playerMaxShields) * 100) : 0;
+  const opponentShieldPercent = opponentMaxShields > 0 ? Math.round((opponentCurrentShields / opponentMaxShields) * 100) : 0;
+  
+  // Generate encounter description like Palm OS: "a police gnat" or "a pirate firefly"
+  const getEncounterDescription = () => {
+    const shipName = opponentShipType.name.toLowerCase();
+    
+    // Police encounters (0-9)
+    if (encounter.type >= 0 && encounter.type <= 9) {
+      return `a police ${shipName}`;
+    }
+    // Pirate encounters (10-19)  
+    else if (encounter.type >= 10 && encounter.type <= 19) {
+      if (opponentShipType.name === 'Mantis') {
+        return `an alien ${shipName}`;
+      }
+      return `a pirate ${shipName}`;
+    }
+    // Trader encounters (20-29)
+    else if (encounter.type >= 20 && encounter.type <= 29) {
+      return `a trader ${shipName}`;
+    }
+    // Special encounters
+    else if (encounter.type === 80) { // MARIECELESTEENCOUNTER
+      return 'the Marie Celeste';
+    }
+    else if (encounter.type >= 70 && encounter.type <= 74) { // Famous captains
+      return 'a famous captain';
+    }
+    else if (encounter.type >= 90 && encounter.type <= 91) { // Bottle encounters
+      return 'a rare bottle';
+    }
+    else {
+      return `a ${shipName}`;
+    }
+  };
+  
+  // Generate encounter location text: "At X clicks from Y, you encounter Z"
+  const destinationName = getSolarSystemName(state.warpSystem);
+  const locationText = `At ${state.clicks} clicks from ${destinationName}, you encounter ${getEncounterDescription()}.`;
+  
+  // Generate flavor text based on encounter type
+  const getFlavorText = () => {
+    switch (encounter.type) {
+      case 0: // POLICEINSPECTION
+        return "The police summon you to submit to an inspection.";
+      case 1: // POLICEIGNORE
+      case 12: // PIRATEIGNORE  
+      case 20: // TRADERIGNORE
+      case 31: // SPACEMONSTERIGNORE
+      case 41: // DRAGONFLYIGNORE
+      case 61: // SCARABIGNORE
+        // TODO: Check if player is cloaked, show "It doesn't notice you." if cloaked
+        return "It ignores you.";
+      case 2: // POLICEATTACK  
+        return "The police hail they want you to surrender.";
+      case 10: // PIRATEATTACK
+        return "Your opponent attacks.";
+      case 11: // PIRATEFLEE
+        return "Your opponent is fleeing.";
+      case 13: // PIRATESURRENDER
+        return "Your opponent hails that he surrenders to you.";
+      case 24: // TRADERSELL
+      case 25: // TRADERBUY
+        return "You are hailed with an offer to trade goods.";
+      default:
+        return "Your opponent awaits your decision.";
+    }
+  };
   
   const handleCombatAction = async (action: string) => {
     try {
@@ -41,107 +128,90 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
   const handleBribe = () => handleCombatAction('bribe');
 
   return (
-    <div className="space-panel">
-      {/* Encounter Header */}
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-2">⚔️</div>
-        <h1 className="retro-title text-xl text-neon-red mb-2">ENCOUNTER!</h1>
-        <div className="text-neon-cyan text-lg">{encounter.name}</div>
-      </div>
-
-      {/* Ship Status Display */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Player Ship */}
-        <div className="space-panel bg-space-black">
-          <div className="text-neon-green font-bold mb-2">Your Ship</div>
-          <div className="text-sm space-y-1">
-            <div>Hull: {playerShip.hull} / {/* Need to get max hull */}</div>
-            <div>Shields: {playerShip.shieldStrength.reduce((a, b) => Math.max(a, b), 0)}</div>
-            <div>Weapons: {playerShip.weapon.filter(w => w >= 0).length}</div>
-            <div>Fuel: {playerShip.fuel}</div>
+    <div className="flex flex-col h-full bg-space-black text-palm-green font-mono">
+      {/* Two-column ship status */}
+      <div className="grid grid-cols-2 gap-4 p-2 border-b border-space-blue">
+        {/* Your Ship */}
+        <div>
+          <div className="text-neon-cyan text-xs font-bold text-center mb-2">You</div>
+          <div className="text-xs space-y-1">
+            <div className="text-center font-bold">{playerShipType.name}</div>
+            <div>Hull at {playerHullPercent}%</div>
+            <div>
+              {playerMaxShields > 0 ? `Shields at ${playerShieldPercent}%` : 'No shields'}
+            </div>
           </div>
         </div>
-
+        
         {/* Opponent Ship */}
-        <div className="space-panel bg-space-black">
-          <div className="text-neon-red font-bold mb-2">Opponent</div>
-          <div className="text-sm space-y-1">
-            <div>Hull: {opponentShip.hull}</div>
-            <div>Shields: {opponentShip.shieldStrength.reduce((a, b) => Math.max(a, b), 0)}</div>
-            <div>Weapons: {opponentShip.weapon.filter(w => w >= 0).length}</div>
-            <div>Type: Unknown</div>
+        <div>
+          <div className="text-neon-red text-xs font-bold text-center mb-2">Opponent</div>
+          <div className="text-xs space-y-1">
+            <div className="text-center font-bold">{opponentShipType.name}</div>
+            <div>Hull at {opponentHullPercent}%</div>
+            <div>
+              {opponentMaxShields > 0 ? `Shields at ${opponentShieldPercent}%` : 'No shields'}
+            </div>
           </div>
         </div>
       </div>
-
+      
+      {/* Location text */}
+      <div className="p-2 border-b border-space-blue">
+        <div className="text-xs text-palm-gray text-center">
+          {locationText}
+        </div>
+      </div>
+      
+      {/* Flavor text */}
+      <div className="p-2 border-b border-space-blue">
+        <div className="text-xs text-neon-amber text-center">
+          {getFlavorText()}
+        </div>
+      </div>
+      
       {/* Action Result */}
       {actionResult && (
-        <div className="space-panel bg-space-black mb-4">
-          <div className="text-neon-amber font-bold mb-2">Combat Log:</div>
-          <div className="text-sm text-palm-gray">{actionResult}</div>
+        <div className="p-2 border-b border-space-blue">
+          <div className="text-xs text-palm-gray text-center">{actionResult}</div>
         </div>
       )}
-
-      {/* Combat Actions */}
-      <div className="space-panel bg-space-black">
-        <div className="text-neon-amber font-bold mb-4 text-center">Choose Your Action</div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {/* Primary Actions */}
-          <button 
-            onClick={handleAttack}
-            className="neon-button h-16 flex flex-col items-center justify-center bg-red-900 border-red-500 hover:bg-red-800"
-          >
-            <div className="text-lg">⚔️</div>
-            <div className="text-sm">Attack</div>
-          </button>
-          
-          <button 
-            onClick={handleFlee}
-            className="neon-button h-16 flex flex-col items-center justify-center bg-yellow-900 border-yellow-500 hover:bg-yellow-800"
-          >
-            <div className="text-lg">🏃</div>
-            <div className="text-sm">Flee</div>
-          </button>
-          
-          <button 
-            onClick={handleSurrender}
-            className="neon-button h-16 flex flex-col items-center justify-center bg-gray-900 border-gray-500 hover:bg-gray-800"
-          >
-            <div className="text-lg">🏳️</div>
-            <div className="text-sm">Surrender</div>
-          </button>
-          
-          <button 
-            onClick={handleIgnore}
-            className="neon-button h-16 flex flex-col items-center justify-center bg-blue-900 border-blue-500 hover:bg-blue-800"
-          >
-            <div className="text-lg">👁️</div>
-            <div className="text-sm">Ignore</div>
-          </button>
+      
+      {/* Available Actions */}
+      <div className="flex-1 p-2">
+        <div className="grid grid-cols-2 gap-2">
+          {availableActions.map((action) => {
+            const getActionInfo = (action: string) => {
+              switch (action) {
+                case 'attack': return { label: 'Attack', color: 'bg-red-900 border-red-500 hover:bg-red-800' };
+                case 'flee': return { label: 'Flee', color: 'bg-yellow-900 border-yellow-500 hover:bg-yellow-800' };
+                case 'surrender': return { label: 'Surrender', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
+                case 'ignore': return { label: 'Ignore', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
+                case 'submit': return { label: 'Submit to Inspection', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
+                case 'bribe': return { label: 'Attempt Bribe', color: 'bg-purple-900 border-purple-500 hover:bg-purple-800' };
+                case 'trade': return { label: 'Trade', color: 'bg-cyan-900 border-cyan-500 hover:bg-cyan-800' };
+                case 'board': return { label: 'Board Ship', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
+                case 'drink': return { label: 'Drink', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
+                case 'plunder': return { label: 'Plunder', color: 'bg-orange-900 border-orange-500 hover:bg-orange-800' };
+                case 'yield': return { label: 'Yield', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
+                case 'meet': return { label: 'Meet', color: 'bg-teal-900 border-teal-500 hover:bg-teal-800' };
+                default: return { label: action, color: 'bg-space-dark border-space-blue hover:bg-space-blue' };
+              }
+            };
+            
+            const actionInfo = getActionInfo(action);
+            
+            return (
+              <button 
+                key={action}
+                onClick={() => handleCombatAction(action)}
+                className={`compact-button ${actionInfo.color}`}
+              >
+                {actionInfo.label}
+              </button>
+            );
+          })}
         </div>
-
-        {/* Secondary Actions */}
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <button 
-            onClick={handleSubmit}
-            className="neon-button h-12 flex items-center justify-center text-sm bg-green-900 border-green-500 hover:bg-green-800"
-          >
-            📋 Submit to Inspection
-          </button>
-          
-          <button 
-            onClick={handleBribe}
-            className="neon-button h-12 flex items-center justify-center text-sm bg-purple-900 border-purple-500 hover:bg-purple-800"
-          >
-            💰 Attempt Bribe
-          </button>
-        </div>
-      </div>
-
-      {/* Help Text */}
-      <div className="text-xs text-palm-gray text-center mt-4">
-        Choose your action carefully. Different encounter types respond to different approaches.
       </div>
     </div>
   );

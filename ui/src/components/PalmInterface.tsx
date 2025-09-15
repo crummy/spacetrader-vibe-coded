@@ -12,8 +12,10 @@ import { CommanderStatusScreen } from '../screens/CommanderStatusScreen';
 import { SystemInfoScreen } from '../screens/SystemInfoScreen';
 import { SystemChartScreen } from '../screens/SystemChartScreen';
 import { GameMenu } from './GameMenu';
+import { EncounterScreen } from './EncounterScreen';
 import { useEffect } from 'react';
 import { getSolarSystemName } from '@game-data/systems.ts';
+import { GameMode } from '../../../ts/types.ts';
 type MainTab = 'system-info' | 'buy-cargo' | 'sell-cargo' | 'shipyard' | 'ship-purchase' | 'map' | 'buy-equipment' | 'sell-equipment' | 'personnel' | 'bank' | 'commander';
 
 interface PalmInterfaceProps {
@@ -27,6 +29,7 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
   const [activeTab, setActiveTab] = useState<MainTab>('buy-cargo');
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
+  const [arrivalMessage, setArrivalMessage] = useState('');
 
   // Show save indicator briefly when state changes (indicating auto-save)
   useEffect(() => {
@@ -36,6 +39,15 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
       return () => clearTimeout(timer);
     }
   }, [state.days, state.credits]); // Trigger when key game state changes
+
+  // Show arrival message when player arrives at a new system
+  useEffect(() => {
+    if (state && state.message && state.message.includes('Arrived safely at')) {
+      setArrivalMessage(state.message);
+      const timer = setTimeout(() => setArrivalMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [state?.message]);
 
   const screenProps = {
     state,
@@ -87,7 +99,13 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
           onClick={() => setActiveTab('system-info')}
           className="retro-title text-sm hover:text-neon-green cursor-pointer bg-transparent border-none"
         >
-          {getSolarSystemName(state.currentSystem)}
+          {arrivalMessage ? (
+            <span className="text-neon-cyan animate-pulse">✨ {arrivalMessage}</span>
+          ) : state.currentMode === GameMode.InCombat ? (
+            <span className="text-neon-red">Encounter</span>
+          ) : (
+            getSolarSystemName(state.currentSystem)
+          )}
         </button>
         <div className="flex items-center gap-2">
           {showSaveIndicator && (
@@ -106,7 +124,11 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
       {/* Main content area */}
       <div className="palm-main">
         <div className="h-full p-2">
-          {screens[activeTab]}
+          {state.currentMode === GameMode.InCombat ? (
+            <EncounterScreen state={state} onAction={onAction} />
+          ) : (
+            screens[activeTab]
+          )}
         </div>
       </div>
 

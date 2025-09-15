@@ -165,18 +165,18 @@ function App() {
     );
   }
   
-  // Show encounter screen when in combat
+  // Show encounter screen when in combat - but preserve the palm interface header
   if (gameState.currentMode === GameMode.InCombat) {
     return (
       <div className="game-screen">
         <div className="palm-device">
           <div className="palm-screen">
-            <div className="palm-content">
-              <EncounterScreen 
-                state={gameState}
-                onAction={handleAction}
-              />
-            </div>
+            <PalmInterface 
+              state={gameState} 
+              onAction={handleAction}
+              availableActions={[]}
+              onNewGame={handleNewGame}
+            />
           </div>
         </div>
       </div>

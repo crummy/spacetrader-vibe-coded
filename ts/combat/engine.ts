@@ -341,7 +341,7 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     const fleeSuccess = Math.random() > 0.3; // 70% success rate for now
     if (fleeSuccess) {
       endEncounter(state);
-      message = 'You successfully escape!';
+      message = 'You have managed to escape your opponent.';
     } else {
       // Failed flee - opponent gets free attack
       playerDamage = calculateDamage(state.opponent, state.ship);
@@ -351,7 +351,7 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
   } else if (playerAction === 'ignore') {
     // Ignore the encounter - end peacefully
     endEncounter(state);
-    message = 'You ignore the encounter and continue on your way.';
+    message = ''; // No message - let travel continuation handle messaging
   } else if (playerAction === 'trade') {
     // Handle orbital trading
     if (state.encounterType === EncounterType.TRADERSELL) {
@@ -644,6 +644,14 @@ export function configureOpponentShip(state: GameState, encounterType: number): 
     const shipType = getShipType(1);
     state.opponent.hull = shipType.hullStrength;
     state.opponent.weapon[0] = 0; // Pulse Laser
+    
+  } else if (encounterType === EncounterType.BOTTLEOLDENCOUNTER ||
+             encounterType === EncounterType.BOTTLEGOODENCOUNTER) {
+    // Bottle encounters - special bottle "ship"
+    state.opponent.type = 14; // Bottle
+    const shipType = getShipType(14);
+    state.opponent.hull = shipType.hullStrength;
+    // Bottles have no weapons
     
   } else {
     // Default opponent setup

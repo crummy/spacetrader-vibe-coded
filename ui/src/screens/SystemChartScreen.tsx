@@ -175,7 +175,12 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
       <DestinationScreen
         initialSystemIndex={selectedSystem}
         onNavigate={onNavigate}
-        onBack={() => setShowDestination(false)}
+        onBack={(finalSystemIndex) => {
+          if (finalSystemIndex !== undefined) {
+            setSelectedSystem(finalSystemIndex);
+          }
+          setShowDestination(false);
+        }}
         state={actualState}
         onAction={actualExecuteAction}
       />
