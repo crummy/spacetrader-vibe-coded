@@ -128,6 +128,7 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
               </div>
             </div>
             <button
+              data-testid="refuel-button"
               onClick={handleRefuel}
               disabled={!refuelAction?.available}
               className={`px-4 py-2 rounded text-sm border transition-all duration-200 ${
@@ -152,6 +153,7 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
               </div>
             </div>
             <button
+              data-testid="repair-button"
               onClick={handleRepair}
               disabled={!repairAction?.available}
               className={`px-4 py-2 rounded text-sm border transition-all duration-200 ${
@@ -176,6 +178,7 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
               </div>
             </div>
             <button
+              data-testid="escape-pod-button"
               onClick={handleBuyEscapePod}
               disabled={!escapePodAction?.available || actualState.ship.escapePod}
               className={`px-4 py-2 rounded text-sm border transition-all duration-200 ${
@@ -197,6 +200,7 @@ export function ShipyardScreen({ onNavigate, onBack, state, onAction, availableA
               </div>
             </div>
             <button
+              data-testid="buy-ships-button"
               onClick={handleBuyShips}
               disabled={!buyShipAction?.available}
               className={`px-4 py-2 rounded text-sm border transition-all duration-200 ${

@@ -31,5 +31,5 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../ts/types.ts", "../ts/engine/game.ts", "../ts/ui/ui-fields.ts", "../ts/state.ts", "../ts/economy/pricing.ts", "../ts/economy/trading.ts", "../ts/data/tradeItems.ts", "../ts/data/systems.ts", "../ts/data/shipTypes.ts", "../ts/game/endings.ts", "../ts/combat/engine.ts"]
+  "include": ["src", "../ts/types.ts", "../ts/engine/game.ts", "../ts/ui/ui-fields.ts", "../ts/state.ts", "../ts/economy/bank.ts", "../ts/economy/pricing.ts", "../ts/economy/trading.ts", "../ts/data/tradeItems.ts", "../ts/data/systems.ts", "../ts/data/shipTypes.ts", "../ts/game/endings.ts", "../ts/combat/engine.ts"]
 }

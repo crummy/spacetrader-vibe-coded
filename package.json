@@ -1,0 +1,36 @@
+{
+  "name": "spacetrader-ts-4",
+  "version": "1.0.0",
+  "description": "Space Trader game - TypeScript port with React UI",
+  "private": true,
+  "workspaces": [
+    "ts",
+    "ui"
+  ],
+  "scripts": {
+    "test": "npm run test:ts; npm run test:ui",
+    "test:ts": "cd ts && npm test",
+    "test:ui": "cd ui && npm test",
+    "test:parallel": "npm run test:ts & npm run test:ui & wait",
+    "test:watch": "concurrently \"npm run test:ts -- --watch\" \"npm run test:ui -- --watch\"",
+    "test:summary": "echo '=== TypeScript Tests ===' && npm run test:ts; echo '=== UI Tests ===' && npm run test:ui; echo '=== Test Summary Complete ==='",
+    "build": "npm run build:ts && npm run build:ui",
+    "build:ts": "cd ts && npm run build",
+    "build:ui": "cd ui && npm run build",
+    "dev:ui": "cd ui && npm run dev",
+    "lint": "npm run lint:ts && npm run lint:ui",
+    "lint:ts": "cd ts && npm run lint",
+    "lint:ui": "cd ui && npm run lint",
+    "check": "npm run check:ts && npm run check:ui",
+    "check:ts": "cd ts && npm run check",
+    "check:ui": "cd ui && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "Space Trader Development Team",
+  "license": "MIT"
+}

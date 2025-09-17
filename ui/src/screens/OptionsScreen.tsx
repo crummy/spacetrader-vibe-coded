@@ -46,6 +46,8 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
         checked={options[key] || false}
         onChange={(e) => handleOptionChange(key, e.target.checked)}
         className="w-3 h-3 accent-neon-cyan"
+        data-testid={`option-${key}`}
+        aria-label={label}
       />
     </div>
   );
@@ -60,6 +62,8 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
         value={options[key] || 0}
         onChange={(e) => handleOptionChange(key, parseInt(e.target.value) || 0)}
         className="w-12 h-5 bg-space-black border border-space-blue text-neon-cyan text-xs text-center"
+        data-testid={`option-${key}`}
+        aria-label={label}
       />
     </div>
   );
@@ -73,6 +77,7 @@ export function OptionsScreen({ state, onAction, onBack }: OptionsScreenProps) {
           onClick={handleBack}
           disabled={isSaving}
           className="text-neon-cyan text-xs hover:text-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="back-button"
         >
           {isSaving ? 'SAVING...' : '← Back'}
         </button>

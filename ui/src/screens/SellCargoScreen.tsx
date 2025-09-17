@@ -196,7 +196,7 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
       )}
 
       {/* Compact header with cargo status */}
-      <div className="bg-space-black border border-space-blue rounded p-1 mb-2">
+      <div className="bg-space-black border border-space-blue rounded p-1 mb-2" data-testid="cargo-status">
         <div className="text-xs text-palm-gray">
           Cargo: {filledCargoBays}/{totalCargoBays} • Free: {totalCargoBays - filledCargoBays}
         </div>
@@ -221,6 +221,7 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
                 key={item.id}
                 onClick={() => canSell ? handleItemSelect(item.id) : undefined}
                 disabled={!canSell}
+                data-testid={`trade-item-${item.name.toLowerCase()}`}
                 className={`w-full p-1 text-left rounded border transition-all duration-200 ${
                   !canSell 
                     ? 'border-space-gray border-opacity-30 opacity-50 cursor-not-allowed'
@@ -265,6 +266,7 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
           <button
             onClick={handleSale}
             disabled={quantity > selectedCargoItem.ownedQty || quantity <= 0}
+            data-testid="sell-button"
             className="compact-button w-full disabled:opacity-50"
           >
             Sell {quantity} units

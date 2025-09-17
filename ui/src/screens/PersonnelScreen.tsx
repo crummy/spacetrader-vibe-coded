@@ -219,6 +219,7 @@ export function PersonnelScreen({ onNavigate, onBack, state, onAction, available
                 ? 'border-neon-cyan bg-neon-cyan bg-opacity-20 text-neon-cyan'
                 : 'border-palm-gray border-opacity-30 text-palm-gray hover:border-neon-cyan'
             }`}
+            data-testid="roster-tab"
           >
             Crew Roster
           </button>
@@ -229,6 +230,7 @@ export function PersonnelScreen({ onNavigate, onBack, state, onAction, available
                 ? 'border-neon-cyan bg-neon-cyan bg-opacity-20 text-neon-cyan'
                 : 'border-palm-gray border-opacity-30 text-palm-gray hover:border-neon-cyan'
             }`}
+            data-testid="hire-tab"
           >
             Hire Crew
           </button>
@@ -265,6 +267,7 @@ export function PersonnelScreen({ onNavigate, onBack, state, onAction, available
                   <button
                     onClick={() => handleFireCrew(crew.slotIndex, crew.name)}
                     className="neon-button w-full py-1 text-sm mt-2 bg-red-900 hover:bg-red-800 border-red-500"
+                    data-testid={`fire-crew-${crew.slotIndex}`}
                   >
                     Fire {crew.name}
                   </button>
@@ -325,6 +328,7 @@ export function PersonnelScreen({ onNavigate, onBack, state, onAction, available
                 onClick={handleHireCrew}
                 disabled={availableQuarters <= 0 || availableMercenary.hiringCost > actualState.credits}
                 className="neon-button w-full py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="hire-crew-button"
               >
                 Hire {availableMercenary.name} for {availableMercenary.hiringCost.toLocaleString()} cr.
               </button>

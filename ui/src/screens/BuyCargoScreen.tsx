@@ -27,10 +27,10 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
 
-  // Debug: log current game mode and available actions
-  console.log('Current game mode:', actualState.currentMode);
-  console.log('Available actions:', actualAvailableActions);
-  console.log('Buy cargo action available:', actualAvailableActions.some(a => a.type === 'buy_cargo' && a.available));
+  // Debug: log current game mode and available actions (commented out for tests)
+  // console.log('Current game mode:', actualState.currentMode);
+  // console.log('Available actions:', actualAvailableActions);
+  // console.log('Buy cargo action available:', actualAvailableActions.some(a => a.type === 'buy_cargo' && a.available));
 
   // Calculate cargo space info
   const totalCargoBays = useMemo(() => getTotalCargoBays(actualState), [actualState]);
@@ -204,7 +204,7 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
       )}
 
       {/* Compact header with cargo status */}
-      <div className="bg-space-black border border-space-blue rounded p-1 mb-2">
+      <div className="bg-space-black border border-space-blue rounded p-1 mb-2" data-testid="cargo-status">
         <div className="text-xs text-palm-gray">
           Cargo: {filledCargoBays}/{totalCargoBays} • Available: {availableCargoBays}
           {actualState.options.leaveEmpty > 0 && ` • Reserved: ${actualState.options.leaveEmpty}`}
@@ -225,6 +225,7 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
                 key={item.id}
                 onClick={() => isAvailable ? handleItemSelect(item.id) : undefined}
                 disabled={!isAvailable}
+                data-testid={`trade-item-${item.name.toLowerCase()}`}
                 className={`w-full p-1 text-left rounded border transition-all duration-200 ${
                   !isAvailable 
                     ? 'border-space-gray border-opacity-30 opacity-50 cursor-not-allowed'
@@ -272,6 +273,7 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
             onClick={handlePurchase}
             disabled={quantity > getMaxAffordable(selectedTradeGood)}
             className="compact-button w-full disabled:opacity-50"
+            data-testid="buy-button"
           >
             Buy {quantity} units
           </button>

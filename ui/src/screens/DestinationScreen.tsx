@@ -186,18 +186,19 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           <button 
             onClick={() => onBack?.(selectedSystemIndex)}
             className="compact-button"
+            data-testid="back-button"
           >
             ← Back
           </button>
           
-          <div className="text-center">
-            <div className="text-neon-cyan text-sm font-bold">
+          <div className="text-center" data-testid="system-info">
+            <div className="text-neon-cyan text-sm font-bold" data-testid="system-name">
               {getSolarSystemName(selectedSystemIndex)} • {Math.round(distance)}p
             </div>
-            <div className="text-palm-gray text-xs">
+            <div className="text-palm-gray text-xs" data-testid="system-description">
               {systemDescription}
             </div>
-            <div className="text-palm-gray text-xs mt-1">
+            <div className="text-palm-gray text-xs mt-1" data-testid="system-activity">
               Police: {policeActivity} • Pirates: {pirateActivity}
             </div>
           </div>
@@ -207,6 +208,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
               onClick={() => handleNavigation('prev')}
               disabled={systemsWithinRange.length <= 1}
               className="compact-button text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="prev-system-button"
             >
               ←
             </button>
@@ -214,6 +216,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
               onClick={() => handleNavigation('next')}
               disabled={systemsWithinRange.length <= 1}
               className="compact-button text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="next-system-button"
             >
               →
             </button>
@@ -237,12 +240,13 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           <button
             onClick={() => setShowRelativePrices(!showRelativePrices)}
             className="compact-button text-xs"
+            data-testid="toggle-prices-button"
           >
             {showRelativePrices ? 'Absolute' : 'Relative'}
           </button>
         </div>
         
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs" data-testid="trade-prices">
           {tradePrices.map((item, index) => {
             let priceText = '';
             if (item.displayPrice === null) {
@@ -257,6 +261,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
               <div 
                 key={index}
                 className={`flex justify-between ${item.profitable ? 'text-neon-green font-bold' : 'text-palm-gray'}`}
+                data-testid={`trade-item-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 <span>{item.name}</span>
                 <span>{priceText}</span>
@@ -282,6 +287,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
         <button
           onClick={handleWarpToSystem}
           className="compact-button w-full bg-neon-green text-space-black font-bold hover:bg-green-400"
+          data-testid="warp-button"
         >
           🚀 Warp to {getSolarSystemName(selectedSystemIndex)}
         </button>
@@ -289,13 +295,14 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
 
       {/* Error Modal */}
       {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid="error-modal">
           <div className="bg-space-dark border border-neon-red rounded p-4 max-w-sm mx-4">
             <div className="text-neon-red font-bold mb-2">Warp Failed</div>
-            <div className="text-palm-gray text-sm mb-4">{errorMessage}</div>
+            <div className="text-palm-gray text-sm mb-4" data-testid="error-message">{errorMessage}</div>
             <button
               onClick={() => setErrorMessage(null)}
               className="compact-button w-full bg-neon-red text-white hover:bg-red-700"
+              data-testid="error-ok-button"
             >
               OK
             </button>

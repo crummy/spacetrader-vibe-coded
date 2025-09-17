@@ -74,6 +74,7 @@ export function CommanderStatusScreen({ onNavigate, onBack, state, onAction, ava
                   ? 'border-neon-cyan bg-neon-cyan bg-opacity-20 text-neon-cyan'
                   : 'border-palm-gray border-opacity-30 text-palm-gray hover:border-neon-cyan'
               }`}
+              data-testid={`${tab}-tab`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>

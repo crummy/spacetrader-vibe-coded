@@ -129,7 +129,7 @@ export function BuyEquipmentScreen({ onNavigate, onBack, state, onAction, availa
       {/* Equipment Slot Status */}
       <div className="space-panel bg-space-black mb-4">
         <div className="text-neon-amber mb-2">Equipment Slots:</div>
-        <div className="grid grid-cols-3 gap-4 text-sm">
+        <div data-testid="equipment-slots" className="grid grid-cols-3 gap-4 text-sm">
           <div className="text-center">
             <div className="text-neon-cyan">Weapons</div>
             <div className={equipmentSlotInfo.weapons.used >= equipmentSlotInfo.weapons.total ? 'text-red-400' : 'text-palm-gray'}>
@@ -158,6 +158,7 @@ export function BuyEquipmentScreen({ onNavigate, onBack, state, onAction, availa
           {(['weapons', 'shields', 'gadgets'] as EquipmentType[]).map((category) => (
             <button
               key={category}
+              data-testid={`category-${category}`}
               onClick={() => setSelectedCategory(category)}
               className={`px-2 py-2 rounded border transition-all duration-200 ${
                 selectedCategory === category
@@ -212,6 +213,7 @@ export function BuyEquipmentScreen({ onNavigate, onBack, state, onAction, availa
                   )}
                   
                   <button
+                    data-testid={`purchase-${selectedCategory}-${item.index}`}
                     onClick={() => handlePurchase(selectedCategory, item.index, item.name)}
                     disabled={!canAfford || !hasSlots}
                     className="neon-button w-full py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
