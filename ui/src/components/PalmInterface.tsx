@@ -139,47 +139,49 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
         </div>
       </div>
 
-      {/* Bottom tabs */}
-      <div className="palm-bottom-tabs">
-        {/* Primary tabs */}
-        <div className="flex border-b border-space-blue">
-          {[
-            { id: 'buy-cargo', name: 'Buy', icon: '📦' },
-            { id: 'sell-cargo', name: 'Sell', icon: '💰' },
-            { id: 'shipyard', name: 'Ships', icon: '🚀' },
-            { id: 'map', name: 'Map', icon: '🗺️' }
-          ].map(tab => (
-            <div
-              key={tab.id}
-              className={`palm-tab flex-1 text-center ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id as MainTab)}
-            >
-              <div className="text-xs">{tab.icon}</div>
-              <div className="text-xs">{tab.name}</div>
-            </div>
-          ))}
+      {/* Bottom tabs - hidden during encounters */}
+      {state.currentMode !== GameMode.InCombat && (
+        <div className="palm-bottom-tabs">
+          {/* Primary tabs */}
+          <div className="flex border-b border-space-blue">
+            {[
+              { id: 'buy-cargo', name: 'Buy', icon: '📦' },
+              { id: 'sell-cargo', name: 'Sell', icon: '💰' },
+              { id: 'shipyard', name: 'Ship', icon: '🚀' },
+              { id: 'map', name: 'Map', icon: '🗺️' }
+            ].map(tab => (
+              <div
+                key={tab.id}
+                className={`palm-tab flex-1 text-center ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id as MainTab)}
+              >
+                <div className="text-xs">{tab.icon}</div>
+                <div className="text-xs">{tab.name}</div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Secondary tabs */}
+          <div className="flex">
+            {[
+              { id: 'buy-equipment', name: 'Equip', icon: '⚡' },
+              { id: 'sell-equipment', name: 'Sell E', icon: '🔧' },
+              { id: 'personnel', name: 'Crew', icon: '👥' },
+              { id: 'bank', name: 'Bank', icon: '🏦' },
+              { id: 'commander', name: 'Cmdr', icon: '👨‍🚀' }
+            ].map(tab => (
+              <div
+                key={tab.id}
+                className={`palm-tab flex-1 text-center ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id as MainTab)}
+              >
+                <div className="text-xs">{tab.icon}</div>
+                <div className="text-xs">{tab.name}</div>
+              </div>
+            ))}
+          </div>
         </div>
-        
-        {/* Secondary tabs */}
-        <div className="flex">
-          {[
-            { id: 'buy-equipment', name: 'Equip', icon: '⚡' },
-            { id: 'sell-equipment', name: 'Sell E', icon: '🔧' },
-            { id: 'personnel', name: 'Crew', icon: '👥' },
-            { id: 'bank', name: 'Bank', icon: '🏦' },
-            { id: 'commander', name: 'Cmdr', icon: '👨‍🚀' }
-          ].map(tab => (
-            <div
-              key={tab.id}
-              className={`palm-tab flex-1 text-center ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id as MainTab)}
-            >
-              <div className="text-xs">{tab.icon}</div>
-              <div className="text-xs">{tab.name}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

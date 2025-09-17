@@ -72,11 +72,19 @@ test('bribery - successful attempt with sufficient credits', () => {
     state.policeRecordScore = PoliceRecordScore.CLEAN;
     const bribeAmount = 800;
 
-    const result = attemptBribery(state, bribeAmount);
+    // Mock Math.random to ensure success (return 0 < 0.7 base success rate)
+    const originalRandom = Math.random;
+    Math.random = () => 0.5;
+    
+    try {
+        const result = attemptBribery(state, bribeAmount);
 
-    assert.equal(result.success, true);
-    assert.ok(result.message.includes('successful'));
-    assert.equal(result.state.credits, 2000 - bribeAmount);
+        assert.equal(result.success, true);
+        assert.ok(result.message.includes('successful'));
+        assert.equal(result.state.credits, 2000 - bribeAmount);
+    } finally {
+        Math.random = originalRandom;
+    }
 });
 
 test('bribery - failed attempt with insufficient credits', () => {

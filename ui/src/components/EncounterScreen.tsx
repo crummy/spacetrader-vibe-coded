@@ -18,6 +18,15 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
   const playerShip = state.ship;
   const availableActions = getAvailableActions(state);
   
+  // Debug logging to understand the issue
+  console.log('🔍 Encounter Debug Info:', {
+    encounterType: state.encounterType,
+    currentMode: state.currentMode,
+    availableActions,
+    encounter,
+    opponentType: state.opponent?.type
+  });
+  
   // Get ship type information
   const playerShipType = getShipType(playerShip.type);
   const opponentShipType = getShipType(opponentShip.type);
@@ -179,25 +188,40 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
       
       {/* Available Actions */}
       <div className="flex-1 p-2">
-        <div className="grid grid-cols-2 gap-2">
-          {availableActions.map((action) => {
+        {availableActions.length === 0 ? (
+          <div className="text-center text-neon-red p-4">
+            <div className="text-sm">No actions available</div>
+            <div className="text-xs text-palm-gray mt-2">
+              Debug: encounterType={state.encounterType}, mode={state.currentMode}
+            </div>
+            <button 
+              onClick={() => onAction({ type: 'combat_continue', parameters: {} })}
+              className="compact-button bg-green-900 border-green-500 hover:bg-green-800 mt-3"
+            >
+              Continue
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {availableActions.map((action) => {
             const getActionInfo = (action: string) => {
-              switch (action) {
-                case 'attack': return { label: 'Attack', color: 'bg-red-900 border-red-500 hover:bg-red-800' };
-                case 'flee': return { label: 'Flee', color: 'bg-yellow-900 border-yellow-500 hover:bg-yellow-800' };
-                case 'surrender': return { label: 'Surrender', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
-                case 'ignore': return { label: 'Ignore', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
-                case 'submit': return { label: 'Submit to Inspection', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
-                case 'bribe': return { label: 'Attempt Bribe', color: 'bg-purple-900 border-purple-500 hover:bg-purple-800' };
-                case 'trade': return { label: 'Trade', color: 'bg-cyan-900 border-cyan-500 hover:bg-cyan-800' };
-                case 'board': return { label: 'Board Ship', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
-                case 'drink': return { label: 'Drink', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
-                case 'plunder': return { label: 'Plunder', color: 'bg-orange-900 border-orange-500 hover:bg-orange-800' };
-                case 'yield': return { label: 'Yield', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
-                case 'meet': return { label: 'Meet', color: 'bg-teal-900 border-teal-500 hover:bg-teal-800' };
-                default: return { label: action, color: 'bg-space-dark border-space-blue hover:bg-space-blue' };
+            switch (action) {
+            case 'attack': return { label: 'Attack', color: 'bg-red-900 border-red-500 hover:bg-red-800' };
+            case 'flee': return { label: 'Flee', color: 'bg-yellow-900 border-yellow-500 hover:bg-yellow-800' };
+            case 'surrender': return { label: 'Surrender', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
+            case 'ignore': return { label: 'Ignore', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
+            case 'submit': return { label: 'Submit to Inspection', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
+            case 'bribe': return { label: 'Attempt Bribe', color: 'bg-purple-900 border-purple-500 hover:bg-purple-800' };
+            case 'trade': return { label: 'Trade', color: 'bg-cyan-900 border-cyan-500 hover:bg-cyan-800' };
+            case 'board': return { label: 'Board Ship', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
+            case 'drink': return { label: 'Drink', color: 'bg-blue-900 border-blue-500 hover:bg-blue-800' };
+            case 'plunder': return { label: 'Plunder', color: 'bg-orange-900 border-orange-500 hover:bg-orange-800' };
+            case 'yield': return { label: 'Yield', color: 'bg-gray-900 border-gray-500 hover:bg-gray-800' };
+            case 'meet': return { label: 'Meet', color: 'bg-teal-900 border-teal-500 hover:bg-teal-800' };
+            case 'continue': return { label: 'Continue', color: 'bg-green-900 border-green-500 hover:bg-green-800' };
+              default: return { label: action, color: 'bg-space-dark border-space-blue hover:bg-space-blue' };
               }
-            };
+              };
             
             const actionInfo = getActionInfo(action);
             
@@ -211,7 +235,8 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
               </button>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -204,20 +204,12 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
 
       {/* Cargo Items List */}
       <div className="space-y-1">{/* Removed panel wrapper to save space */}
-        {!sellCargoAvailable ? (
-          <div className="text-palm-gray text-sm p-2">
-            {cargoItems.length === 0 
-              ? "Your cargo hold is empty."
-              : "No buyers interested in your cargo at this system."
-            }
-          </div>
-        ) : cargoItems.length === 0 ? (
-          <div className="text-palm-gray text-sm p-2">Your cargo hold is empty.</div>
-        ) : (
-          cargoItems.map((item) => {
-            const canSell = item.ownedQty > 0 && item.price > 0;
-            return (
-              <button
+        {cargoItems.map((item) => {
+          const canSell = sellCargoAvailable && item.ownedQty > 0 && item.price > 0;
+          const hasCargoButCantSell = item.ownedQty > 0 && item.price <= 0;
+          
+          return (
+            <button
                 key={item.id}
                 onClick={() => canSell ? handleItemSelect(item.id) : undefined}
                 disabled={!canSell}
@@ -238,13 +230,12 @@ export function SellCargoScreen({ onNavigate, onBack, state, onAction, available
                     <span className="text-xs text-palm-gray ml-2">Own: {item.ownedQty}</span>
                   </div>
                   <div className={canSell ? "text-neon-green font-bold text-sm" : "text-space-gray font-bold text-sm"}>
-                    {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
+                    {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'no trade'}
                   </div>
                 </div>
               </button>
             );
-          })
-        )}
+          })}
       </div>
 
       {/* Sale Controls */}

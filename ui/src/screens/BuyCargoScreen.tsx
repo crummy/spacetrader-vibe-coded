@@ -219,7 +219,8 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
           <div className="text-palm-gray text-sm p-2">No trade goods available at this location.</div>
         ) : (
           tradeGoods.map((item) => {
-            const isAvailable = item.price > 0 && item.availableQty > 0;
+            const isAvailable = item.price > 0 && item.availableQty > 0 && actualState.credits >= item.price;
+            const isSystemItem = item.price > 0 && item.availableQty > 0;
             return (
               <button
                 key={item.id}
@@ -243,7 +244,7 @@ export function BuyCargoScreen({ onNavigate, onBack, state, onAction, availableA
                       Avail: {item.availableQty} • Own: {item.playerOwned}
                     </span>
                   </div>
-                  <div className={`font-bold text-sm ${isAvailable ? 'text-neon-green' : 'text-space-gray'}`}>
+                  <div className={`font-bold text-sm ${isAvailable ? 'text-neon-green' : isSystemItem ? 'text-neon-red' : 'text-space-gray'}`}>
                     {item.price > 0 ? `${item.price.toLocaleString()}cr` : 'N/A'}
                   </div>
                 </div>

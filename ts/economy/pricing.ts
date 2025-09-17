@@ -244,17 +244,17 @@ export function calculateFinalPrices(
   policeRecord: number,
   randomFunc?: () => number
 ): { buyPrice: number; sellPrice: number } {
-  // Check if item can be produced in this system
-  if (!canSystemProduceItem(tradeItemIndex, system.techLevel)) {
+  // Check if system can USE this item (required for sell prices)
+  if (!canSystemUseItem(tradeItemIndex, system.techLevel)) {
     return { buyPrice: 0, sellPrice: 0 };
   }
 
-  // Check political restrictions
+  // Check political restrictions (affects both buy and sell)
   if (isPoliticallyRestricted(tradeItemIndex, system.politics)) {
     return { buyPrice: 0, sellPrice: 0 };
   }
 
-  // Calculate standard base price
+  // Calculate standard base price (this is the sell price foundation)
   let basePrice = calculateStandardPrice(
     tradeItemIndex,
     system.size,
@@ -277,10 +277,15 @@ export function calculateFinalPrices(
     return { buyPrice: 0, sellPrice: 0 };
   }
 
-  // Calculate final buy and sell prices
+  // Calculate sell price (systems can sell items they can USE)
   const isCriminal = policeRecord < DUBIOUSSCORE;
   const sellPrice = calculateSellPrice(basePrice, isCriminal);
-  const buyPrice = calculateBuyPrice(sellPrice, traderSkill, isCriminal, policeRecord);
+
+  // Calculate buy price (systems can only buy items they can PRODUCE)
+  let buyPrice = 0;
+  if (canSystemProduceItem(tradeItemIndex, system.techLevel)) {
+    buyPrice = calculateBuyPrice(sellPrice, traderSkill, isCriminal, policeRecord);
+  }
 
   return { buyPrice, sellPrice };
 }

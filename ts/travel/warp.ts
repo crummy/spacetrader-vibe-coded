@@ -211,7 +211,7 @@ export function canWarpTo(state: GameState, toSystem: number): WarpValidation {
     const currentFuel = getCurrentFuel(state.ship);
     
     if (distance > currentFuel) {
-      return { canWarp: false, reason: 'Out of fuel range' };
+      return { canWarp: false, reason: `Out of fuel range (need ${distance} fuel, have ${currentFuel})` };
     }
   }
   

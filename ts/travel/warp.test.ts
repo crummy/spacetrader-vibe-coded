@@ -201,7 +201,7 @@ describe('Warp System', () => {
       
       const result = canWarpTo(state, 49); // Even reachable system fails with no fuel
       assert.equal(result.canWarp, false);
-      assert.equal(result.reason, 'Out of fuel range');
+      assert.ok(result.reason.startsWith('Out of fuel range (need'));
     });
 
     test('should allow wormhole warp regardless of fuel', () => {

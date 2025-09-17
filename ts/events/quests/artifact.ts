@@ -2,6 +2,7 @@
 // Based on original C code in SpecialEvent.c and Encounter.c
 
 import type { State } from '../../types.ts';
+import { addNewsEvent, SpecialEventType } from '../special.ts';
 
 // System indices from Palm OS
 const NIX_SYSTEM_ID = 67;
@@ -130,13 +131,18 @@ export function completeArtifactDelivery(state: State): QuestResult {
     };
   }
   
+  const newState = {
+    ...state,
+    artifactOnBoard: false,
+    credits: state.credits + 20000, // Reward from Palm OS
+  };
+
+  // Add news event for artifact delivery
+  addNewsEvent(newState, SpecialEventType.ALIENARTIFACT);
+
   return {
     success: true,
-    state: {
-      ...state,
-      artifactOnBoard: false,
-      credits: state.credits + 20000, // Reward from Palm OS
-    },
+    state: newState,
     message: 'You deliver the alien artifact to the archaeological team and receive 20,000 credits!'
   };
 }

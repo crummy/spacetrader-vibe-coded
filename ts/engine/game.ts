@@ -21,6 +21,7 @@ import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
 import { getLoan, payBackLoan, calculateMaxLoan } from '../economy/bank.ts';
 import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, getMercenaryName } from '../data/crew.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
+import { updateEventStatuses, checkRandomEventOccurrence } from '../events/special.ts';
 
 // Action System Types
 export type GameAction = {
@@ -1042,25 +1043,21 @@ function shouldAutoIgnoreEncounter(state: GameState, encounterType: number): boo
 function getPlanetActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
-  // Check if any cargo can be bought
+  // Buy cargo action is always available on planets, but items may be individually unavailable
   const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
-  const canBuyAnything = allPrices.some(p => p.buyPrice > 0 && state.credits >= p.buyPrice);
+  const availableItems = allPrices
+    .map((priceInfo, index) => ({ index, buyPrice: priceInfo.buyPrice }))
+    .filter(item => item.buyPrice > 0) // Available for purchase (regardless of player credits)
+    .map(item => item.index);
   
-  if (canBuyAnything) {
-    // Find which items can be bought
-    const possibleItems = allPrices
-      .map((priceInfo, index) => ({ index, buyPrice: priceInfo.buyPrice }))
-      .filter(item => item.buyPrice > 0 && state.credits >= item.buyPrice)
-      .map(item => item.index);
-    
-    actions.push({
-      type: 'buy_cargo',
-      name: 'Buy Cargo',
-      description: 'Purchase trade goods',
-      parameters: { possibleItems },
-      available: true
-    });
-  }
+  // Always show buy cargo screen on planets
+  actions.push({
+    type: 'buy_cargo',
+    name: 'Buy Cargo',
+    description: 'Purchase trade goods',
+    parameters: { possibleItems: availableItems },
+    available: true
+  });
   
   // Check if any cargo can be sold
   const canSellAnything = state.ship.cargo.some((quantity, index) => 
@@ -1332,6 +1329,19 @@ export function advanceTime(state: GameState, days: number): void {
   // Handle daily interest on debt
   for (let i = 0; i < days; i++) {
     payInterest(state);
+  }
+  
+  // Update event statuses and check for news events
+  try {
+    updateEventStatuses(state);
+    
+    // Check for random event occurrences occasionally
+    if (state.days % 5 === 0) { // Check every 5 days
+      checkRandomEventOccurrence(state);
+    }
+  } catch (error) {
+    // Don't let event system errors break time advancement
+    console.warn('Error in event system during time advancement:', error);
   }
   
   // Update markets periodically

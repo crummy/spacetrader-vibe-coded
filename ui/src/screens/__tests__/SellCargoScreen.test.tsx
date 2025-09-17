@@ -258,7 +258,7 @@ describe('SellCargoScreen', () => {
     })
   })
 
-  it('should display proper message when undocked', () => {
+  it('should show all trade items when undocked', () => {
     // Create a state where we're in orbit (no trading available)
     const undockedState = { 
       ...testGameState, 
@@ -274,11 +274,12 @@ describe('SellCargoScreen', () => {
     
     render(<SellCargoScreen {...undockedProps} />)
     
-    // Should show no buyers message when not docked
-    expect(screen.getByText('No buyers interested in your cargo at this system.')).toBeInTheDocument()
+    // Should show all trade items even when not docked
+    expect(screen.getByTestId('trade-item-furs')).toBeInTheDocument()
+    expect(screen.getByTestId('trade-item-water')).toBeInTheDocument()
   })
 
-  it('should show no buyers message when trading not available', async () => {
+  it('should show all trade items when trading not available', async () => {
     // Create a state where sell_cargo is not available
     const noTradingState = { 
       ...testGameState, 
@@ -294,11 +295,12 @@ describe('SellCargoScreen', () => {
     
     render(<SellCargoScreen {...noTradingProps} />)
     
-    // Should show "no buyers" message when trading not available
-    expect(screen.getByText('No buyers interested in your cargo at this system.')).toBeInTheDocument()
+    // Should show all trade items even when trading not available
+    expect(screen.getByTestId('trade-item-furs')).toBeInTheDocument()
+    expect(screen.getByTestId('trade-item-water')).toBeInTheDocument()
     
-    // Items should not be rendered as buttons since trading is not available
-    expect(screen.queryByTestId('trade-item-furs')).not.toBeInTheDocument()
+    // Items should be disabled when trading is not available
+    expect(screen.getByTestId('trade-item-furs')).toBeDisabled()
   })
 
   it('should clear selection when all units are sold', async () => {

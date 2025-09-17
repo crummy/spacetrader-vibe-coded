@@ -161,6 +161,12 @@ export function getAvailableActions(state: GameState): CombatAction[] {
   const encounterType = state.encounterType;
   const actions: CombatAction[] = [];
 
+  // Handle invalid encounter type (encounter ended but still in combat mode)
+  if (encounterType === -1) {
+    actions.push('continue');
+    return actions;
+  }
+
   if (encounterType === EncounterType.POLICEINSPECTION) {
     actions.push('attack', 'flee', 'submit', 'bribe');
   } else if (encounterType === EncounterType.POSTMARIEPOLICEENCOUNTER) {
