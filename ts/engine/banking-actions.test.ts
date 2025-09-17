@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState } from '../state.ts';
 import { createGameEngine } from './game.ts';
+import { GameMode } from '../types.ts';
 
 test('banking actions - get loan action availability and execution', () => {
     const state = createInitialState();
@@ -267,8 +268,8 @@ test('banking actions - actions not available when not on planet', () => {
     const planetActions = engine.getAvailableActions();
     assert.ok(planetActions.find(a => a.type === 'buy_insurance'), 'Insurance should be available on planets');
     
-    // Change to space mode (InSpace = 0)
-    state.currentMode = 0; // InSpace
+    // Change to invalid mode (banking should only work on planet)
+state.currentMode = GameMode.InCombat;
     
     const spaceActions = engine.getAvailableActions();
     

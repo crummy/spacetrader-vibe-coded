@@ -7,6 +7,7 @@ import {
   refuelToFull, getFuelStatus 
 } from './fuel.ts';
 import { createInitialState } from '../state.ts';
+import { GameMode } from '../types.ts';
 
 test('Fuel System', async (t) => {
 
@@ -405,7 +406,7 @@ test('Fuel System', async (t) => {
       
       engine.state.ship.fuel = 10; // Half full
       engine.state.credits = 100;
-      engine.state.currentMode = 1; // OnPlanet (required for refuel)
+      engine.state.currentMode = GameMode.OnPlanet; // Required for refuel
       
       const result = await engine.executeAction({
         type: 'refuel_ship',
@@ -424,7 +425,7 @@ test('Fuel System', async (t) => {
       
       engine.state.ship.fuel = 10; // Partially fueled
       engine.state.credits = 100;
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       const actions = engine.getAvailableActions();
       const refuelAction = actions.find(a => a.type === 'refuel_ship');
@@ -438,7 +439,7 @@ test('Fuel System', async (t) => {
       const engine = createGameEngine();
       
       engine.state.ship.fuel = 14; // Full tank for Gnat
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       const actions = engine.getAvailableActions();
       const refuelAction = actions.find(a => a.type === 'refuel_ship');

@@ -7,6 +7,7 @@ import {
   getAvailableEquipment, getInstialledEquipmentSellPrices 
 } from './equipment-trading.ts';
 import { createInitialState } from '../state.ts';
+import { GameMode } from '../types.ts';
 
 test('Equipment Trading System', async (t) => {
 
@@ -287,7 +288,7 @@ test('Equipment Trading System', async (t) => {
     await t.test('should show equipment actions when available', async () => {
       const { createGameEngine } = await import('../engine/game.ts');
       const engine = createGameEngine();
-      engine.state.currentMode = 1; // OnPlanet
+      engine.state.currentMode = GameMode.OnPlanet;
       
       const actions = engine.getAvailableActions();
       const hasEquipmentAction = actions.some(a => a.type === 'buy_equipment');

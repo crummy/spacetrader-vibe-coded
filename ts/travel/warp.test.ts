@@ -225,7 +225,7 @@ describe('Warp System', () => {
       // Use system 49 which is reachable with Gnat's 14 fuel (distance 7)
       const result = canWarpTo(state, 49);
       assert.equal(result.canWarp, false);
-      assert.equal(result.reason, 'Insufficient credits');
+      assert.equal(result.reason, 'Insufficient credits: need 200, have 10 (Debt interest: 200)');
     });
 
     test('should prevent warp when debt too large', () => {

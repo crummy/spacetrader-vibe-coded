@@ -13,9 +13,9 @@ import {
 } from './types.ts';
 
 test('GameMode constants are correct', () => {
-  assert.strictEqual(GameMode.InSpace, 0);
-  assert.strictEqual(GameMode.OnPlanet, 1);
-  assert.strictEqual(GameMode.InCombat, 2);
+  assert.strictEqual(GameMode.OnPlanet, 0);
+  assert.strictEqual(GameMode.InCombat, 1);
+  assert.strictEqual(GameMode.GameOver, 2);
 });
 
 test('Difficulty levels match Palm source', () => {

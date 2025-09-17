@@ -120,7 +120,17 @@ export function startEncounter(state: GameState, encounterType: number): { succe
 
 export function endEncounter(state: GameState): void {
   state.encounterType = -1; // No encounter
-  state.currentMode = GameMode.InSpace;
+  // Mode will be determined by travel continuation:
+  // - OnPlanet if at destination or no travel in progress
+  // - InCombat if another encounter occurs during travel
+  
+  // If not traveling (warpSystem same as current), go to planet
+  if (state.warpSystem === state.currentSystem || state.clicks === 0) {
+    state.currentMode = GameMode.OnPlanet;
+  } else {
+    // Still traveling - mode will be set by travel continuation logic
+    // Don't change mode here, let automaticTravelContinuation handle it
+  }
 }
 
 export function getCurrentEncounter(state: GameState): { type: number; name: string; isActive: boolean } {

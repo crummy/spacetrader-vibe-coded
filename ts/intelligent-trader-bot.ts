@@ -164,7 +164,7 @@ export class IntelligentTraderBot {
     }
     
     // Now dock if we're in space
-    if (this.engine.state.currentMode === GameMode.InSpace) {
+    if (this.engine.state.currentMode === GameMode.OnPlanet) {
       const dockAction = await this.engine.executeAction({
         type: 'dock_at_planet',
         parameters: {}

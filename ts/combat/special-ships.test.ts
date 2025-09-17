@@ -3,6 +3,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
 import { createInitialState } from '../state.ts';
+import { GameMode } from '../types.ts';
 import { 
   boardMarieCeleste,
   drinkBottle,
@@ -78,7 +79,7 @@ describe('Special Ship Encounters', () => {
     const result = handleSpaceMonsterEncounter(state);
     
     assert.equal(result.state.encounterType, SPACEMONSTERATTACK);
-    assert.equal(result.state.currentMode, 2); // InCombat
+    assert.equal(result.state.currentMode, GameMode.InCombat);
     assert.match(result.message, /space monster.*attack/i);
   });
   
@@ -88,7 +89,7 @@ describe('Special Ship Encounters', () => {
     const result = handleDragonflyEncounter(state);
     
     assert.equal(result.state.encounterType, DRAGONFLYATTACK);
-    assert.equal(result.state.currentMode, 2); // InCombat
+    assert.equal(result.state.currentMode, GameMode.InCombat);
     assert.match(result.message, /dragonfly.*cargo/i);
   });
   
@@ -98,7 +99,7 @@ describe('Special Ship Encounters', () => {
     const result = handleScarabEncounter(state);
     
     assert.equal(result.state.encounterType, SCARABATTACK);
-    assert.equal(result.state.currentMode, 2); // InCombat
+    assert.equal(result.state.currentMode, GameMode.InCombat);
     assert.match(result.message, /scarab.*attack/i);
   });
   
@@ -133,7 +134,7 @@ describe('Special Ship Encounters', () => {
     const result = handleMarieEncounter(state);
     
     assert.equal(result.state.encounterType, MARIECELESTEENCOUNTER);
-    assert.equal(result.state.currentMode, 2); // InCombat
+    assert.equal(result.state.currentMode, GameMode.InCombat);
     assert.match(result.message, /marie celeste.*derelict|derelict.*marie/i);
   });
   
@@ -208,16 +209,16 @@ describe('Special Ship Encounters', () => {
     const state = createInitialState();
     
     const monsterResult = handleSpaceMonsterEncounter(state);
-    assert.equal(monsterResult.state.currentMode, 2); // InCombat
+    assert.equal(monsterResult.state.currentMode, GameMode.InCombat);
     
     const dragonflyResult = handleDragonflyEncounter(state);
-    assert.equal(dragonflyResult.state.currentMode, 2); // InCombat
+    assert.equal(dragonflyResult.state.currentMode, GameMode.InCombat);
     
     const scarabResult = handleScarabEncounter(state);
-    assert.equal(scarabResult.state.currentMode, 2); // InCombat
+    assert.equal(scarabResult.state.currentMode, GameMode.InCombat);
     
     const marieResult = handleMarieEncounter(state);
-    assert.equal(marieResult.state.currentMode, 2); // InCombat (peaceful)
+    assert.equal(marieResult.state.currentMode, GameMode.InCombat);
   });
   
   test('Scarab hull upgrade - multiple destructions only grant one upgrade', () => {

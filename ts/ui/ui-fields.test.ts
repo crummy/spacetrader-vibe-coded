@@ -51,34 +51,17 @@ test('ui fields - system status messages', () => {
     });
 });
 
-test('ui fields - space travel mode', () => {
-    const state = createInitialState();
-    state.currentMode = GameMode.InSpace;
-    state.currentSystem = 0; // Acamar  
-    state.warpSystem = 5;     // Different system
-    state.clicks = 8;         // Travel in progress
-    
-    const ui = getUiFields(state);
-    
-    // Should show travel information
-    assert.ok(ui.primary.includes('En route to'), 'Should show travel message');
-    assert.ok(ui.primary.includes('8 clicks remaining'), 'Should show remaining clicks');
-    
-    // Should have travel information in secondary
-    assert.ok(ui.secondary.length > 0, 'Should have secondary information');
-    assert.ok(ui.secondary.some(msg => msg.includes('Fuel consumption')), 'Should show fuel consumption');
-});
+// InSpace mode has been removed - travel state is now handled differently
 
-test('ui fields - arrived at destination', () => {
+test('ui fields - on planet mode', () => {
     const state = createInitialState();
-    state.currentMode = GameMode.InSpace;
+    state.currentMode = GameMode.OnPlanet;
     state.currentSystem = 0;
-    state.warpSystem = 0; // Same system
-    state.clicks = 0;     // Arrived
     
     const ui = getUiFields(state);
     
-    assert.ok(ui.primary.includes('Arrived at'), 'Should show arrival message');
+    // On planet mode shows system information
+    assert.ok(ui.primary.includes('Acamar'), 'Should show current system');
 });
 
 test('ui fields - combat encounter mode', () => {
@@ -282,9 +265,7 @@ test('ui fields - primary message fallbacks', () => {
     let ui = getUiFields(state);
     assert.ok(ui.primary.length > 0, 'Should have primary message for planet mode');
     
-    state.currentMode = GameMode.InSpace;
-    ui = getUiFields(state);
-    assert.ok(ui.primary.length > 0, 'Should have primary message for space mode');
+    // InSpace mode removed - skip this test case
     
     state.currentMode = GameMode.InCombat;
     ui = getUiFields(state);

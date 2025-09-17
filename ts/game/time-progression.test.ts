@@ -14,7 +14,8 @@ test('time progression - days increment during travel via game engine', async ()
   // Set ship to max fuel capacity to ensure we can reach some system
   const shipType = getShipType(engine.state.ship.type);
   engine.state.ship.fuel = shipType.fuelTanks;
-  engine.state.credits = 10000;
+  engine.state.credits = 50000; // High credits to cover any warp costs
+  engine.state.debt = 0; // Clear debt to avoid interest costs
   
   const initialDays = engine.state.days;
   

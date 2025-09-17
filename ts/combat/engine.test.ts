@@ -90,14 +90,14 @@ describe('Combat System Engine', () => {
       assert.equal(state.encounterType, EncounterType.POLICEATTACK); // Unchanged
     });
 
-    test('should end encounter and return to space mode', () => {
+    test('should end encounter and return to planet mode', () => {
       const state = createInitialState();
       state.currentMode = GameMode.InCombat;
       state.encounterType = EncounterType.PIRATEATTACK;
       
       endEncounter(state);
       
-      assert.equal(state.currentMode, GameMode.InSpace);
+      assert.equal(state.currentMode, GameMode.OnPlanet);
       assert.equal(state.encounterType, -1); // No encounter
     });
 
@@ -273,7 +273,7 @@ describe('Combat System Engine', () => {
       assert.equal(typeof result.message, 'string');
       
       if (result.success) {
-        assert.equal(state.currentMode, GameMode.InSpace);
+        assert.equal(state.currentMode, GameMode.OnPlanet);
       }
     });
 
@@ -288,7 +288,7 @@ describe('Combat System Engine', () => {
       
       if (result.success) {
         // Should lose cargo/credits but end combat
-        assert.equal(state.currentMode, GameMode.InSpace);
+        assert.equal(state.currentMode, GameMode.OnPlanet);
       }
     });
   });

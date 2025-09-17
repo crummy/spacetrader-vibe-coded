@@ -91,12 +91,12 @@ describe('Game Engine Integration', () => {
       assert.ok(planetActions.some(action => action.type === 'warp_to_system'));
       assert.ok(planetActions.some(action => action.type === 'track_system'));
       
-      // Test actions when in space
-      engine.state.currentMode = GameMode.InSpace;
-      const spaceActions = engine.getAvailableActions();
+      // Test actions when on planet (after InSpace was removed)
+      engine.state.currentMode = GameMode.OnPlanet;
+      const onPlanetActions = engine.getAvailableActions();
       
-      assert.ok(spaceActions.some(action => action.type === 'warp_to_system'));
-      assert.ok(spaceActions.some(action => action.type === 'dock_at_planet'));
+      assert.ok(onPlanetActions.some(action => action.type === 'warp_to_system'));
+      // dock_at_planet is not needed when already on planet
     });
 
     test('should execute trading actions through unified interface', async () => {
@@ -120,7 +120,7 @@ describe('Game Engine Integration', () => {
 
     test('should execute warp actions through unified interface', async () => {
       const engine = createGameEngine();
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       engine.state.ship.fuel = 14; // Gnat has 14 fuel tanks
       engine.state.currentSystem = 0;
       engine.state.credits = 2000; // Ensure sufficient credits for warp costs
@@ -141,7 +141,7 @@ describe('Game Engine Integration', () => {
         }
       });
       
-      assert.equal(result.success, true);
+      assert.equal(result.success, true, `Warp should succeed. Error: ${result.message}`);
       
       // With the new multi-encounter system, warp might not arrive immediately if there's an encounter
       if (engine.state.currentMode as GameMode === GameMode.InCombat) {
@@ -216,7 +216,7 @@ describe('Game Engine Integration', () => {
 
     test('should check for random encounters during travel', () => {
       const engine = createGameEngine();
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       
       // Mock random encounter check
       const encounterCheck = checkRandomEncounters(engine.state);
@@ -276,7 +276,7 @@ describe('Game Engine Integration', () => {
       const engine = createGameEngine();
       
       // Modify state in ways that might cause inconsistency
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       engine.state.encounterType = 10; // Should be -1 when not in combat
       
       synchronizeSystemState(engine.state);
@@ -308,16 +308,14 @@ describe('Game Engine Integration', () => {
         assert.equal(result.success, true);
         // After warp from planet, we should either:
         // 1. Arrive at destination planet (OnPlanet at different system)
-        // 2. Be in space (InSpace) if still traveling
-        // 3. Be in combat (InCombat) if encounter occurred
+        // 2. Be in combat (InCombat) if encounter occurred (InSpace removed)
         // The key is that we should have changed system if we arrived
         if (engine.state.currentMode === GameMode.OnPlanet) {
           // If we're on a planet, we should be at the destination system
           assert.equal(engine.state.currentSystem, reachableSystems[0]);
         } else {
-          // If not on planet, should be in space or combat
-          assert.ok(engine.state.currentMode === GameMode.InSpace || 
-                   engine.state.currentMode === GameMode.InCombat);
+          // If not on planet, should be in combat (InSpace mode removed)
+          assert.equal(engine.state.currentMode, GameMode.InCombat);
         }
       } else {
         // If no systems in range, the test is inconclusive but shouldn't fail
@@ -521,14 +519,14 @@ describe('Game Engine Integration', () => {
 
     test('should integrate with travel system', async () => {
       const engine = createGameEngine();
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       
       // Test warp system integration
       const actions = engine.getAvailableActions();
       const warpAction = actions.find(action => action.type === 'warp_to_system');
       
-      assert.ok(warpAction);
-      assert.ok(warpAction.parameters?.possibleSystems?.length > 0);
+      assert.ok(warpAction, 'Should have warp action available');
+      assert.equal(warpAction.available, true, 'Warp action should be available');
     });
 
     test('should integrate with combat system', () => {

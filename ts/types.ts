@@ -22,10 +22,9 @@ export const MAXSKILL = 10;
 
 // Game Mode - represents what screen/state the game is in
 export const GameMode = {
-  InSpace: 0,     // Traveling between planets or in space
-  OnPlanet: 1,    // Docked at a planet
-  InCombat: 2,    // In combat encounter
-  GameOver: 3,    // Game has ended
+  OnPlanet: 0,    // Docked at a planet  
+  InCombat: 1,    // In combat encounter
+  GameOver: 2,    // Game has ended
 } as const;
 
 export type GameMode = typeof GameMode[keyof typeof GameMode];

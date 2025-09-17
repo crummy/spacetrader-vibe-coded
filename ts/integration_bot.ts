@@ -96,7 +96,7 @@ if (warpActions.length > 0) {
   
   // Switch to space mode for travel
   console.log('🚀 Launching into space...');
-  engine.state.currentMode = GameMode.InSpace;
+  engine.state.currentMode = GameMode.OnPlanet;
   
   // Execute the warp
   const warpResult = await engine.executeAction({

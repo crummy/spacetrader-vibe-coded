@@ -68,9 +68,6 @@ export function getUiFields(state: State): UiFields {
     case GameMode.OnPlanet:
       generatePlanetUiFields(state, fields);
       break;
-    case GameMode.InSpace:
-      generateSpaceUiFields(state, fields);
-      break;
     case GameMode.InCombat:
       generateCombatUiFields(state, fields);
       break;
@@ -112,27 +109,6 @@ function generatePlanetUiFields(state: State, fields: UiFields): void {
   }
 }
 
-/**
- * Generate UI fields when traveling in space
- */
-function generateSpaceUiFields(state: State, fields: UiFields): void {
-  const currentSystemName = getSolarSystemName(state.currentSystem);
-  const destinationName = state.warpSystem !== state.currentSystem 
-    ? getSolarSystemName(state.warpSystem)
-    : currentSystemName;
-  
-  if (state.clicks > 0) {
-    fields.primary = `En route to ${destinationName} (${state.clicks} clicks remaining)`;
-  } else {
-    fields.primary = `Arrived at ${destinationName}`;
-  }
-  
-  // Add fuel consumption information
-  const fuelUsed = state.clicks; // Simplified - actual calculation may differ
-  if (fuelUsed > 0) {
-    fields.secondary.push(`Fuel consumption: ${fuelUsed} units for this journey`);
-  }
-}
 
 /**
  * Generate UI fields during combat encounters
@@ -393,7 +369,7 @@ function generatePrimaryMessage(state: State): string {
   switch (state.currentMode) {
     case GameMode.OnPlanet:
       return `Docked at ${getSolarSystemName(state.currentSystem)}`;
-    case GameMode.InSpace:
+    case GameMode.InCombat:
       return state.clicks > 0 
         ? `Traveling to ${getSolarSystemName(state.warpSystem)}`
         : `Arrived at ${getSolarSystemName(state.currentSystem)}`;

@@ -79,8 +79,6 @@ function renderModeSpecificContent(state: GameState): string {
   switch (state.currentMode) {
     case GameMode.OnPlanet:
       return renderPlanetContent(state);
-    case GameMode.InSpace:
-      return renderSpaceContent(state);
     case GameMode.InCombat:
       return renderCombatContent(state);
     default:
@@ -107,12 +105,7 @@ function renderPlanetContent(state: GameState): string {
   return sections.join('\n\n');
 }
 
-/**
- * Render space-specific content
- */
-function renderSpaceContent(state: GameState): string {
-  return '🚀 You are traveling through space...\nChoose your next action.';
-}
+
 
 /**
  * Render combat-specific content

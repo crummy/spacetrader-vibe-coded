@@ -179,9 +179,9 @@ describe('State Transition Testing', () => {
   });
 
   describe('Game Mode Transitions', () => {
-    test('should transition from InSpace to InCombat during encounters', async () => {
+    test('should transition from OnPlanet to InCombat during encounters', async () => {
       const engine = createGameEngine();
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       engine.state.credits = 10000;
       engine.state.ship.fuel = 14;
       
@@ -192,7 +192,7 @@ describe('State Transition Testing', () => {
       while (!encounterTriggered && attempts < 50) {
         attempts++;
         const testEngine = createGameEngine();
-        testEngine.state.currentMode = GameMode.InSpace;
+        testEngine.state.currentMode = GameMode.OnPlanet;
         testEngine.state.credits = 10000;
         testEngine.state.ship.fuel = 14;
         
@@ -205,7 +205,7 @@ describe('State Transition Testing', () => {
           encounterTriggered = true;
           assert.equal((testEngine.state.currentMode as GameMode), GameMode.InCombat);
           assert.ok(testEngine.state.opponent.hull > 0, 'Opponent should have positive hull');
-          console.log(`✅ InSpace → InCombat transition successful (attempt ${attempts})`);
+          console.log(`✅ OnPlanet → InCombat transition successful (attempt ${attempts})`);
         }
       }
       
@@ -213,7 +213,7 @@ describe('State Transition Testing', () => {
       console.log(`Encounter triggered: ${encounterTriggered} (${attempts} attempts)`);
     });
 
-    test('should transition from InCombat to InSpace after combat resolution', async () => {
+    test('should transition from InCombat to OnPlanet after combat resolution', async () => {
       const engine = createGameEngine();
       engine.state.currentMode = GameMode.InCombat;
       engine.state.encounterType = EncounterType.PIRATEATTACK;
@@ -227,8 +227,8 @@ describe('State Transition Testing', () => {
       });
       
       // Check if combat ended (either immediately or after a continue action)
-      if ((engine.state.currentMode as GameMode) === GameMode.InSpace) {
-        console.log('✅ InCombat → InSpace transition via direct resolution');
+      if ((engine.state.currentMode as GameMode) === GameMode.OnPlanet) {
+        console.log('✅ InCombat → OnPlanet transition via direct resolution');
       } else if (engine.state.opponent.hull <= 0) {
         // Should have continue action available
         const actions = engine.getAvailableActions();
@@ -242,25 +242,20 @@ describe('State Transition Testing', () => {
         });
         
         assert.equal(continueResult.success, true, 'Continue action should succeed');
-        console.log('✅ InCombat → InSpace transition via continue action');
+        console.log('✅ InCombat → OnPlanet transition via continue action');
       }
     });
 
-    test('should transition from InSpace to OnPlanet when docking', async () => {
+    test('should remain OnPlanet when already docked (dock action removed)', async () => {
       const engine = createGameEngine();
-      engine.state.currentMode = GameMode.InSpace;
+      engine.state.currentMode = GameMode.OnPlanet;
       
-      const result = await engine.executeAction({
-        type: 'dock_at_planet',
-        parameters: {}
-      });
-      
-      assert.equal(result.success, true, 'Docking should succeed');
-      assert.equal(engine.state.currentMode, GameMode.OnPlanet, 'Should transition to OnPlanet');
-      console.log('✅ InSpace → OnPlanet transition successful');
+      // No dock action needed since always on planet after InSpace removal
+      assert.equal(engine.state.currentMode, GameMode.OnPlanet);
+      console.log('✅ OnPlanet mode maintained (InSpace removed)');
     });
 
-    test('should transition from OnPlanet to InSpace when warping', async () => {
+    test('should transition from OnPlanet directly during warping (no intermediate InSpace)', async () => {
       const engine = createGameEngine();
       engine.state.currentMode = GameMode.OnPlanet;
       
@@ -297,10 +292,10 @@ describe('State Transition Testing', () => {
           assert.equal(engine.state.currentSystem, targetSystem, 'Should have moved to destination system');
           console.log('✅ OnPlanet → OnPlanet transition successful (warp completed safely)');
         } else {
-          // Had an encounter during warp - should be in combat or space  
-          assert.ok(engine.state.currentMode === GameMode.InCombat || engine.state.currentMode === GameMode.InSpace, 
-                   'Should be in Combat or Space mode if encounter occurred');
-          console.log('✅ OnPlanet → InSpace/InCombat transition successful');
+          // Had an encounter during warp - should be in combat (InSpace removed)
+          assert.equal(engine.state.currentMode, GameMode.InCombat, 
+                   'Should be in Combat mode if encounter occurred');
+          console.log('✅ OnPlanet → InCombat transition successful');
         }
       } else {
         // Skip test if no systems in range
@@ -313,7 +308,7 @@ describe('State Transition Testing', () => {
     test('should provide correct actions for each game mode', () => {
       const modes = [
         { mode: GameMode.OnPlanet, name: 'OnPlanet' },
-        { mode: GameMode.InSpace, name: 'InSpace' },
+        { mode: GameMode.InCombat, name: 'InCombat' },
       ];
       
       for (const modeTest of modes) {

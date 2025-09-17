@@ -131,7 +131,7 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
 
       case 'dock_at_planet':
-        return await executeDockAtPlanetAction(state);
+      return { success: false, message: 'Dock action not needed - already on planet', stateChanged: false };
       
       case 'buy_weapon':
         return await executeBuyWeaponAction(state, action.parameters);
@@ -234,10 +234,6 @@ export function getAvailableActions(state: GameState): AvailableAction[] {
   switch (state.currentMode) {
     case GameMode.OnPlanet:
       actions.push(...getPlanetActions(state));
-      break;
-    
-    case GameMode.InSpace:
-      actions.push(...getSpaceActions(state));
       break;
     
     case GameMode.InCombat:
@@ -452,6 +448,8 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
     };
   }
   
+
+  
   try {
     // Check if we can warp first (before any state changes)
     const validation = canWarpTo(state, targetSystem);
@@ -463,10 +461,10 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
       };
     }
     
-    // Auto-launch ship if we're on a planet (only after validation passes)
-    if (state.currentMode === GameMode.OnPlanet) {
-      state.currentMode = GameMode.InSpace;
-    }
+    // Mode will be set appropriately based on warp outcome:
+    // - OnPlanet if arriving without encounters 
+    // - InCombat if encounters occur
+    // - Stay OnPlanet if warp fails
     
     // Set warpSystem for encounter calculations but DON'T move yet
     const originalSystem = state.currentSystem;
@@ -769,55 +767,7 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
 
 
 
-async function executeDockAtPlanetAction(state: GameState): Promise<ActionResult> {
-  if (state.currentMode !== GameMode.InSpace) {
-    return {
-      success: false,
-      message: 'Can only dock when in space around a planet',
-      stateChanged: false
-    };
-  }
-  
-  state.currentMode = GameMode.OnPlanet;
-  
-  // Auto-services: auto-fuel and auto-repair if enabled
-  let message = 'Docked at planet';
-  const autoActions: string[] = [];
-  
-  // Auto-repair if enabled and ship is damaged
-  if (state.options.autoRepair) {
-    const shipType = getShipType(state.ship.type);
-    const maxHull = shipType.hullStrength;
-    if (state.ship.hull < maxHull) {
-      const repairResult = await executeRepairAction(state);
-      if (repairResult.success) {
-        autoActions.push('auto-repaired');
-      }
-    }
-  }
-  
-  // Auto-fuel if enabled and ship is not at full fuel
-  if (state.options.autoFuel) {
-    const shipType = getShipType(state.ship.type);
-    const maxFuel = shipType.fuelTanks;
-    if (state.ship.fuel < maxFuel) {
-      const refuelResult = await executeRefuelAction(state);
-      if (refuelResult.success) {
-        autoActions.push('auto-refueled');
-      }
-    }
-  }
-  
-  if (autoActions.length > 0) {
-    message += ` (${autoActions.join(', ')})`;
-  }
-  
-  return {
-    success: true,
-    message: message,
-    stateChanged: true
-  };
-}
+
 
 // Equipment trading action handlers
 async function executeBuyWeaponAction(state: GameState, parameters: any): Promise<ActionResult> {
@@ -1011,8 +961,8 @@ async function executeCombatAction(state: GameState, action: GameAction): Promis
     const result = resolveCombatRound(state, combatAction as any);
     let message = result.message;
     
-    // If encounter ended, automatically continue travel (whether we have clicks remaining or arrived)
-    if ((state.currentMode as GameMode) === GameMode.InSpace) {
+    // If encounter ended and still traveling, automatically continue travel
+    if (state.warpSystem !== state.currentSystem && state.clicks > 0) {
       const travelResult = await automaticTravelContinuation(state);
       
       if (travelResult.hasEncounter) {
@@ -1324,39 +1274,6 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   return actions;
 }
 
-function getSpaceActions(state: GameState): AvailableAction[] {
-  const actions: AvailableAction[] = [];
-  
-  // Warp to systems when in space (for manual space travel)
-  const possibleSystems: number[] = [];
-  for (let i = 0; i < state.solarSystem.length; i++) {
-    if (i !== state.currentSystem && canWarpTo(state, i).canWarp) {
-      possibleSystems.push(i);
-    }
-  }
-  
-  if (possibleSystems.length > 0) {
-    actions.push({
-      type: 'warp_to_system',
-      name: 'Warp to System',
-      description: 'Warp to another solar system',
-      parameters: { possibleSystems },
-      available: state.ship.fuel > 0
-    });
-  }
-
-  // Return to current planet (dock)
-  actions.push({
-    type: 'dock_at_planet',
-    name: 'Dock at Planet',
-    description: 'Return to planet surface',
-    available: true
-  });
-  
-  return actions;
-}
-
-
 
 function getCombatActionsForState(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
@@ -1431,7 +1348,8 @@ function payInterest(state: GameState): void {
 }
 
 export function checkRandomEncounters(state: GameState): { hasEncounter: boolean; encounterType?: number } {
-  if (state.currentMode !== GameMode.InSpace) {
+  // Encounters only happen during warp travel
+  if (state.warpSystem === state.currentSystem || state.clicks === 0) {
     return { hasEncounter: false };
   }
   

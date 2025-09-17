@@ -21,15 +21,15 @@ describe('Ship Trading Integration', () => {
     assert(shipAction.parameters?.availableShips, 'Should include available ships data');
   });
 
-  test('ship trading not available in space', () => {
+  test('ship trading available on planet', () => {
     const engine = createGameEngine();
     const state = engine.state;
-    state.currentMode = GameMode.InSpace;
+    state.currentMode = GameMode.OnPlanet;
     
     const actions = engine.getAvailableActions();
     const shipAction = actions.find(a => a.type === 'buy_ship');
     
-    assert(!shipAction, 'Ship trading should not be available in space');
+    assert(shipAction, 'Ship trading should be available on planet');
   });
 
   test('complete ship purchase flow', async () => {

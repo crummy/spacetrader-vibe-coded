@@ -134,7 +134,7 @@ async function intelligentTravel() {
     
     // Launch into space
     console.log('🛸 Launching into space...');
-    engine.state.currentMode = GameMode.InSpace;
+    engine.state.currentMode = GameMode.OnPlanet;
     
     // Execute warp
     const warpResult = await engine.executeAction({
@@ -218,7 +218,7 @@ async function testGameSystems() {
   console.log('\n🎮 Testing game modes...');
   const originalMode = engine.state.currentMode;
   
-  engine.state.currentMode = GameMode.InSpace;
+  engine.state.currentMode = GameMode.OnPlanet;
   console.log(`✅ Switched to Space mode`);
   const spaceActions = engine.getAvailableActions();
   console.log(`  Available actions in space: ${spaceActions.length}`);
