@@ -23,6 +23,7 @@ import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, ge
 import { setGalacticChartSystem } from '../travel/galaxy.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 import { updateEventStatuses, checkRandomEventOccurrence } from '../events/special.ts';
+import { shuffleStatus } from '../events/status-shuffle.ts';
 
 // Action System Types
 export type GameAction = {
@@ -638,6 +639,9 @@ export async function automaticTravelContinuation(state: GameState): Promise<{ h
     
     // Reset newspaper payment flag when arriving at new system
     state.alreadyPaidForNewspaper = false;
+    
+    // Shuffle system statuses on arrival (Palm OS Traveler.c line 2437: ShuffleStatus())
+    shuffleStatus(state);
     
     // Auto-services on arrival (from Palm OS Traveler.c lines 2328-2348)
     let message = `Arrived safely at ${systemName}`;

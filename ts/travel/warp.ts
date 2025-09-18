@@ -10,6 +10,7 @@ import {
   executeFabricRipTravel, 
   updateFabricRipProbability 
 } from './fabric-rip.ts';
+import { shuffleStatus } from '../events/status-shuffle.ts';
 
 // Constants from Palm OS source
 const DEBTTOOLARGE = 100000; // Maximum debt before restrictions (from Palm OS spacetrader.h)
@@ -305,12 +306,18 @@ export function performWarp(state: GameState, toSystem: number, viaSingularity: 
     Object.assign(state, ripResult.state);
     // Reset newspaper payment flag when arriving at new system via fabric rip
     state.alreadyPaidForNewspaper = false;
+    
+    // Shuffle system statuses on arrival (Palm OS Traveler.c line 2437: ShuffleStatus())
+    shuffleStatus(state);
   } else {
     // Normal warp - execute as planned
     state.currentSystem = toSystem;
     state.solarSystem[toSystem].visited = true;
     // Reset newspaper payment flag when arriving at new system
     state.alreadyPaidForNewspaper = false;
+    
+    // Shuffle system statuses on arrival (Palm OS Traveler.c line 2437: ShuffleStatus())
+    shuffleStatus(state);
   }
   
   // Update fabric rip probability (decreases daily during experiment)
