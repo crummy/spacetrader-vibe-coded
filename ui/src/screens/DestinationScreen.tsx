@@ -25,6 +25,23 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
   const [showRelativePrices, setShowRelativePrices] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
+  // Update galactic chart system when destination screen opens
+  React.useEffect(() => {
+    if (actualExecuteAction) {
+      const promise = actualExecuteAction({
+        type: 'set_galactic_chart_system',
+        parameters: { systemIndex: initialSystemIndex }
+      });
+      
+      // Only call .catch() if the promise exists and has .catch method
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch(error => {
+          console.warn('Failed to set initial galactic chart system:', error);
+        });
+      }
+    }
+  }, []); // Empty dependency array - run only once on mount
+  
   const currentSystem = actualState.solarSystem[actualState.currentSystem];
   const selectedSystem = actualState.solarSystem[selectedSystemIndex];
   const currentFuel = getCurrentFuel(actualState.ship);
@@ -71,10 +88,27 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
     return systemsWithinRange[newIndex];
   }, [systemsWithinRange, selectedSystemIndex]);
   
-  const handleNavigation = useCallback((direction: 'next' | 'prev') => {
+  const handleNavigation = useCallback(async (direction: 'next' | 'prev') => {
     const nextSystemIndex = getNextSystem(direction);
     setSelectedSystemIndex(nextSystemIndex);
-  }, [getNextSystem]);
+    
+    // Update the galactic chart system so the dotted line points to the new selection
+    if (actualExecuteAction) {
+      try {
+        const promise = actualExecuteAction({
+          type: 'set_galactic_chart_system',
+          parameters: { systemIndex: nextSystemIndex }
+        });
+        
+        // Only await if it's a proper promise
+        if (promise && typeof promise.then === 'function') {
+          await promise;
+        }
+      } catch (error) {
+        console.warn('Failed to update galactic chart system:', error);
+      }
+    }
+  }, [getNextSystem, actualExecuteAction]);
   
   const handleWarpToSystem = useCallback(async () => {
     if (!actualExecuteAction) return;

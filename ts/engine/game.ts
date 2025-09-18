@@ -20,6 +20,7 @@ import { purchaseShip, getShipPurchaseInfo } from '../economy/ship-trading.ts';
 import { getAvailableShipsForPurchase } from '../economy/ship-pricing.ts';
 import { getLoan, payBackLoan, calculateMaxLoan } from '../economy/bank.ts';
 import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, getMercenaryName } from '../data/crew.ts';
+import { setGalacticChartSystem } from '../travel/galaxy.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 import { updateEventStatuses, checkRandomEventOccurrence } from '../events/special.ts';
 
@@ -126,6 +127,9 @@ export async function executeAction(state: GameState, action: GameAction): Promi
       
       case 'track_system':
         return await executeTrackSystemAction(state, action.parameters);
+      
+      case 'set_galactic_chart_system':
+        return await executeSetGalacticChartSystemAction(state, action.parameters);
       
       case 'read_news':
         return await executeReadNewsAction(state);
@@ -698,6 +702,26 @@ async function executeTrackSystemAction(state: GameState, parameters: any): Prom
   };
 }
 
+async function executeSetGalacticChartSystemAction(state: GameState, parameters: any): Promise<ActionResult> {
+  const { systemIndex } = parameters;
+  
+  if (typeof systemIndex !== 'number') {
+    return {
+      success: false,
+      message: 'Invalid system index for galactic chart selection',
+      stateChanged: false
+    };
+  }
+  
+  setGalacticChartSystem(state, systemIndex);
+  
+  return {
+    success: true,
+    message: `Galactic chart focused on ${getSolarSystemName(systemIndex)}`,
+    stateChanged: true
+  };
+}
+
 async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
   try {
     // News costs 1 credit base, +1 per difficulty level (like Palm OS)
@@ -1170,6 +1194,14 @@ function getPlanetActions(state: GameState): AvailableAction[] {
     type: 'track_system',
     name: 'Track System',
     description: 'Set a system to track on the galactic map',
+    available: true
+  });
+
+  // Set galactic chart system action (for UI navigation)
+  actions.push({
+    type: 'set_galactic_chart_system',
+    name: 'Set Chart Focus',
+    description: 'Set which system the galactic chart focuses on',
     available: true
   });
 
