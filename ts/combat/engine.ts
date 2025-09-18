@@ -134,6 +134,22 @@ export function endEncounter(state: GameState): void {
   }
 }
 
+function getIgnoreMessage(encounterType: number): string {
+  if (encounterType >= 0 && encounterType <= 9) {
+    // Police encounters
+    return 'You ignored the police and continued on your way.';
+  } else if (encounterType >= 10 && encounterType <= 19) {
+    // Pirate encounters  
+    return 'You ignored the pirates and continued on your way.';
+  } else if (encounterType >= 20 && encounterType <= 29) {
+    // Trader encounters
+    return 'You ignored the trader and continued on your way.';
+  } else {
+    // Special encounters
+    return 'You ignored the encounter and continued on your way.';
+  }
+}
+
 export function getCurrentEncounter(state: GameState): { type: number; name: string; isActive: boolean } {
   const encounterNames: Record<number, string> = {
     [EncounterType.POLICEINSPECTION]: 'Police Inspection',
@@ -367,8 +383,9 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     }
   } else if (playerAction === 'ignore') {
     // Ignore the encounter - end peacefully
+    const encounterResolutionMessage = getIgnoreMessage(state.encounterType);
     endEncounter(state);
-    message = ''; // No message - let travel continuation handle messaging
+    message = encounterResolutionMessage;
   } else if (playerAction === 'trade') {
     // Handle orbital trading
     if (state.encounterType === EncounterType.TRADERSELL) {

@@ -1307,6 +1307,18 @@ function getPlanetActions(state: GameState): AvailableAction[] {
 function getCombatActionsForState(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
+  // Check if encounter was already ended (encounterType === -1)
+  if (state.encounterType === -1) {
+    // Encounter ended - provide a continue action to transition out of combat mode
+    actions.push({
+      type: 'combat_continue',
+      name: 'Continue',
+      description: 'Continue after encounter resolution',
+      available: true
+    });
+    return actions;
+  }
+  
   // First check if combat should auto-resolve (opponent or player destroyed)
   if (state.opponent.hull <= 0 || state.ship.hull <= 0) {
     // Combat should end - provide a continue action
@@ -2039,6 +2051,47 @@ async function executeSystemScannerAction(state: GameState, parameters: any): Pr
  * Execute combat continue action (resolve combat when ships are destroyed)
  */
 async function executeCombatContinueAction(state: GameState): Promise<ActionResult> {
+  // Handle the case where encounter was already ended (encounterType === -1)
+  if (state.encounterType === -1) {
+    // Encounter already ended, need to transition out of combat mode
+    if (state.warpSystem !== state.currentSystem && state.clicks > 0) {
+      // Still traveling - continue travel
+      const travelResult = await automaticTravelContinuation(state);
+      if (travelResult.hasEncounter) {
+        const encounterResult = startEncounter(state, travelResult.encounterType!);
+        if (encounterResult.success) {
+          return {
+            success: true,
+            message: travelResult.message,
+            stateChanged: true
+          };
+        }
+      } else if (travelResult.arrivedSafely) {
+        return {
+          success: true,
+          message: travelResult.message,
+          stateChanged: true
+        };
+      }
+    } else {
+      // Not traveling or no clicks left - go to planet
+      state.currentMode = GameMode.OnPlanet;
+      return {
+        success: true,
+        message: 'Continuing...',
+        stateChanged: true
+      };
+    }
+    
+    // Fallback for any edge cases
+    state.currentMode = GameMode.OnPlanet;
+    return {
+      success: true,
+      message: 'Encounter ended',
+      stateChanged: true
+    };
+  }
+  
   // Import combat resolution function
   const { checkCombatResolution } = await import('../combat/engine.ts');
   

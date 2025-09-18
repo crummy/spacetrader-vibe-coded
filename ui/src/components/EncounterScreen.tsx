@@ -12,6 +12,8 @@ interface EncounterScreenProps {
 
 export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
   const [actionResult, setActionResult] = useState<string>('');
+  const [showResolutionModal, setShowResolutionModal] = useState<boolean>(false);
+  const [resolutionMessage, setResolutionMessage] = useState<string>('');
   
   const encounter = getCurrentEncounter(state);
   const opponentShip = state.opponent;
@@ -119,7 +121,20 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
       });
       
       if (result.success) {
-        setActionResult(result.message || `${action} successful`);
+        const message = result.message || `${action} successful`;
+        
+        // Check if this action ended the encounter (encounterType became -1)
+        if (state.encounterType === -1 && message && 
+            (message.includes('continued on your way') || 
+             message.includes('managed to escape') ||
+             message.includes('Trade completed') ||
+             message.includes('successful'))) {
+          // Show modal for successful encounter resolution
+          setResolutionMessage(message);
+          setShowResolutionModal(true);
+        } else {
+          setActionResult(message);
+        }
       } else {
         setActionResult(result.message || `${action} failed`);
       }
@@ -238,6 +253,27 @@ export function EncounterScreen({ state, onAction }: EncounterScreenProps) {
           </div>
         )}
       </div>
+      
+      {/* Encounter Resolution Modal */}
+      {showResolutionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-space-dark border border-neon-green rounded p-4 max-w-sm mx-4">
+            <div className="text-neon-green font-bold mb-2">Encounter Resolved</div>
+            <div className="text-palm-gray text-sm mb-4">{resolutionMessage}</div>
+            <button
+              onClick={async () => {
+                setShowResolutionModal(false);
+                setResolutionMessage('');
+                // Execute the continue action to properly end the encounter
+                await onAction({ type: 'combat_continue', parameters: {} });
+              }}
+              className="compact-button w-full bg-neon-green text-black hover:bg-green-400"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
