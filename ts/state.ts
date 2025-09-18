@@ -45,7 +45,7 @@ import { createCommander, createRandomCrewMember } from './data/crew.ts';
 import { getShipType } from './data/shipTypes.ts';
 import { getTradeItem } from './data/tradeItems.ts';
 import { getPoliticalSystem } from './data/politics.ts';
-import { getAllSystemPrices } from './economy/pricing.ts';
+// Removed getAllSystemPrices import - no longer needed for state initialization
 
 // Create an empty ship with default values
 export function createEmptyShip(): Ship {
@@ -315,17 +315,7 @@ export function createInitialState(): State {
     }
   };
 
-  // Initialize market prices for the starting system (Sol)
-  const allPrices = getAllSystemPrices(
-    initialState.solarSystem[initialState.currentSystem], 
-    initialState.commanderTrader, 
-    initialState.policeRecordScore
-  );
-  
-  for (let i = 0; i < initialState.buyPrice.length; i++) {
-    initialState.buyPrice[i] = allPrices[i].buyPrice;
-    initialState.sellPrice[i] = allPrices[i].sellPrice;
-  }
+  // No need to initialize market prices - they're computed on-demand (Palm OS style)
 
   return initialState;
 }

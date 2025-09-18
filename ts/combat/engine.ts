@@ -3,6 +3,7 @@
 
 import type { GameState, Ship } from '../types.ts';
 import { executeOrbitalPurchase, executeOrbitalSale } from '../trading/orbital.ts';
+import { getCurrentSystemPrices } from '../economy/pricing.ts';
 import { GameMode } from '../types.ts';
 import { getShipType } from '../data/shipTypes.ts';
 import { getWeapons, getShields } from '../data/equipment.ts';
@@ -832,7 +833,8 @@ function handlePoliceSubmit(state: GameState): string {
       state.buyingPrice[NARCOTICS] = 0;
       
       // Calculate fine based on worth and difficulty
-      const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * state.sellPrice[i]), 0);
+      const prices = getCurrentSystemPrices(state);
+      const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * prices.sellPrice[i]), 0);
       let fine = Math.floor(currentWorth / ((7 - state.difficulty) * 10));
       if (fine % 50 !== 0) {
         fine += (50 - (fine % 50));
@@ -871,7 +873,8 @@ function handlePoliceSubmit(state: GameState): string {
 
 function handlePoliceBribe(state: GameState): string {
   // Calculate bribe amount based on worth and system politics
-  const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * state.sellPrice[i]), 0);
+  const prices = getCurrentSystemPrices(state);
+  const currentWorth = state.credits + state.ship.cargo.reduce((total, qty, i) => total + (qty * prices.sellPrice[i]), 0);
   
   // Use hardcoded politics bribeLevel for now (should be imported properly)
   const bribeLevel = 1; // Default bribe level

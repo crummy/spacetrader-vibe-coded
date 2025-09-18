@@ -13,8 +13,7 @@ test('createInitialState creates valid initial game state', () => {
   assert.strictEqual(state.days, 0);
   assert.strictEqual(state.nameCommander, "Commander");
   
-  // Test arrays are correct length
-  assert.strictEqual(state.buyPrice.length, MAXTRADEITEM);
+  // Test arrays are correct length (buyPrice removed - now computed on-demand)
   assert.strictEqual(state.mercenary.length, MAXCREWMEMBER + 1);
   assert.strictEqual(state.solarSystem.length, MAXSOLARSYSTEM);
   

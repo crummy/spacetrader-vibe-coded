@@ -283,9 +283,7 @@ export interface State {
   selectedShipType: number;
   galacticChartSystem: number;
   
-  // Trading prices
-  buyPrice: MutableTradeItemArray;
-  sellPrice: MutableTradeItemArray;
+  // Trading prices (buyingPrice tracks what player paid for cargo)
   buyingPrice: MutableTradeItemArray;
   shipPrice: readonly number[]; // [MAXSHIPTYPE]
   

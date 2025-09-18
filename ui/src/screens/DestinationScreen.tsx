@@ -5,7 +5,7 @@ import { getSolarSystemName } from '@game-data/systems.ts';
 import { calculateDistance, getCurrentFuel, getWormholeDestinations } from '../../../ts/travel/warp.ts';
 import { getTradeItemName } from '@game-data/tradeItems.ts';
 import { MAXTRADEITEM } from '@game-types';
-import { calculateStandardPrice } from '../../../ts/economy/pricing.ts';
+import { calculateStandardPrice, getStablePricesForDisplay } from '../../../ts/economy/pricing.ts';
 import { getPoliticalSystem } from '../../../ts/data/politics.ts';
 import { getFilledCargoBays, getTotalCargoBays } from '../../../ts/economy/trading.ts';
 import type { ScreenProps } from '../types.ts';
@@ -140,7 +140,8 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           selectedSystem.visited ? selectedSystem.specialResources : -1
         );
         
-        const currentBuyPrice = actualState.buyPrice?.[i] || 0;
+        const currentPrices = getStablePricesForDisplay(actualState);
+        const currentBuyPrice = currentPrices.buyPrice[i] || 0;
         const currentStock = currentSystem.qty[i] || 0;
         
         // Check if profitable - destination price > current system buy price and we have stock
@@ -176,7 +177,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
     }
     
     return prices;
-  }, [selectedSystem, currentSystem, actualState.buyPrice, showRelativePrices]);
+  }, [selectedSystem, currentSystem, showRelativePrices]); // Removed buyPrice dependency - now computed on-demand
   
   return (
     <div className="flex flex-col h-full bg-space-black text-palm-green font-mono">

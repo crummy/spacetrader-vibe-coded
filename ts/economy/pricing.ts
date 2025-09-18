@@ -1,7 +1,7 @@
 // Price Calculation System Implementation
 // Port of pricing algorithms from Palm OS Traveler.c and Skill.c
 
-import type { SolarSystem, TechLevel } from '../types.ts';
+import type { SolarSystem, TechLevel, State } from '../types.ts';
 import { TradeItem, SystemStatus } from '../types.ts';
 import { getTradeItem } from '../data/tradeItems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
@@ -311,4 +311,59 @@ export function getAllSystemPrices(
   }
   
   return prices;
+}
+
+/**
+ * Get current system's prices on-demand (Palm OS style)
+ * Matches Palm OS behavior of computing prices when needed rather than storing them
+ * @param state Current game state
+ * @param systemId Optional system ID to get prices for (defaults to current system)
+ * @returns Object with buyPrice and sellPrice arrays
+ */
+export function getCurrentSystemPrices(
+  state: Pick<State, 'solarSystem' | 'currentSystem' | 'commanderTrader' | 'policeRecordScore'>,
+  systemId?: number
+): { buyPrice: number[]; sellPrice: number[] } {
+  const targetSystemId = systemId ?? state.currentSystem;
+  const system = state.solarSystem[targetSystemId];
+  const allPrices = getAllSystemPrices(system, state.commanderTrader, state.policeRecordScore);
+  
+  const buyPrice: number[] = [];
+  const sellPrice: number[] = [];
+  
+  for (let i = 0; i < 10; i++) {
+    buyPrice[i] = allPrices[i].buyPrice;
+    sellPrice[i] = allPrices[i].sellPrice;
+  }
+  
+  return { buyPrice, sellPrice };
+}
+
+/**
+ * Get stable prices for UI display (no random variance)
+ * Used for destination screen and other UI that should show consistent prices until travel
+ * @param state Current game state
+ * @param systemId Optional system ID to get prices for (defaults to current system)
+ * @returns Object with buyPrice and sellPrice arrays (stable, no randomness)
+ */
+export function getStablePricesForDisplay(
+  state: Pick<State, 'solarSystem' | 'currentSystem' | 'commanderTrader' | 'policeRecordScore'>,
+  systemId?: number
+): { buyPrice: number[]; sellPrice: number[] } {
+  const targetSystemId = systemId ?? state.currentSystem;
+  const system = state.solarSystem[targetSystemId];
+  
+  // Use a fixed random function (always returns 0.5) for stable prices
+  const stableRandom = () => 0.5;
+  const allPrices = getAllSystemPrices(system, state.commanderTrader, state.policeRecordScore, stableRandom);
+  
+  const buyPrice: number[] = [];
+  const sellPrice: number[] = [];
+  
+  for (let i = 0; i < 10; i++) {
+    buyPrice[i] = allPrices[i].buyPrice;
+    sellPrice[i] = allPrices[i].sellPrice;
+  }
+  
+  return { buyPrice, sellPrice };
 }

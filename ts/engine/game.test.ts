@@ -16,7 +16,7 @@ import {
   validateGameState, 
   
   // Game Loop Management
-  advanceTime, checkRandomEncounters, updateMarkets,
+  advanceTime, checkRandomEncounters,
   
   // Action Types and Results
   type GameAction, type ActionResult, type AvailableAction,
@@ -30,6 +30,7 @@ import {
   // Utilities
   getGameStatus, getCurrentLocation, getCurrentShipStatus
 } from './game.ts';
+import { getCurrentSystemPrices } from '../economy/pricing.ts';
 
 describe('Game Engine Integration', () => {
 
@@ -228,18 +229,24 @@ describe('Game Engine Integration', () => {
       }
     });
 
-    test('should update market prices over time', () => {
+    test('should compute prices on-demand (Palm OS style)', () => {
       const engine = createGameEngine();
-      const initialPrices = [...engine.state.buyPrice];
       
-      updateMarkets(engine.state);
+      // Mock Math.random to ensure consistent prices
+      const originalRandom = Math.random;
+      Math.random = () => 0.5; // Fixed value for testing
       
-      // Prices should potentially change
-      const pricesChanged = engine.state.buyPrice.some((price, index) => 
-        price !== initialPrices[index]
-      );
-      // Note: Prices might not always change, so this tests the function runs without error
-      assert.equal(typeof pricesChanged, 'boolean');
+      const prices1 = getCurrentSystemPrices(engine.state);
+      const prices2 = getCurrentSystemPrices(engine.state);
+      
+      // Restore original random function
+      Math.random = originalRandom;
+      
+      // Prices should be consistent when computed with same random seed
+      assert.deepEqual(prices1.buyPrice, prices2.buyPrice);
+      assert.deepEqual(prices1.sellPrice, prices2.sellPrice);
+      assert.equal(prices1.buyPrice.length, 10);
+      assert.equal(prices1.sellPrice.length, 10);
     });
 
     test('should handle interest payments on debt', () => {

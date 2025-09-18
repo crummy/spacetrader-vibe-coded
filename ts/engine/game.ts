@@ -7,7 +7,7 @@ import { GameMode } from '../types.ts';
 
 // Import all system modules
 import { buyCargo, sellCargo } from '../economy/trading.ts';
-import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getAllSystemPrices } from '../economy/pricing.ts';
+import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getCurrentSystemPrices } from '../economy/pricing.ts';
 import { refuelToFull, getFuelStatus } from '../economy/fuel.ts';
 import { performWarp, canWarpTo, calculateWarpCost, calculateDistance } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
@@ -301,8 +301,8 @@ async function executeBuyCargoAction(state: GameState, parameters: any): Promise
   
   try {
     const currentSystem = state.solarSystem[state.currentSystem];
-    const allPrices = getAllSystemPrices(currentSystem, state.commanderTrader, state.policeRecordScore);
-    const buyPrices = extractBuyPrices(allPrices);
+    const prices = getCurrentSystemPrices(state);
+    const buyPrices = prices.buyPrice;
     
     const result = buyCargo(state, currentSystem, tradeItem, quantity, buyPrices);
     return {
@@ -333,8 +333,8 @@ async function executeSellCargoAction(state: GameState, parameters: any): Promis
   
   try {
     const currentSystem = state.solarSystem[state.currentSystem];
-    const allPrices = getAllSystemPrices(currentSystem, state.commanderTrader, state.policeRecordScore);
-    const sellPrices = extractSellPrices(allPrices);
+    const prices = getCurrentSystemPrices(state);
+    const sellPrices = prices.sellPrice;
     
     const result = sellCargo(state, tradeItem, quantity, sellPrices);
     return {
@@ -1044,9 +1044,9 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   const actions: AvailableAction[] = [];
   
   // Buy cargo action is always available on planets, but items may be individually unavailable
-  const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
-  const availableItems = allPrices
-    .map((priceInfo, index) => ({ index, buyPrice: priceInfo.buyPrice }))
+  const prices = getCurrentSystemPrices(state);
+  const availableItems = prices.buyPrice
+    .map((buyPrice, index) => ({ index, buyPrice }))
     .filter(item => item.buyPrice > 0) // Available for purchase (regardless of player credits)
     .map(item => item.index);
   
@@ -1061,7 +1061,7 @@ function getPlanetActions(state: GameState): AvailableAction[] {
   
   // Check if any cargo can be sold
   const canSellAnything = state.ship.cargo.some((quantity, index) => 
-    quantity > 0 && allPrices[index].sellPrice > 0
+    quantity > 0 && prices.sellPrice[index] > 0
   );
   
   if (canSellAnything) {
@@ -1344,10 +1344,7 @@ export function advanceTime(state: GameState, days: number): void {
     console.warn('Error in event system during time advancement:', error);
   }
   
-  // Update markets periodically
-  if (state.days % 3 === 0) {
-    updateMarkets(state);
-  }
+  // Removed periodic market updates - prices computed on-demand (Palm OS style)
 }
 
 function payInterest(state: GameState): void {
@@ -1606,14 +1603,7 @@ function checkVeryRareEncounter(state: GameState): { hasEncounter: boolean; enco
   return { hasEncounter: true, encounterType: selectedEncounter.encounterCode };
 }
 
-export function updateMarkets(state: GameState): void {
-  // Update trade prices based on market fluctuations
-  const allPrices = getAllSystemPrices(state.solarSystem[state.currentSystem], state.commanderTrader, state.policeRecordScore);
-  for (let i = 0; i < state.buyPrice.length; i++) {
-    state.buyPrice[i] = allPrices[i].buyPrice;
-    state.sellPrice[i] = allPrices[i].sellPrice;
-  }
-}
+// Remove updateMarkets - prices are now computed on-demand (Palm OS style)
 
 // System Integration
 
@@ -1733,25 +1723,7 @@ export function getCurrentShipStatus(state: GameState): {
 
 // Helper Functions
 
-function extractBuyPrices(allPrices: Array<{ buyPrice: number; sellPrice: number }>): TradeItemArray {
-  if (allPrices.length !== 10) {
-    throw new Error(`Expected exactly 10 trade items, got ${allPrices.length}`);
-  }
-  return [
-    allPrices[0].buyPrice, allPrices[1].buyPrice, allPrices[2].buyPrice, allPrices[3].buyPrice, allPrices[4].buyPrice,
-    allPrices[5].buyPrice, allPrices[6].buyPrice, allPrices[7].buyPrice, allPrices[8].buyPrice, allPrices[9].buyPrice
-  ];
-}
-
-function extractSellPrices(allPrices: Array<{ buyPrice: number; sellPrice: number }>): TradeItemArray {
-  if (allPrices.length !== 10) {
-    throw new Error(`Expected exactly 10 trade items, got ${allPrices.length}`);
-  }
-  return [
-    allPrices[0].sellPrice, allPrices[1].sellPrice, allPrices[2].sellPrice, allPrices[3].sellPrice, allPrices[4].sellPrice,
-    allPrices[5].sellPrice, allPrices[6].sellPrice, allPrices[7].sellPrice, allPrices[8].sellPrice, allPrices[9].sellPrice
-  ];
-}
+// Removed extractBuyPrices and extractSellPrices - no longer needed with on-demand pricing
 
 function getReputationString(score: number): string {
   if (score >= 80) return 'Elite';
