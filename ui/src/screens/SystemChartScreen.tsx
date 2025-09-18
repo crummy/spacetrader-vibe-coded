@@ -72,8 +72,11 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
   const currentY = scaleY(currentSystem.y);
   
   // Range circle radius in SVG coordinates
-  // Scale fuel range (parsecs) to SVG coordinates - same as distance scaling
-  const rangeRadius = currentFuel * (SVG_WIDTH / GALAXY_WIDTH);
+  // Use average scaling factor for better circle representation on stretched display
+  const scaleFactorX = SVG_WIDTH / GALAXY_WIDTH;
+  const scaleFactorY = SVG_HEIGHT / GALAXY_HEIGHT;
+  const averageScaleFactor = (scaleFactorX + scaleFactorY) / 2;
+  const rangeRadius = currentFuel * averageScaleFactor;
 
   // Zoom toggle handler - switch between 100% and 300%
   const toggleZoom = useCallback(() => {
@@ -354,9 +357,11 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
       {/* System Information */}
       {(hoveredSystem !== null || selectedSystem !== null) && (
         <div className="bg-space-black border border-space-blue rounded p-2 mx-2 mb-2">
-          <div className="text-neon-amber mb-1 text-xs">
-            {selectedSystem !== null ? 'Selected:' : 'System:'}
-          </div>
+          {selectedSystem !== null && (
+            <div className="text-neon-amber mb-1 text-xs">
+              Selected:
+            </div>
+          )}
           {(() => {
             const systemIndex = selectedSystem !== null ? selectedSystem : hoveredSystem!;
             const system = actualState.solarSystem[systemIndex];
@@ -369,12 +374,15 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
                 <div className="text-neon-cyan font-bold">
                   {getSolarSystemName(systemIndex)}
                 </div>
-                <div className="text-palm-gray space-y-0.5">
-                  <div>({system.x}, {system.y}) • {distance.toFixed(1)}p • TL{system.techLevel}</div>
-                  <div className={inRange ? 'text-neon-green' : 'text-neon-red'}>
-                    {inRange ? 'In Range' : 'Out of Range'}
+                {/* Only show details when system is selected, not when just hovering */}
+                {selectedSystem !== null && (
+                  <div className="text-palm-gray space-y-0.5">
+                    <div>({system.x}, {system.y}) • {distance.toFixed(1)}p • TL{system.techLevel}</div>
+                    <div className={inRange ? 'text-neon-green' : 'text-neon-red'}>
+                      {inRange ? 'In Range' : 'Out of Range'}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {selectedSystem !== null && inRange && selectedSystem !== actualState.currentSystem && (
                   <button
