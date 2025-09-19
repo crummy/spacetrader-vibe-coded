@@ -21,8 +21,9 @@ The deployment process uses GitHub Actions (`.github/workflows/deploy.yml`) and 
 
 1. **Build Process**:
    - Installs Node.js 22 and dependencies
-   - Runs TypeScript tests to ensure game logic is working
-   - Performs TypeScript type checking (with warnings for any issues)
+   - Runs TypeScript backend tests (1300+ tests)
+   - Runs UI component tests (React/Vitest)
+   - Performs TypeScript type checking 
    - Builds the React UI for production with correct GitHub Pages paths
 
 2. **Deployment Process**:
@@ -31,10 +32,12 @@ The deployment process uses GitHub Actions (`.github/workflows/deploy.yml`) and 
 
 ### Current Build Status
 
-✅ **TypeScript Backend**: Fully tested and working  
-⚠️  **UI Tests**: Currently disabled in CI due to type compatibility issues  
+✅ **TypeScript Backend**: Fully tested with 1300+ passing tests  
+✅ **UI Tests**: Fixed TypeScript errors and re-enabled in CI  
 ✅ **Production Build**: Working with Vite handling TypeScript compilation  
 ✅ **GitHub Pages**: Configured with correct base paths  
+
+**All systems ready for deployment!**  
 
 ### Local Development
 
@@ -70,7 +73,7 @@ cd ui && npm run build
 
 - **Base Path**: The UI is configured to work with GitHub Pages' subdirectory structure (`/spacetrader-ts-4/`)
 - **Build Tool**: Vite with React and TypeScript (handles compilation without separate tsc step)
-- **Testing**: Node.js native test runner for TS backend (UI tests temporarily disabled)
+- **Testing**: Node.js native test runner for TS backend, Vitest for React components
 - **Node Version**: 22+ required (uses experimental TypeScript support)
 
 ### Troubleshooting
@@ -79,14 +82,16 @@ If deployment fails:
 
 1. Check the Actions tab in GitHub for detailed error logs
 2. Ensure backend tests pass locally with `cd ts && npm test`
-3. Verify the build works locally with `cd ui && npm run build`
-4. Check that GitHub Pages is enabled in repository settings
+3. Ensure UI tests pass locally with `cd ui && npm run test:run`
+4. Verify the build works locally with `cd ui && npm run build`
+5. Check that GitHub Pages is enabled in repository settings
 
-### Known Issues
+### Notes
 
-- UI component tests have TypeScript compatibility issues that need to be resolved
-- These don't affect the production build or game functionality
-- The deployment pipeline skips UI tests but still builds successfully
+- The project requires Node.js 22+ locally due to experimental TypeScript support
+- GitHub Actions CI uses Node.js 22 automatically 
+- All TypeScript type errors have been resolved for both backend and UI
+- Full test coverage ensures deployment stability
 
 ### Manual Deployment
 
