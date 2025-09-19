@@ -28,7 +28,7 @@ The deployment process uses GitHub Actions (`.github/workflows/deploy.yml`) and 
 
 2. **Deployment Process**:
    - Uploads the built UI assets to GitHub Pages
-   - Makes the site available at `https://[username].github.io/spacetrader-ts-4/`
+   - Makes the site available at `https://[username].github.io/spacetrader-vibe-coded/`
 
 ### Current Build Status
 
@@ -71,7 +71,7 @@ cd ui && npm run build
 
 ### Configuration Details
 
-- **Base Path**: The UI is configured to work with GitHub Pages' subdirectory structure (`/spacetrader-ts-4/`)
+- **Base Path**: The UI is configured to work with GitHub Pages' subdirectory structure (`/spacetrader-vibe-coded/`)
 - **Build Tool**: Vite with React and TypeScript (handles compilation without separate tsc step)
 - **Testing**: Node.js native test runner for TS backend, Vitest for React components
 - **Node Version**: 22+ required (uses experimental TypeScript support)
