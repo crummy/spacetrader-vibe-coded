@@ -88,8 +88,8 @@ export function buyFuel(state: GameState, requestedAmount: number): RefuelResult
     };
   }
   
-  // Execute the transaction
-  state.ship.fuel += fuelBought;
+  // Execute the transaction - ensure we don't exceed tank capacity
+  state.ship.fuel = Math.min(state.ship.fuel + fuelBought, maxFuel);
   state.credits -= actualCost;
   
   return {
