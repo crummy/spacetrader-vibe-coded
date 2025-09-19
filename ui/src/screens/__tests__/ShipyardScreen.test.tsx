@@ -5,7 +5,8 @@ import { ShipyardScreen } from '../ShipyardScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
 import { GameMode } from '@game-types'
-import type { GameState, Action, GameAction } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -24,7 +25,7 @@ testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 10000
 testGameState.ship.hull = 50 // Damaged hull (Gnat has 100 hull)
 testGameState.ship.fuel = 10 // Partially fueled (Gnat has 14 fuel tanks)
-testGameState.ship.escapePod = false // No escape pod installed
+testGameState.escapePod = false // No escape pod installed
 
 // Get real available actions
 const testAvailableActions = getAvailableActions(testGameState)
@@ -180,7 +181,7 @@ describe('ShipyardScreen', () => {
   it('should disable services when not available', () => {
     // Create a scenario where services are not available (e.g., not docked)
     const stateNotDocked = createInitialState()
-    stateNotDocked.currentMode = GameMode.InSpace
+    stateNotDocked.currentMode = GameMode.InCombat
     const actionsNotDocked = getAvailableActions(stateNotDocked)
     
     render(<ShipyardScreen 
@@ -237,7 +238,7 @@ describe('ShipyardScreen', () => {
   it('should show correct status when escape pod is already installed', () => {
     const podInstalledState = createInitialState()
     podInstalledState.currentMode = GameMode.OnPlanet
-    podInstalledState.ship.escapePod = true
+    podInstalledState.escapePod = true
     
     render(<ShipyardScreen 
       {...defaultProps} 

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { EncounterScreen } from '../EncounterScreen'
 import { createInitialState } from '@game-state'
+import { GameMode } from '@game-types'
 import type { State } from '@game-types'
 
 // Mock the game engine modules
@@ -36,19 +37,19 @@ describe('EncounterScreen Modal Tests', () => {
   beforeEach(() => {
     testState = createInitialState()
     testState.encounterType = 1
-    testState.currentMode = 3
+    testState.currentMode = GameMode.InCombat
     
     testState.opponent = {
       type: 1,
       hull: 20,
       shieldStrength: [5, 0, 0],
-      weapon: [1, -1, -1],
-      shield: [0, -1, -1],
-      gadget: [-1, -1, -1],
-      crew: [0, -1, -1],
+      weapon: [1, -1, -1] as any,
+      shield: [0, -1, -1] as any,
+      gadget: [-1, -1, -1] as any,
+      crew: [0, -1, -1] as any,
       fuel: 10,
       tribbles: 0,
-      japoriDiseaseStatus: 0,
+
       reactorStatus: 0,
       escape: false,
       insurance: false,

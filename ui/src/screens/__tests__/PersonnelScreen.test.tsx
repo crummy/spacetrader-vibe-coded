@@ -4,7 +4,9 @@ import { userEvent } from '@testing-library/user-event'
 import { PersonnelScreen } from '../PersonnelScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
-import type { GameState, Action, GameAction } from '@game-types'
+import { GameMode } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -19,10 +21,10 @@ vi.mock('../../hooks/useGameEngine.ts', () => ({
 const testGameState = createInitialState()
 
 // Set up a realistic test scenario - docked at a planet
-testGameState.currentMode = 0 // OnPlanet
+testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 15000
 testGameState.currentSystem = 1 // A system with mercenaries
-testGameState.ship.crew = [0, 5, 12, -1] // Commander + 2 crew members, 1 empty slot
+testGameState.ship.crew = [0, 5, 12] as any // Commander + 2 crew members, 1 empty slot
 
 // Set up mercenaries with realistic stats
 testGameState.mercenary[5] = {
@@ -30,14 +32,14 @@ testGameState.mercenary[5] = {
   fighter: 4,
   trader: 5,
   engineer: 3,
-  currentSystem: 1
+  curSystem: 1
 }
 testGameState.mercenary[12] = {
   pilot: 3,
   fighter: 7,
   trader: 2,
   engineer: 6,
-  currentSystem: 1
+  curSystem: 1
 }
 // Add a mercenary available for hire in the current system
 testGameState.mercenary[8] = {
@@ -45,16 +47,16 @@ testGameState.mercenary[8] = {
   fighter: 6,
   trader: 4,
   engineer: 5,
-  currentSystem: 1
+  curSystem: 1
 }
 
 // Also need to adjust ship type - Gnat only has 1 crew quarter but we have 3 crew
 // So use a different ship or adjust expectations
 testGameState.ship.type = 1 // Flea has 2 crew quarters
-testGameState.ship.crew = [0, 5, -1] // Commander + 1 crew member, 1 empty slot
+testGameState.ship.crew = [0, 5, -1] as any // Commander + 1 crew member, 1 empty slot
 
 // Ensure mercenary 8 is available for hire (not already hired and in current system)
-testGameState.mercenary[8].currentSystem = testGameState.currentSystem
+testGameState.mercenary[8].curSystem = testGameState.currentSystem
 
 // Get real available actions (should include hire_crew and fire_crew when docked)
 const testAvailableActions = getAvailableActions(testGameState)
@@ -318,7 +320,7 @@ describe('PersonnelScreen', () => {
     // State with no available mercenaries in current system
     const noMercState = { 
       ...testGameState, 
-      mercenary: testGameState.mercenary.map(m => ({ ...m, currentSystem: 99 })) // Move all to different system
+      mercenary: testGameState.mercenary.map(m => ({ ...m, curSystem: 99 })) // Move all to different system
     }
     const noMercProps = { ...defaultProps, state: noMercState }
     

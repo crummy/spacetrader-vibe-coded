@@ -5,7 +5,8 @@ import { BuyEquipmentScreen } from '../BuyEquipmentScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
 import { GameMode } from '@game-types'
-import type { GameState, Action, GameAction } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -24,13 +25,12 @@ testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 50000
 testGameState.currentSystem = 0
 testGameState.solarSystem[0].techLevel = 7 // High-level tech planet for equipment availability
-testGameState.solarSystem[0].politicalSystem = 2 // For predictable pricing
+testGameState.solarSystem[0].politics = 2 // For predictable pricing
 
 // Set up ship with some equipment slots filled and some empty
-// NOTE: Gnat actually has 1 weapon slot, 0 shield slots, 1 gadget slot
-testGameState.ship.weapon = [-1] // Empty weapon slot (Gnat has 1 weapon slot)
-testGameState.ship.shield = [] // No shield slots (Gnat has 0 shield slots)  
-testGameState.ship.gadget = [-1] // Empty gadget slot (Gnat has 1 gadget slot)
+testGameState.ship.weapon = [-1, -1, -1] as any // Empty weapon slots
+testGameState.ship.shield = [-1, -1, -1] as any // Empty shield slots  
+testGameState.ship.gadget = [-1, -1, -1] as any // Empty gadget slots
 
 // Get real available actions
 const testAvailableActions = getAvailableActions(testGameState)
@@ -101,9 +101,9 @@ describe('BuyEquipmentScreen', () => {
     const fullSlotsState = createInitialState()
     fullSlotsState.currentMode = GameMode.OnPlanet
     fullSlotsState.solarSystem[0].techLevel = 7
-    fullSlotsState.ship.weapon = [0] // All weapon slots filled (Gnat has 1)
-    fullSlotsState.ship.shield = [] // No shield slots (Gnat has 0)
-    fullSlotsState.ship.gadget = [0] // All gadget slots filled (Gnat has 1)
+    fullSlotsState.ship.weapon = [0, -1, -1] as any // All weapon slots filled (Gnat has 1)
+    fullSlotsState.ship.shield = [-1, -1, -1] as any // No shield slots (Gnat has 0)
+    fullSlotsState.ship.gadget = [0, -1, -1] as any // All gadget slots filled (Gnat has 1)
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 
@@ -146,7 +146,7 @@ describe('BuyEquipmentScreen', () => {
     const fullSlotsState = createInitialState()
     fullSlotsState.currentMode = GameMode.OnPlanet
     fullSlotsState.solarSystem[0].techLevel = 7
-    fullSlotsState.ship.weapon = [0] // All weapon slots filled
+    fullSlotsState.ship.weapon = [0, -1, -1] as any // All weapon slots filled
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 
@@ -171,7 +171,7 @@ describe('BuyEquipmentScreen', () => {
     poorState.currentMode = GameMode.OnPlanet
     poorState.solarSystem[0].techLevel = 7
     poorState.credits = 10 // Very low credits
-    poorState.ship.weapon = [-1] // Empty weapon slot
+    poorState.ship.weapon = [-1, -1, -1] as any // Empty weapon slot
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 
@@ -190,7 +190,7 @@ describe('BuyEquipmentScreen', () => {
 
   it('should show equipment store unavailable when not docked', () => {
   const notDockedState = createInitialState()
-  notDockedState.currentMode = GameMode.InSpace
+  notDockedState.currentMode = GameMode.InCombat
   
   render(<BuyEquipmentScreen 
     {...defaultProps} 
@@ -204,7 +204,7 @@ describe('BuyEquipmentScreen', () => {
 
   it('should show equipment unavailable when not docked', () => {
     const notDockedState = createInitialState()
-    notDockedState.currentMode = GameMode.InSpace
+    notDockedState.currentMode = GameMode.InCombat
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 
@@ -244,7 +244,7 @@ describe('BuyEquipmentScreen', () => {
     testState.currentMode = GameMode.OnPlanet
     testState.solarSystem[0].techLevel = 7
     testState.credits = 100 // Low credits
-    testState.ship.weapon = [0] // Full weapon slots
+    testState.ship.weapon = [0, -1, -1] as any // Full weapon slots
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 
@@ -270,7 +270,7 @@ describe('BuyEquipmentScreen', () => {
     testState.currentMode = GameMode.OnPlanet
     testState.solarSystem[0].techLevel = 7
     testState.credits = 50000
-    testState.ship.weapon = [-1] // Empty weapon slot
+    testState.ship.weapon = [-1, -1, -1] as any // Empty weapon slot
     
     render(<BuyEquipmentScreen 
       {...defaultProps} 

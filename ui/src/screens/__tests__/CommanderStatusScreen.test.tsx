@@ -41,7 +41,7 @@ testGameState.moonBought = false
 testGameState.ship.hull = 100
 testGameState.ship.fuel = 14
 testGameState.ship.cargo = [0, 3, 2, 5, 0, 0, 0, 0, 0, 0] // Some cargo
-testGameState.ship.crew = [0, 5, 12, -1] // Commander plus two crew members
+testGameState.ship.crew = [0, 5, 12] as any // Commander plus two crew members
 testGameState.currentSystem = 2 // Sol system
 
 // Get real available actions

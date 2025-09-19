@@ -11,9 +11,12 @@ import { getFilledCargoBays, getTotalCargoBays } from '../../../ts/economy/tradi
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
 
-interface DestinationScreenProps extends ScreenProps {
-  initialSystemIndex: number;
+interface DestinationScreenProps {
+  onNavigate: (screen: any) => void;
   onBack?: (finalSystemIndex?: number) => void;
+  state: any;
+  onAction: (action: any) => Promise<any>;
+  initialSystemIndex: number;
 }
 
 export function DestinationScreen({ onNavigate, onBack, state, onAction, initialSystemIndex }: DestinationScreenProps) {

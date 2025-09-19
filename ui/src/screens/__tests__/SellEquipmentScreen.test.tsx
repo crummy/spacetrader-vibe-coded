@@ -5,7 +5,8 @@ import { SellEquipmentScreen } from '../SellEquipmentScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
 import { GameMode } from '@game-types'
-import type { GameState, Action, GameAction } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -26,9 +27,9 @@ testGameState.currentSystem = 0
 testGameState.solarSystem[0].techLevel = 4
 
 // Set up ship with various equipment installed
-testGameState.ship.weapon = [1, 2] // Multiple weapons installed (Pulse laser, Beam laser)
-testGameState.ship.shield = [0] // Shield installed (Energy shield)
-testGameState.ship.gadget = [0, 1] // Gadgets installed (Cargo bay, Auto-repair)
+testGameState.ship.weapon = [1, 2, -1] as any // Multiple weapons installed (Pulse laser, Beam laser)
+testGameState.ship.shield = [0, -1, -1] as any // Shield installed (Energy shield)
+testGameState.ship.gadget = [0, 1, -1] as any // Gadgets installed (Cargo bay, Auto-repair)
 
 // Get real available actions
 const testAvailableActions = getAvailableActions(testGameState)
@@ -214,9 +215,9 @@ describe('SellEquipmentScreen', () => {
   it('should show no equipment message when category is empty', () => {
     const emptyState = createInitialState()
     emptyState.currentMode = GameMode.OnPlanet
-    emptyState.ship.weapon = [-1] // No weapons installed
-    emptyState.ship.shield = [-1] // No shields installed  
-    emptyState.ship.gadget = [-1, -1] // No gadgets installed
+    emptyState.ship.weapon = [-1, -1, -1] as any // No weapons installed
+    emptyState.ship.shield = [-1, -1, -1] as any // No shields installed  
+    emptyState.ship.gadget = [-1, -1, -1] as any // No gadgets installed
     
     render(<SellEquipmentScreen 
       {...defaultProps} 
@@ -231,8 +232,8 @@ describe('SellEquipmentScreen', () => {
     const user = userEvent.setup()
     const emptyShieldsState = createInitialState()
     emptyShieldsState.currentMode = GameMode.OnPlanet
-    emptyShieldsState.ship.weapon = [1] // Has weapons
-    emptyShieldsState.ship.shield = [-1] // No shields installed
+    emptyShieldsState.ship.weapon = [1, -1, -1] as any // Has weapons
+    emptyShieldsState.ship.shield = [-1, -1, -1] as any // No shields installed
     
     render(<SellEquipmentScreen 
       {...defaultProps} 
@@ -248,8 +249,8 @@ describe('SellEquipmentScreen', () => {
 
   it('should show equipment store unavailable when not docked', () => {
     const notDockedState = createInitialState()
-    notDockedState.currentMode = GameMode.InSpace
-    notDockedState.ship.weapon = [1] // Has equipment to sell
+    notDockedState.currentMode = GameMode.InCombat
+    notDockedState.ship.weapon = [1, -1, -1] as any // Has equipment to sell
     
     render(<SellEquipmentScreen 
       {...defaultProps} 
@@ -263,8 +264,8 @@ describe('SellEquipmentScreen', () => {
 
   it('should show equipment store unavailable when not docked', () => {
     const notDockedState = createInitialState()
-    notDockedState.currentMode = GameMode.InSpace
-    notDockedState.ship.weapon = [1] // Has equipment but not docked
+    notDockedState.currentMode = GameMode.InCombat
+    notDockedState.ship.weapon = [1, -1, -1] as any // Has equipment but not docked
     
     render(<SellEquipmentScreen 
       {...defaultProps} 
@@ -298,8 +299,8 @@ describe('SellEquipmentScreen', () => {
     // Set up a damaged shield
     const damagedShieldState = createInitialState()
     damagedShieldState.currentMode = GameMode.OnPlanet
-    damagedShieldState.ship.shield = [0] // Has shield installed
-    damagedShieldState.ship.shieldStrength = [50] // Damaged shield
+    damagedShieldState.ship.shield = [0, -1, -1] as any // Has shield installed
+    damagedShieldState.ship.shieldStrength = [50, -1, -1] as any // Damaged shield
     
     render(<SellEquipmentScreen 
       {...defaultProps} 
@@ -367,7 +368,7 @@ describe('SellEquipmentScreen', () => {
     
     const noSellState = createInitialState()
     noSellState.currentMode = GameMode.InSpace // Not docked, so sell action not available
-    noSellState.ship.weapon = [1] // Has equipment
+    noSellState.ship.weapon = [1, -1, -1] as any // Has equipment
     
     render(<SellEquipmentScreen 
       {...defaultProps} 

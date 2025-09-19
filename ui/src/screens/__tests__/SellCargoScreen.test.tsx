@@ -4,7 +4,9 @@ import { userEvent } from '@testing-library/user-event'
 import { SellCargoScreen } from '../SellCargoScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
-import type { GameState, Action, GameAction } from '@game-types'
+import { GameMode } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -19,7 +21,7 @@ vi.mock('../../hooks/useGameEngine.ts', () => ({
 const testGameState = createInitialState()
 
 // Set up a realistic test scenario with cargo to sell
-testGameState.currentMode = 0 // OnPlanet
+testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 2000
 testGameState.ship.cargo = [3, 8, 5, 2, 0, 0, 0, 4, 0, 0] // Water: 3, Furs: 8, Food: 5, Ore: 2, Machinery: 4
 testGameState.currentSystem = 0
@@ -27,7 +29,7 @@ testGameState.currentSystem = 0
 // Set up the current system with trade goods available for purchase (affects sell prices)
 testGameState.solarSystem[0].qty = [5, 2, 8, 10, 0, 0, 0, 6, 0, 0] // Some availability for price calculation
 testGameState.solarSystem[0].techLevel = 5
-testGameState.solarSystem[0].politicalSystem = 3 // Corporate (for predictable pricing)
+testGameState.solarSystem[0].politics = 3 // Corporate (for predictable pricing)
 testGameState.solarSystem[0].size = 2
 testGameState.solarSystem[0].specialResources = 0
 
@@ -262,7 +264,7 @@ describe('SellCargoScreen', () => {
     // Create a state where we're in orbit (no trading available)
     const undockedState = { 
       ...testGameState, 
-      currentMode: 2 // InOrbit 
+      currentMode: GameMode.InCombat 
     }
     const undockedAvailableActions = getAvailableActions(undockedState)
     
@@ -283,7 +285,7 @@ describe('SellCargoScreen', () => {
     // Create a state where sell_cargo is not available
     const noTradingState = { 
       ...testGameState, 
-      currentMode: 1 // InSpace - no trading available
+      currentMode: GameMode.InCombat // No trading available
     }
     const noTradingActions = getAvailableActions(noTradingState)
     

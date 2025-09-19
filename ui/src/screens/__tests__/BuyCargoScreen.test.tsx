@@ -4,7 +4,9 @@ import { userEvent } from '@testing-library/user-event'
 import { BuyCargoScreen } from '../BuyCargoScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
-import type { GameState, Action, GameAction } from '@game-types'
+import { GameMode } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -19,7 +21,7 @@ vi.mock('../../hooks/useGameEngine.ts', () => ({
 const testGameState = createInitialState()
 
 // Set up a realistic test scenario
-testGameState.currentMode = 0 // OnPlanet
+testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 5000
 testGameState.ship.cargo = [0, 5, 2, 0, 0, 0, 0, 0, 0, 0] // 5 Furs, 2 Food
 testGameState.currentSystem = 0
@@ -27,7 +29,7 @@ testGameState.currentSystem = 0
 // Set up the current system with some trade goods available
 testGameState.solarSystem[0].qty = [0, 8, 0, 15, 4, 0, 0, 12, 0, 0] // Furs: 8, Ore: 15, Games: 4, Machinery: 12
 testGameState.solarSystem[0].techLevel = 4
-testGameState.solarSystem[0].politicalSystem = 2 // Communist (for predictable pricing)
+testGameState.solarSystem[0].politics = 2 // Communist (for predictable pricing)
 testGameState.solarSystem[0].size = 2
 testGameState.solarSystem[0].specialResources = 0
 

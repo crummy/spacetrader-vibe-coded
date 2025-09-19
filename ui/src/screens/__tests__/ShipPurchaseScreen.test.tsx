@@ -5,7 +5,8 @@ import { ShipPurchaseScreen } from '../ShipPurchaseScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
 import { GameMode } from '@game-types'
-import type { GameState, Action, GameAction } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({
@@ -24,7 +25,7 @@ testGameState.currentMode = GameMode.OnPlanet
 testGameState.credits = 100000 // Plenty of credits for ship purchases
 testGameState.currentSystem = 0
 testGameState.solarSystem[0].techLevel = 6 // High tech level for more ship options
-testGameState.solarSystem[0].shipyardShips = [1, 2, 3] // Multiple ship types available
+// Ship availability is determined by tech level and game logic, not shipyardShips property
 
 // Set up current ship with some damage to show trade-in scenario
 testGameState.ship.hull = 80 // Slightly damaged hull
@@ -202,7 +203,7 @@ describe('ShipPurchaseScreen', () => {
     expensiveShipState.ship.type = 9 // Most expensive ship (Utopia Spacecraft)
     expensiveShipState.ship.hull = 200 // Full hull
     expensiveShipState.solarSystem[0].techLevel = 6
-    expensiveShipState.solarSystem[0].shipyardShips = [0] // Gnat available (cheapest ship)
+    // Ship availability determined by tech level and game logic
     
     render(<ShipPurchaseScreen 
       {...defaultProps} 
@@ -288,7 +289,7 @@ describe('ShipPurchaseScreen', () => {
 
   it('should show docking info when not docked', () => {
     const notDockedState = createInitialState()
-    notDockedState.currentMode = GameMode.InSpace
+    notDockedState.currentMode = GameMode.InCombat
     
     render(<ShipPurchaseScreen 
       {...defaultProps} 
@@ -302,7 +303,7 @@ describe('ShipPurchaseScreen', () => {
 
   it('should show shipyard unavailable when not docked', () => {
     const notDockedState = createInitialState()
-    notDockedState.currentMode = GameMode.InSpace
+    notDockedState.currentMode = GameMode.InCombat
     
     render(<ShipPurchaseScreen 
       {...defaultProps} 
@@ -316,7 +317,7 @@ describe('ShipPurchaseScreen', () => {
   it('should show no ships available message when shipyard has no ships', () => {
     const noShipsState = createInitialState()
     noShipsState.currentMode = GameMode.OnPlanet
-    noShipsState.solarSystem[0].shipyardShips = [] // No ships available
+    // Ship availability determined by tech level
     noShipsState.solarSystem[0].techLevel = 1 // Low tech level to prevent ships
     
     render(<ShipPurchaseScreen 

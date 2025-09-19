@@ -5,7 +5,8 @@ import { BankScreen } from '../BankScreen'
 import { createInitialState } from '@game-state'
 import { getAvailableActions } from '@game-engine'
 import { calculateMaxLoan, canGetLoan, canPayBack } from '@game/economy/bank'
-import type { GameState, Action, GameAction } from '@game-types'
+import type { GameState } from '@game-types'
+import type { GameAction, AvailableAction } from '@game-engine'
 
 // Only mock the game engine hook - everything else is real
 vi.mock('../../hooks/useGameEngine.ts', () => ({

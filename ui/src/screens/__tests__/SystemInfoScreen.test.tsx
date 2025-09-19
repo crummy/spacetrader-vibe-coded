@@ -176,7 +176,7 @@ describe('SystemInfoScreen', () => {
     it('should show wanted trade goods when available', () => {
       const state = setupTestState(0)
       // Set a wanted trade good
-      state.solarSystem[0].politicalSystem = 2 // Use a system that has wanted goods
+      state.solarSystem[0].politics = 2 // Use a system that has wanted goods
       
       render(<SystemInfoScreen 
         state={state} 
