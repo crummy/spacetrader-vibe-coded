@@ -5,6 +5,7 @@ import type { SolarSystem, TechLevel, State } from '../types.ts';
 import { TradeItem, SystemStatus } from '../types.ts';
 import { getTradeItem } from '../data/tradeItems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
+import { calculateEffectiveTraderSkill } from './skill-utils.ts';
 
 // Constants from Palm OS
 const MAXSKILL = 10;
@@ -321,12 +322,13 @@ export function getAllSystemPrices(
  * @returns Object with buyPrice and sellPrice arrays
  */
 export function getCurrentSystemPrices(
-  state: Pick<State, 'solarSystem' | 'currentSystem' | 'commanderTrader' | 'policeRecordScore'>,
+  state: State,
   systemId?: number
 ): { buyPrice: number[]; sellPrice: number[] } {
   const targetSystemId = systemId ?? state.currentSystem;
   const system = state.solarSystem[targetSystemId];
-  const allPrices = getAllSystemPrices(system, state.commanderTrader, state.policeRecordScore);
+  const effectiveTraderSkill = calculateEffectiveTraderSkill(state);
+  const allPrices = getAllSystemPrices(system, effectiveTraderSkill, state.policeRecordScore);
   
   const buyPrice: number[] = [];
   const sellPrice: number[] = [];
@@ -347,7 +349,7 @@ export function getCurrentSystemPrices(
  * @returns Object with buyPrice and sellPrice arrays (stable, no randomness)
  */
 export function getStablePricesForDisplay(
-  state: Pick<State, 'solarSystem' | 'currentSystem' | 'commanderTrader' | 'policeRecordScore'>,
+  state: State,
   systemId?: number
 ): { buyPrice: number[]; sellPrice: number[] } {
   const targetSystemId = systemId ?? state.currentSystem;
@@ -355,7 +357,8 @@ export function getStablePricesForDisplay(
   
   // Use a fixed random function (always returns 0.5) for stable prices
   const stableRandom = () => 0.5;
-  const allPrices = getAllSystemPrices(system, state.commanderTrader, state.policeRecordScore, stableRandom);
+  const effectiveTraderSkill = calculateEffectiveTraderSkill(state);
+  const allPrices = getAllSystemPrices(system, effectiveTraderSkill, state.policeRecordScore, stableRandom);
   
   const buyPrice: number[] = [];
   const sellPrice: number[] = [];

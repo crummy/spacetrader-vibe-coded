@@ -2,6 +2,10 @@
 // Based on original C code in Event.c and EventDialog.c
 
 import type { State } from '../types.ts';
+import { growTribblesDaily } from '../creatures/tribbles-palm.ts';
+
+// Hull upgrade constant from Palm OS spacetrader.h
+const UPGRADEDHULL = 50;
 
 // Add newsEvents to State type if missing
 declare module '../types.ts' {
@@ -836,13 +840,12 @@ export function updateEventStatuses(state: GameState): void {
     }
   }
   
-  // Update tribble breeding (simplified)
-  if (state.ship.tribbles > 0 && state.ship.tribbles < 50000) {
-    // Tribbles breed slowly over time
-    const breedChance = Math.min(0.1, state.ship.tribbles * 0.001);
-    if (Math.random() < breedChance) {
-      state.ship.tribbles = Math.min(50000, Math.floor(state.ship.tribbles * 1.1));
-    }
+  // Update tribble breeding using Palm OS mechanics
+  const tribbleMessages = growTribblesDaily(state);
+  // Store messages for potential display (could be added to news system later)
+  if (tribbleMessages.length > 0) {
+    // Could add to news system or state for display
+    // For now, just apply the growth silently during daily updates
   }
 }
 
@@ -940,8 +943,9 @@ function executeHullUpgradeEvent(state: GameState): EventResult {
     return { success: false, message: 'You have already received the hull upgrade.' };
   }
   
-  // Permanently upgrade ship hull by 50 points
-  state.ship.hull += 50;
+  // Permanently upgrade ship hull by UPGRADEDHULL points
+  state.ship.hull += UPGRADEDHULL;
+  state.ship.hullUpgrades = (state.ship.hullUpgrades || 0) + 1;
   state.scarabStatus = 3; // Hull upgrade completed
   
   return { 

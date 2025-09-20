@@ -5,7 +5,9 @@ import type { State } from '../types.ts';
 import { GameMode } from '../types.ts';
 import { EncounterType } from './engine.ts';
 import { EXTRABAYS } from '../economy/trading.ts';
-// No need for specific random utilities - use Math.random() directly
+
+// Hull upgrade constant from Palm OS spacetrader.h
+const UPGRADEDHULL = 50;
 
 /**
  * Special Ship Encounter Types from Palm OS
@@ -156,7 +158,7 @@ export function handleScarabEncounter(state: State): { message: string; state: S
  * Player gets permanent hull upgrade when they destroy a Scarab
  */
 export function handleScarabDestroyed(state: State): { message: string; state: State } {
-  if (state.scarabStatus === 1) { // Already got hull upgrade
+  if (state.scarabStatus >= 2) { // Already destroyed Scarab
     return {
       message: 'The Scarab is destroyed, but you already have the hull upgrade.',
       state
@@ -165,10 +167,10 @@ export function handleScarabDestroyed(state: State): { message: string; state: S
   
   const newState = {
     ...state,
-    scarabStatus: 1, // Mark hull upgrade acquired
+    scarabStatus: 2, // Mark Scarab destroyed (should match SCARABDESTROYED from special.ts)
     ship: {
       ...state.ship,
-      hull: Math.min(state.ship.hull + 10, 200), // Permanent +10 hull bonus
+      hull: state.ship.hull + UPGRADEDHULL, // Use UPGRADEDHULL constant from Palm OS (50 points)
       hullUpgrades: (state.ship.hullUpgrades || 0) + 1
     }
   };

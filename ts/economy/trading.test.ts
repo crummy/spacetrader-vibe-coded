@@ -189,7 +189,7 @@ describe('Trading Functions', () => {
     test('should fail when debt is too large', () => {
       const state = createInitialState();
       state.credits = 5000;
-      state.debt = 200001; // Greater than DEBTTOOLARGE (200000)
+      state.debt = 100001; // Greater than DEBTTOOLARGE (100000)
       
       const currentSystem: SolarSystem = {
         ...state.solarSystem[0],

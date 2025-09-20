@@ -1,7 +1,7 @@
 import type { 
   Ship, 
   CrewMember
-} from '../types/ship.js';
+} from '../types/ship.ts';
 import { 
   Difficulty, 
   Gadget,
@@ -9,7 +9,7 @@ import {
   MAXSKILL, 
   SKILLBONUS, 
   CLOAKBONUS 
-} from '../types/ship.js';
+} from '../types/ship.ts';
 
 export class SkillSystem {
 

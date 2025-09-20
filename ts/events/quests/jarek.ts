@@ -87,6 +87,28 @@ export function completeJarekDelivery(state: State): QuestResult {
 }
 
 /**
+ * Complete Jarek delivery with price recalculation callback (Palm OS compliance)
+ */
+export function completeJarekDeliveryWithCallback(state: State, onPriceRecalculate: () => void): boolean {
+  if (state.jarekStatus !== 1) {
+    return false;
+  }
+  
+  if (state.currentSystem !== DEVIDIA_SYSTEM_ID) {
+    return false;
+  }
+  
+  // Update Jarek status
+  state.jarekStatus = 2;
+  state.credits += 5000;
+  
+  // Trigger price recalculation (like Palm OS RecalculateBuyPrices)
+  onPriceRecalculate();
+  
+  return true;
+}
+
+/**
  * Handle Jarek being taken by pirates when ship destroyed/surrendered
  */
 export function jarekTakenByPirates(state: State): QuestResult {

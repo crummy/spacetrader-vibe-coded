@@ -748,11 +748,8 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
       state.alreadyPaidForNewspaper = true;
     }
     
-    // Generate news content
-    const { getNewsEvents, getEventName } = await import('../events/special.ts');
-    const newsEvents = getNewsEvents(state);
-    const { getSolarSystemName } = await import('../data/systems.ts');
-    const systemName = getSolarSystemName(state.currentSystem);
+    // Generate news content using Palm OS compliant system
+    const { generateNewspaper } = await import('../news/newspaper-palm.ts');
     
     let newsContent = '';
     if (actualCost > 0) {
@@ -761,24 +758,7 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
       newsContent += `Re-reading (already paid)\n\n`;
     }
     
-    if (newsEvents.length > 0) {
-      newsContent += 'Recent Headlines:\n';
-      newsEvents.forEach((event, index) => {
-        const eventName = getEventName(event.id);
-        newsContent += `• ${eventName}\n`;
-      });
-    } else {
-      newsContent += 'No major news today.\n';
-      // Add some generic filler headlines like Palm OS
-      const fillerHeadlines = [
-        'Local weather continues to be pleasant',
-        'Trade prices stable according to market analysts', 
-        'Shipping lanes report normal traffic patterns',
-        'No major incidents reported in local space'
-      ];
-      const randomHeadline = fillerHeadlines[Math.floor(Math.random() * fillerHeadlines.length)];
-      newsContent += `• ${randomHeadline}\n`;
-    }
+    newsContent += generateNewspaper(state);
     
     return {
       success: true,

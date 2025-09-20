@@ -110,20 +110,20 @@ describe('Special Ship Encounters', () => {
     
     const result = handleScarabDestroyed(state);
     
-    assert.equal(result.state.scarabStatus, 1);
-    assert.equal(result.state.ship.hull, 60); // +10 hull bonus
+    assert.equal(result.state.scarabStatus, 2); // SCARABDESTROYED
+    assert.equal(result.state.ship.hull, 100); // +50 hull bonus (UPGRADEDHULL from Palm OS)
     assert.equal(result.state.ship.hullUpgrades, 1);
     assert.match(result.message, /scarab.*hull.*plating|hull.*upgrade/i);
   });
   
   test('Scarab destruction rewards - already acquired', () => {
     const state = createInitialState();
-    state.scarabStatus = 1; // Already got upgrade
+    state.scarabStatus = 2; // Already destroyed Scarab
     state.ship.hull = 50;
     
     const result = handleScarabDestroyed(state);
     
-    assert.equal(result.state.scarabStatus, 1);
+    assert.equal(result.state.scarabStatus, 2);
     assert.equal(result.state.ship.hull, 50); // No additional bonus
     assert.match(result.message, /already.*upgrade/i);
   });
@@ -227,14 +227,14 @@ describe('Special Ship Encounters', () => {
     
     // First destruction
     const firstResult = handleScarabDestroyed(state);
-    assert.equal(firstResult.state.scarabStatus, 1);
-    assert.equal(firstResult.state.ship.hull, 70);
+    assert.equal(firstResult.state.scarabStatus, 2); // SCARABDESTROYED
+    assert.equal(firstResult.state.ship.hull, 110); // 60 + 50 (UPGRADEDHULL)
     assert.equal(firstResult.state.ship.hullUpgrades, 1);
     
     // Second destruction (should not grant additional upgrade)
     const secondResult = handleScarabDestroyed(firstResult.state);
-    assert.equal(secondResult.state.scarabStatus, 1);
-    assert.equal(secondResult.state.ship.hull, 70); // No additional bonus
+    assert.equal(secondResult.state.scarabStatus, 2);
+    assert.equal(secondResult.state.ship.hull, 110); // No additional bonus
     assert.match(secondResult.message, /already.*upgrade/i);
   });
 });
