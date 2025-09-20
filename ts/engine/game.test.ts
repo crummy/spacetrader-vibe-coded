@@ -120,11 +120,16 @@ describe('Game Engine Integration', () => {
     });
 
     test('should execute warp actions through unified interface', async () => {
-      const engine = createGameEngine();
+      // Create a fresh state to avoid test pollution
+      const { createInitialState } = await import('../state.ts');
+      const freshState = createInitialState();
+      const engine = createGameEngine(freshState);
+      
       engine.state.currentMode = GameMode.OnPlanet;
       engine.state.ship.fuel = 14; // Gnat has 14 fuel tanks
       engine.state.currentSystem = 0;
       engine.state.credits = 2000; // Ensure sufficient credits for warp costs
+      engine.state.debt = 0; // Clear any debt to avoid warp restrictions
       
       // Import getSystemsWithinRange to find a system actually within range
       const { getSystemsWithinRange } = await import('../travel/galaxy.ts');
