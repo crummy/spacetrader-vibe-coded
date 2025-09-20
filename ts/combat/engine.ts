@@ -8,6 +8,7 @@ import { GameMode } from '../types.ts';
 import { getShipType } from '../data/shipTypes.ts';
 import { getWeapons, getShields } from '../data/equipment.ts';
 import { createEmptyShip } from '../state.ts';
+import { random, randomBool, randomChoice, randomFloor } from '../math/random.ts';
 
 // Combat Action Types
 export type CombatAction = 'attack' | 'flee' | 'surrender' | 'bribe' | 'submit' | 'ignore' | 'trade' | 'board' | 'meet' | 'drink' | 'yield' | 'plunder';
@@ -290,7 +291,7 @@ export function calculateDamage(attacker: Ship, defender: Ship): number {
   let damage = weaponPower - (shieldPower * 0.5); // Shields reduce damage by 50%
   
   // Random factor (Palm OS uses random variation)
-  const randomFactor = 0.5 + (Math.random() * 1.0); // 50% to 150% of base damage
+  const randomFactor = 0.5 + (random() * 1.0); // 50% to 150% of base damage
   damage = Math.floor(damage * randomFactor);
   
   // Minimum damage of 1 if attacker has any weapons
@@ -371,7 +372,7 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     }
   } else if (playerAction === 'flee') {
     // Attempt to flee - success based on ship speed vs opponent
-    const fleeSuccess = Math.random() > 0.3; // 70% success rate for now
+    const fleeSuccess = randomBool(0.7); // 70% success rate for now
     if (fleeSuccess) {
       endEncounter(state);
       message = 'You have managed to escape your opponent.';
@@ -448,7 +449,7 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     // Handle drinking from bottle found on Marie Celeste
     if (state.justLootedMarie) {
       // Random effect from drinking bottle
-      const goodEffect = Math.random() < 0.5;
+      const goodEffect = randomBool(0.5);
       if (goodEffect) {
         state.ship.hull = Math.min(state.ship.hull + 10, 100);
         message = 'The bottle contains a healing elixir! Your ship is partially repaired.';
@@ -568,7 +569,7 @@ export function attemptFlee(state: GameState): { success: boolean; message: stri
   const baseFleeChance = 0.7;
   
   // TODO: Factor in ship speed, pilot skill, etc.
-  const success = Math.random() < baseFleeChance;
+  const success = randomBool(baseFleeChance);
   
   if (success) {
     endEncounter(state);
@@ -667,7 +668,7 @@ export function configureOpponentShip(state: GameState, encounterType: number): 
   } else if (EncounterType.isPirateEncounter(encounterType)) {
     // Pirate ships - varied types
     const pirateShipTypes = [1, 2]; // Gnat, Firefly
-    state.opponent.type = pirateShipTypes[Math.floor(Math.random() * pirateShipTypes.length)];
+    state.opponent.type = randomChoice(pirateShipTypes);
     const shipType = getShipType(state.opponent.type);
     state.opponent.hull = shipType.hullStrength;
     state.opponent.weapon[0] = 0; // Pulse Laser (same as player)
@@ -796,8 +797,8 @@ function handleVictory(state: GameState): { message: string } {
     message += ` Bounty earned: ${bounty} credits.`;
     
     // Chance to scoop cargo (simplified)
-    if (Math.random() < 0.5) {
-      const randomItem = Math.floor(Math.random() * 5); // Focus on cheaper items
+    if (randomBool(0.5)) {
+      const randomItem = randomFloor(5); // Focus on cheaper items
       if (state.ship.cargo.reduce((sum, qty) => sum + qty, 0) < getShipType(state.ship.type).cargoBays) {
         state.ship.cargo[randomItem]++;
         const tradeItemNames = ['Water', 'Furs', 'Food', 'Ore', 'Games'];
@@ -811,8 +812,8 @@ function handleVictory(state: GameState): { message: string } {
     message += ` You are now considered a criminal!`;
     
     // Trader cargo scoop
-    if (Math.random() < 0.7) {
-      const randomItem = Math.floor(Math.random() * 10);
+    if (randomBool(0.7)) {
+      const randomItem = randomFloor(10);
       if (state.ship.cargo.reduce((sum, qty) => sum + qty, 0) < getShipType(state.ship.type).cargoBays) {
         state.ship.cargo[randomItem]++;
         const tradeItemNames = ['Water', 'Furs', 'Food', 'Ore', 'Games', 'Firearms', 'Medicine', 'Machinery', 'Narcotics', 'Robots'];

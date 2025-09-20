@@ -7,6 +7,7 @@ import { createGameEngine } from './engine/game.ts';
 import { checkGameEndConditions, processRetirement } from './game/endings.ts';
 import { getSolarSystemName } from './data/systems.ts';
 import { Difficulty } from './types.ts';
+import { randomFloor, randomChoice, random } from './math/random.ts';
 
 interface GameSession {
   gameNumber: number;
@@ -34,7 +35,7 @@ export class AutomatedPlayer {
     this.verbose = verbose;
     
     this.session = {
-      gameNumber: Math.floor(Math.random() * 1000),
+      gameNumber: randomFloor(1000),
       startTime: Date.now(),
       totalTurns: 0,
       finalCredits: 0,
@@ -111,7 +112,7 @@ export class AutomatedPlayer {
     const prioritizedActions = this.prioritizeActions(actions);
     
     // Select randomly from prioritized actions
-    return prioritizedActions[Math.floor(Math.random() * prioritizedActions.length)];
+    return randomChoice(prioritizedActions)!;
   }
 
   /**
@@ -152,7 +153,7 @@ export class AutomatedPlayer {
       .map(action => ({
         ...action,
         priority: priorities[action.type] || 0,
-        random: Math.random()
+        random: random()
       }))
       .sort((a, b) => {
         if (a.priority !== b.priority) {

@@ -6,6 +6,7 @@
 import type { State, SolarSystem } from '../types.ts';
 import { getNewsEvents, getEventName } from '../events/special.ts';
 import { getSolarSystemName } from '../data/systems.ts';
+import { random, randomFloor } from '../math/random.ts';
 
 // Palm OS constants
 export const MAXTECHLEVEL = 8;
@@ -145,7 +146,7 @@ export function calculateStoryProbability(techLevel: number, difficulty: number)
  */
 export function shouldGenerateStory(system: SolarSystem, difficulty: number): boolean {
   const probability = calculateStoryProbability(system.techLevel, difficulty);
-  return Math.random() * 100 <= probability;
+  return random() * 100 <= probability;
 }
 
 /**
@@ -213,7 +214,7 @@ export function generateStatusStories(state: State, maxStories: number = 10): st
     
     // Generate probabilistic stories using Palm OS formula
     if (shouldGenerateStory(currentSystem, state.difficulty)) {
-      const prefixIndex = Math.floor(Math.random() * STORY_PREFIXES.length);
+      const prefixIndex = randomFloor(STORY_PREFIXES.length);
       const prefix = STORY_PREFIXES[prefixIndex];
       const statusMessage = STATUS_MESSAGES[system.status as keyof typeof STATUS_MESSAGES];
       
@@ -265,10 +266,10 @@ export function generateNewspaper(state: State): string {
   if (!realNews) {
     const cannedStories = getCannedStories(currentSystem.politics);
     const shown: boolean[] = new Array(MAXSTORIES).fill(false);
-    const numStories = Math.floor(Math.random() * MAXSTORIES) + 1;
+    const numStories = randomFloor(MAXSTORIES) + 1;
     
     for (let i = 0; i < numStories; i++) {
-      const storyIndex = Math.floor(Math.random() * MAXSTORIES);
+      const storyIndex = randomFloor(MAXSTORIES);
       if (!shown[storyIndex]) {
         content += formatNewsText(`• ${cannedStories[storyIndex]}`) + '\n';
         shown[storyIndex] = true;

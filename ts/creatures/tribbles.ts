@@ -3,6 +3,7 @@
 
 import type { State } from '../types.ts';
 import { TradeItem } from '../types.ts';
+import { random, randomBool, randomChoice, randomInt } from '../math/random.ts';
 
 /**
  * Tribble System Constants (from spacetrader.h)
@@ -43,7 +44,7 @@ export function breedTribbles(state: State): { message?: string; state: State } 
   const populationFactor = Math.min(BREEDING_POPULATION_FACTOR, state.ship.tribbles / 1000);
   const breedingChance = Math.min(0.9, BREEDING_BASE_CHANCE + populationFactor);
   
-  if (Math.random() < breedingChance) {
+  if (randomBool(breedingChance)) {
     const newTribbles = Math.floor(state.ship.tribbles * BREEDING_GROWTH_RATE);
     const finalTribbles = Math.min(newTribbles, MAX_TRIBBLES);
     
@@ -119,7 +120,7 @@ export function tribblesEatNarcotics(state: State): { message?: string; state: S
 
   // Tribbles eat narcotics and get sick
   const narcoticsEaten = Math.min(state.ship.cargo[TradeItem.Narcotics], 5);
-  const tribblesAfterSickness = 1 + Math.floor(Math.random() * 3); // 1-3 tribbles survive
+  const tribblesAfterSickness = randomInt(1, 3); // 1-3 tribbles survive
   
   const newState = {
     ...state,
@@ -212,7 +213,7 @@ export function handleTribbleSurvival(state: State, shipDestroyed: boolean): { m
   }
 
   // Small chance (10%) that some tribbles survive in escape pods
-  if (Math.random() < 0.1) {
+  if (randomBool(0.1)) {
     const survivors = Math.min(10, Math.floor(state.ship.tribbles * 0.01)); // 1% survive, max 10
     
     return {
@@ -369,5 +370,5 @@ export function getRandomTribbleEncounterMessage(tribbleCount: number): string {
     return 'The constant cooing of thousands of tribbles fills the air.';
   }
 
-  return messages[Math.floor(Math.random() * messages.length)];
+  return randomChoice(messages)!;
 }

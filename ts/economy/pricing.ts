@@ -6,6 +6,7 @@ import { TradeItem, SystemStatus } from '../types.ts';
 import { getTradeItem } from '../data/tradeItems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
 import { calculateEffectiveTraderSkill } from './skill-utils.ts';
+import { random } from '../math/random.ts';
 
 // Constants from Palm OS
 const MAXSKILL = 10;
@@ -112,7 +113,7 @@ export function applySpecialEventModifier(
 export function applyRandomVariance(
   tradeItemIndex: number,
   basePrice: number,
-  randomFunc: () => number = Math.random
+  randomFunc: () => number = random
 ): number {
   const tradeItem = getTradeItem(tradeItemIndex);
   

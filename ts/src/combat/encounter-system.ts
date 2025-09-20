@@ -9,6 +9,7 @@ import {
   SHIP_DATA
 } from '../types/ship.js';
 import { SkillSystem } from './skill-system.js';
+import { random, randomFloor, randomBool, randomChoice } from '../../math/random.ts';
 
 export class EncounterSystem {
   private skillSystem = new SkillSystem();
@@ -20,7 +21,7 @@ export class EncounterSystem {
   calculateEncounterProbability(difficulty: Difficulty, shipType: ShipType): number {
     const baseProbability = 44 - (2 * difficulty);
     const multiplier = shipType === ShipType.FLEA ? 2 : 1;
-    return Math.floor(Math.random() * baseProbability) * multiplier;
+    return randomFloor(baseProbability) * multiplier;
   }
 
   /**
@@ -49,7 +50,7 @@ export class EncounterSystem {
     }
     
     // Special case: Artifact triggers Mantis encounters (15% chance)
-    if (hasArtifact && Math.random() < 0.15) {
+    if (hasArtifact && randomBool(0.15)) {
       return EncounterType.MANTIS;
     }
     
@@ -74,7 +75,7 @@ export class EncounterSystem {
     if (policeRecord < -10) {
       if (reputation < 400) { // AVERAGESCORE
         return EncounterType.POLICE_ATTACK;
-      } else if (Math.random() * 12800 > reputation / 2) { // ELITESCORE check
+      } else if (random() * 12800 > reputation / 2) { // ELITESCORE check
         return EncounterType.POLICE_ATTACK;
       } else {
         return EncounterType.POLICE_FLEE;
@@ -88,13 +89,13 @@ export class EncounterSystem {
     
     // Clean record (10-29) - random inspection chance
     if (policeRecord >= 10 && policeRecord < 30) {
-      if (Math.random() < 1 / (12 - difficulty) && !isInspected) {
+      if (randomBool(1 / (12 - difficulty)) && !isInspected) {
         return EncounterType.POLICEINSPECTION;
       }
     }
     
     // Lawful record (30+) - very low inspection chance (2.5%)
-    if (policeRecord >= 30 && Math.random() < 0.025 && !isInspected) {
+    if (policeRecord >= 30 && randomBool(0.025) && !isInspected) {
       return EncounterType.POLICEINSPECTION;
     }
     
@@ -122,7 +123,7 @@ export class EncounterSystem {
 
     // Large ships (≥7) or low reputation = attack
     const shipTypeValue = Object.values(ShipType).indexOf(pirateShipType);
-    if (shipTypeValue >= 7 || Math.random() * 12800 > (reputation * 4) / (1 + shipTypeValue)) {
+    if (shipTypeValue >= 7 || random() * 12800 > (reputation * 4) / (1 + shipTypeValue)) {
       return EncounterType.PIRATE_ATTACK;
     }
 
@@ -153,7 +154,7 @@ export class EncounterSystem {
     // Criminals make traders flee if player has reputation
     if (policeRecord <= -30) { // CRIMINALSCORE
       const shipTypeValue = Object.values(ShipType).indexOf(traderShipType);
-      if (Math.random() * 12800 <= (reputation * 10) / (1 + shipTypeValue)) {
+      if (random() * 12800 <= (reputation * 10) / (1 + shipTypeValue)) {
         return EncounterType.TRADER_FLEE;
       }
     }
@@ -165,7 +166,7 @@ export class EncounterSystem {
    * Check for trade opportunity in orbit
    */
   hasTradeOpportunity(chanceOfTradeInOrbit: number): boolean {
-    return Math.random() * 1000 < chanceOfTradeInOrbit;
+    return random() * 1000 < chanceOfTradeInOrbit;
   }
 
   /**
@@ -231,9 +232,9 @@ export class EncounterSystem {
   ): { type: EncounterType; data?: any } | null {
     if (days <= 10) return null;
     
-    if (Math.random() * 1000 >= chanceOfVeryRareEncounter) return null;
+    if (random() * 1000 >= chanceOfVeryRareEncounter) return null;
 
-    const rareEncounterType = Math.floor(Math.random() * 6); // 6 types of rare encounters
+    const rareEncounterType = randomFloor(6); // 6 types of rare encounters
 
     switch (rareEncounterType) {
       case 0: // Marie Celeste

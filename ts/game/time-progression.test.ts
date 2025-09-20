@@ -9,7 +9,7 @@ import { performWarp } from '../travel/warp.ts';
 test('time progression - days increment during travel via game engine', async () => {
   const { createGameEngine } = await import('../engine/game.ts');
   const { getShipType } = await import('../data/shipTypes.ts');
-  const engine = createGameEngine();
+  const engine = createGameEngine(undefined, { seed: 12345 }); // Use deterministic seed
   
   // Set ship to max fuel capacity to ensure we can reach some system
   const shipType = getShipType(engine.state.ship.type);

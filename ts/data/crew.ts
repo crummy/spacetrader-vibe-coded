@@ -4,6 +4,7 @@
 import type { CrewMember, GameState } from '../types.ts';
 import { MAXCREWMEMBER, MAXSKILL } from '../types.ts';
 import { getShipType } from './shipTypes.ts';
+import { randomFloor } from '../math/random.ts';
 
 // Mercenary names ported exactly from Palm OS source:
 // char* MercenaryName[MAXCREWMEMBER] = { ... }
@@ -75,7 +76,7 @@ export function getMercenaryName(index: number): string {
 export function generateRandomSkill(): number {
   // Palm OS: 1 + GetRandom(5) + GetRandom(6)
   // GetRandom(n) returns 0 to n-1
-  return 1 + Math.floor(Math.random() * 5) + Math.floor(Math.random() * 6);
+  return 1 + randomFloor(5) + randomFloor(6);
 }
 
 /**

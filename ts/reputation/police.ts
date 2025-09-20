@@ -2,6 +2,7 @@
 // Based on original C code in Global.c and Encounter.c
 
 import type { State } from '../types.ts';
+import { randomFloor, randomBool } from '../math/random.ts';
 
 /**
  * Police Record Score Constants (from spacetrader.h)
@@ -85,8 +86,8 @@ export function isCleanRecord(score: number): boolean {
  * Note: The formula means easier difficulty = more expensive bribes
  */
 export function calculateBribeAmount(difficulty: number): number {
-  const baseAmount = Math.floor(Math.random() * 250) + 250;
-  const bonusAmount = Math.floor(Math.random() * 250) + 250;
+  const baseAmount = randomFloor(250) + 250;
+  const bonusAmount = randomFloor(250) + 250;
   const difficultyBonus = 10 * (4 - difficulty); // IMPOSSIBLE (4) - difficulty - easier pays more
   
   return baseAmount + bonusAmount + difficultyBonus;
@@ -138,7 +139,7 @@ export function attemptBribery(state: State, bribeAmount: number): { success: bo
   const recordModifier = Math.max(0, state.policeRecordScore + 100) / 200; // Better record = higher chance
   const finalChance = Math.min(0.95, baseSuccessChance + recordModifier);
   
-  const success = Math.random() < finalChance;
+  const success = randomBool(finalChance);
   
   if (success) {
     // Successful bribery: deduct credits
@@ -187,14 +188,14 @@ export function handleInspectorEncounter(state: State): { message: string; fine:
   let canBribe = true;
 
   if (isCriminalRecord(state.policeRecordScore)) {
-    fine = Math.floor(Math.random() * 10000) + 5000; // Higher fines for criminals
+    fine = randomFloor(10000) + 5000; // Higher fines for criminals
     message = `Inspector finds irregularities in your ship records! As a known ${record}, you face a ${fine} credit fine.`;
   } else {
-    fine = Math.floor(Math.random() * 1000) + 500; // Lower fines for clean records
+    fine = randomFloor(1000) + 500; // Lower fines for clean records
     message = `Routine inspection finds minor violations. Clean record reduces penalty to ${fine} credits.`;
     
     // Clean records might avoid fines entirely
-    if (state.policeRecordScore >= LAWFUL_SCORE && Math.random() < 0.3) {
+    if (state.policeRecordScore >= LAWFUL_SCORE && randomBool(0.3)) {
       fine = 0;
       message = `Routine inspection. Your ${record} record helps you avoid any penalties.`;
       canBribe = false;

@@ -42,6 +42,7 @@ import type {
 
 import { generateRandomSolarSystems } from './data/systems.ts';
 import { createCommander, createRandomCrewMember } from './data/crew.ts';
+import { randomFloor, getRandom } from './math/random.ts';
 import { getShipType } from './data/shipTypes.ts';
 import { getTradeItem } from './data/tradeItems.ts';
 import { getPoliticalSystem } from './data/politics.ts';
@@ -87,7 +88,7 @@ function initializeMercenaries(): CrewMember[] {
   // Initialize regular mercenaries (indices 1 to MAXCREWMEMBER-1)
   for (let i = 1; i < MAXCREWMEMBER; i++) {
     // Place each mercenary in a random system
-    const randomSystem = Math.floor(Math.random() * MAXSOLARSYSTEM);
+    const randomSystem = getRandom(MAXSOLARSYSTEM);
     mercenaries[i] = createRandomCrewMember(i, randomSystem);
   }
   
@@ -131,7 +132,7 @@ function initializeTradeItems(system: SolarSystem): void {
     }
     
     // Calculate quantity based on tech level and system size
-    const baseQuantity = 9 + Math.floor(Math.random() * 5); // 9-13
+    const baseQuantity = 9 + getRandom(5); // 9-13
     const techDiff = Math.abs(tradeItem.techTopProduction - system.techLevel);
     const sizeBonus = 1 + system.size;
     

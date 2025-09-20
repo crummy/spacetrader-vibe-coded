@@ -3,6 +3,7 @@
 
 import type { GameState, TradeItemArray } from '../types.ts';
 import { getTradeItem } from '../data/tradeItems.ts';
+import { random, randomFloor, randomBool } from '../math/random.ts';
 
 /**
  * Result of orbital trading transaction
@@ -28,12 +29,12 @@ function calculateOrbitalPrice(tradeItemIndex: number, isBuying: boolean): numbe
   if (isBuying) {
     // When buying from orbital trader, price is closer to maxTradePrice
     const range = tradeItem.maxTradePrice - tradeItem.minTradePrice;
-    const variation = Math.floor(Math.random() * (range * 0.3)); // Top 30% of range
+    const variation = randomFloor(range * 0.3); // Top 30% of range
     return tradeItem.maxTradePrice - variation;
   } else {
     // When selling to orbital trader, price is closer to minTradePrice  
     const range = tradeItem.maxTradePrice - tradeItem.minTradePrice;
-    const variation = Math.floor(Math.random() * (range * 0.3)); // Bottom 30% of range
+    const variation = randomFloor(range * 0.3); // Bottom 30% of range
     return tradeItem.minTradePrice + variation;
   }
 }
@@ -45,7 +46,7 @@ function calculateOrbitalPrice(tradeItemIndex: number, isBuying: boolean): numbe
 function selectTraderInterest(state: GameState, isSellingToPlayer: boolean): number {
   if (isSellingToPlayer) {
     // Trader is selling to player - pick any trade item
-    return Math.floor(Math.random() * 10);
+    return randomFloor(10);
   } else {
     // Trader wants to buy from player - pick something player has
     const availableItems = [];
@@ -59,7 +60,7 @@ function selectTraderInterest(state: GameState, isSellingToPlayer: boolean): num
       return -1; // No items to sell
     }
     
-    return availableItems[Math.floor(Math.random() * availableItems.length)];
+    return availableItems[randomFloor(availableItems.length)];
   }
 }
 
@@ -89,7 +90,7 @@ export function executeOrbitalPurchase(state: GameState, encounterType: number):
   // Determine quantity trader wants to sell (1-10 units)
   const maxQuantity = Math.min(10, Math.floor(state.credits / price));
   const availableSpace = getAvailableCargoSpace(state);
-  const quantity = Math.min(maxQuantity, availableSpace, 1 + Math.floor(Math.random() * 5));
+  const quantity = Math.min(maxQuantity, availableSpace, 1 + randomFloor(5));
   
   if (quantity <= 0) {
     return {
@@ -159,7 +160,7 @@ export function executeOrbitalSale(state: GameState, encounterType: number): Orb
   const price = calculateOrbitalPrice(tradeItemIndex, false);
   
   // Determine quantity trader wants to buy (1 to all available)
-  const maxWanted = Math.min(availableQuantity, 5 + Math.floor(Math.random() * 10));
+  const maxWanted = Math.min(availableQuantity, 5 + randomFloor(10));
   const quantity = Math.min(maxWanted, availableQuantity);
   
   const totalPayment = price * quantity;
@@ -183,7 +184,7 @@ export function executeOrbitalSale(state: GameState, encounterType: number): Orb
  * From Palm OS: 100 in 1000 chance (CHANCEOFTRADEINORBIT)
  */
 export function shouldOfferOrbitalTrade(): boolean {
-  return Math.floor(Math.random() * 1000) < 100; // 100 in 1000 chance
+  return randomFloor(1000) < 100; // 100 in 1000 chance
 }
 
 /**
@@ -203,7 +204,7 @@ export function generateOrbitalTradeEncounter(state: GameState): {
   }
   
   // Decide if trader is buying or selling
-  const isTraderSelling = Math.random() < 0.5;
+  const isTraderSelling = randomBool(0.5);
   const encounterType = isTraderSelling ? 24 : 25; // TRADERSELL or TRADERBUY
   
   const tradeItemIndex = selectTraderInterest(state, isTraderSelling);
@@ -220,11 +221,11 @@ export function generateOrbitalTradeEncounter(state: GameState): {
     // Trader selling to player
     const maxBuyable = Math.floor(state.credits / price);
     const cargoSpace = getAvailableCargoSpace(state);
-    quantity = Math.min(maxBuyable, cargoSpace, 1 + Math.floor(Math.random() * 5));
+    quantity = Math.min(maxBuyable, cargoSpace, 1 + randomFloor(5));
   } else {
     // Trader buying from player
     const available = state.ship.cargo[tradeItemIndex];
-    quantity = Math.min(available, 1 + Math.floor(Math.random() * Math.min(5, available)));
+    quantity = Math.min(available, 1 + randomFloor(Math.min(5, available)));
   }
   
   if (quantity <= 0) {

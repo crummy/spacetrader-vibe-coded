@@ -12,6 +12,7 @@ import {
   SHIP_DATA
 } from '../types/ship.js';
 import { SkillSystem } from './skill-system.js';
+import { random, randomFloor, randomBool, randomInt } from '../../math/random.ts';
 
 /**
  * Combat system implementing the original Space Trader combat mechanics
@@ -29,9 +30,9 @@ export class CombatSystem {
     defenderShipSize: number, 
     isDefenderFleeing: boolean
   ): number {
-    const attackerRoll = Math.random() * (fighterSkill + defenderShipSize);
+    const attackerRoll = random() * (fighterSkill + defenderShipSize);
     const fleeMultiplier = isDefenderFleeing ? 2 : 1;
-    const defenderRoll = fleeMultiplier * Math.random() * (5 + Math.floor(pilotSkill / 2));
+    const defenderRoll = fleeMultiplier * random() * (5 + Math.floor(pilotSkill / 2));
     
     return attackerRoll >= defenderRoll ? 1 : 0;
   }
@@ -46,7 +47,7 @@ export class CombatSystem {
     const damageMultiplier = (100 + 2 * engineerSkill) / 100;
     const maxDamage = weaponPower * damageMultiplier;
     
-    return Math.floor(Math.random() * maxDamage) + 1;
+    return randomInt(1, maxDamage);
   }
 
   /**
@@ -106,7 +107,7 @@ export class CombatSystem {
     // Apply remaining damage to hull
     if (remainingDamage > 0) {
       // Engineer skill reduces hull damage
-      const engineerReduction = Math.floor(Math.random() * defenderEngineerSkill);
+      const engineerReduction = randomFloor(defenderEngineerSkill);
       const actualHullDamage = Math.max(1, remainingDamage - engineerReduction);
       
       defender.hull = Math.max(0, defender.hull - actualHullDamage);
@@ -245,8 +246,8 @@ export class CombatSystem {
    * Formula: (Random(7) + PilotSkill/3) × 2 vs Random(OpponentPilotSkill) × (2 + Difficulty)
    */
   calculateEscapeProbability(playerPilotSkill: number, opponentPilotSkill: number, difficulty: Difficulty): boolean {
-    const playerRoll = (Math.floor(Math.random() * 7) + Math.floor(playerPilotSkill / 3)) * 2;
-    const opponentRoll = Math.floor(Math.random() * opponentPilotSkill) * (2 + difficulty);
+    const playerRoll = (randomFloor(7) + Math.floor(playerPilotSkill / 3)) * 2;
+    const opponentRoll = randomFloor(opponentPilotSkill) * (2 + difficulty);
     
     return playerRoll >= opponentRoll;
   }
@@ -292,7 +293,7 @@ export class CombatSystem {
     if (encounterType.includes('POLICE')) {
       if (hullPercentage < 0.5) {
         if (playerHullPercentage < 0.5) {
-          return Math.random() < 0.5; // 50% chance
+          return randomBool(0.5); // 50% chance
         }
         return true;
       }
@@ -302,7 +303,7 @@ export class CombatSystem {
     if (encounterType.includes('PIRATE')) {
       if (hullPercentage < 0.66) {
         if (playerHullPercentage < 0.66) {
-          return Math.random() < 0.7; // 70% chance to flee
+          return randomBool(0.7); // 70% chance to flee
         }
         return true;
       }
@@ -325,15 +326,15 @@ export class CombatSystem {
     
     // Surrender if below 66% hull
     if (hullPercentage < 0.66) {
-      return Math.random() < 0.7; // 70% chance to surrender
+      return randomBool(0.7); // 70% chance to surrender
     }
     
     // Flee if below 90% hull and player not too damaged
     if (hullPercentage < 0.9) {
       if (playerHullPercentage < 0.66) {
-        return Math.random() < 0.3; // 30% chance if player badly hurt
+        return randomBool(0.3); // 30% chance if player badly hurt
       } else if (playerHullPercentage < 0.9) {
-        return Math.random() < 0.7; // 70% chance if player moderately hurt  
+        return randomBool(0.7); // 70% chance if player moderately hurt  
       } else {
         return true; // Always flee if player undamaged
       }

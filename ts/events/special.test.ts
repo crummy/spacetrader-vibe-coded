@@ -332,23 +332,25 @@ describe('Special Events System', () => {
       }
     });
 
-    test('should respect event occurrence rates', () => {
+    test('should respect event occurrence rates', async () => {
       const state = createInitialState();
       
-      // Mock random function to test specific occurrence rates
-      const originalRandom = Math.random;
+      // Test with multiple seeds to verify event generation can occur
+      const { randSeed } = await import('../math/random.ts');
+      let eventOccurred = false;
       
-      try {
-        // Force high probability to test event generation
-        Math.random = () => 0.01; // 1% chance
-        
+      for (let seed = 1; seed <= 100; seed++) {
+        randSeed(seed, seed * 2);
         const occurrence = checkRandomEventOccurrence(state);
         
-        // Should generate event with high probability
-        assert.equal(occurrence.hasEvent, true);
-      } finally {
-        Math.random = originalRandom;
+        if (occurrence.hasEvent) {
+          eventOccurred = true;
+          break;
+        }
       }
+      
+      // Should generate event with some seed within reasonable attempts
+      assert.equal(eventOccurred, true, 'Random events should occur with some seed within 100 attempts');
     });
   });
 

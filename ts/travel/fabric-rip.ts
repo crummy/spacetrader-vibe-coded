@@ -2,6 +2,7 @@
 // Based on original C code in Traveler.c and SpecialEvent.c
 
 import type { State } from '../types.ts';
+import { random, randomFloor } from '../math/random.ts';
 
 /**
  * Fabric Rip System Mechanics:
@@ -100,7 +101,7 @@ export function checkFabricRipOccurrence(state: State): boolean {
   }
   
   // Roll against current fabric rip probability
-  const roll = Math.random() * 100;
+  const roll = random() * 100;
   return roll < state.fabricRipProbability;
 }
 
@@ -124,7 +125,7 @@ export function executeFabricRipTravel(state: State, numSystems: number): {
   // Select random system (different from current)
   let randomSystem;
   do {
-    randomSystem = Math.floor(Math.random() * numSystems);
+    randomSystem = randomFloor(numSystems);
   } while (randomSystem === state.currentSystem);
   
   // Update state with new location

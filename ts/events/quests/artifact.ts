@@ -3,6 +3,7 @@
 
 import type { State } from '../../types.ts';
 import { addNewsEvent, SpecialEventType } from '../special.ts';
+import { randomBool } from '../../math/random.ts';
 
 // System indices from Palm OS
 const NIX_SYSTEM_ID = 67;
@@ -68,8 +69,8 @@ export function checkArtifactStolen(state: State): QuestResult {
   }
   
   // From Palm OS Traveler.c: GetRandom(20) <= 3 (4 out of 20 chance) = 20%
-  // But test uses 2% so let's use Math.random() < 0.02 for 2%
-  if (Math.random() < 0.02) {
+  // But test uses 2% so let's use randomBool(0.02) for 2%
+  if (randomBool(0.02)) {
     return {
       success: true,
       state: {

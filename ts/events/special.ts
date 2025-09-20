@@ -3,6 +3,7 @@
 
 import type { State } from '../types.ts';
 import { growTribblesDaily } from '../creatures/tribbles-palm.ts';
+import { randomChoice, random } from '../math/random.ts';
 
 // Hull upgrade constant from Palm OS spacetrader.h
 const UPGRADEDHULL = 50;
@@ -638,7 +639,7 @@ function executeSkillIncreaseEvent(state: GameState, event: SpecialEventDefiniti
     return { success: false, message: 'All skills are already maxed out' };
   }
   
-  const selectedSkill = improvableSkills[Math.floor(Math.random() * improvableSkills.length)];
+  const selectedSkill = randomChoice(improvableSkills)!;
   
   switch (selectedSkill.name) {
     case 'pilot':
@@ -781,7 +782,7 @@ export function getNewsEvents(state: GameState): NewsEventInfo[] {
 
 export function generateRandomEvent(state: GameState): RandomEventResult | null {
   // 5% chance of random event generation
-  if (Math.random() > 0.05) {
+  if (random() > 0.05) {
     return null;
   }
   
@@ -793,8 +794,8 @@ export function generateRandomEvent(state: GameState): RandomEventResult | null 
     SpecialEventType.MOONFORSALE
   ];
   
-  const eventId = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-  const systemIndex = Math.floor(Math.random() * state.solarSystem.length);
+  const eventId = randomChoice(randomEvents)!;
+  const systemIndex = Math.floor(random() * state.solarSystem.length);
   
   return {
     id: eventId,

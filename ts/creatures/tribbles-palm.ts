@@ -3,6 +3,7 @@
 
 import type { State } from '../types.ts';
 import { TradeItem } from '../types.ts';
+import { getRandom } from '../math/random.ts';
 
 /**
  * Palm OS Constants
@@ -10,13 +11,9 @@ import { TradeItem } from '../types.ts';
 export const MAXTRIBBLES = 100000;
 
 /**
- * Palm OS compatible random number generator
+ * Palm OS compatible random number generator - now using seeded RNG
  * GetRandom(max) returns 0 to max-1 (exclusive upper bound)
  */
-function getRandom(max: number): number {
-  if (max <= 0) return 0;
-  return Math.floor(Math.random() * max);
-}
 
 /**
  * Apply Palm OS tribble growth mechanics exactly as implemented in Traveler.c

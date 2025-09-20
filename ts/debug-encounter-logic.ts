@@ -2,6 +2,7 @@
 
 import { createGameEngine } from './engine/game.ts';
 import { getPoliticalSystem } from './data/politics.ts';
+import { randomFloor } from './math/random.ts';
 
 console.log('🔍 Debugging Encounter Logic vs Palm OS Original\n');
 
@@ -76,7 +77,7 @@ let testEncounters = 0;
 const testRuns = 1000;
 
 for (let i = 0; i < testRuns; i++) {
-  let encounterTest = Math.floor(Math.random() * baseRange);
+  let encounterTest = randomFloor(baseRange);
   
   if (state.ship.type === 0) {
     encounterTest *= 2; // Ship type modifier

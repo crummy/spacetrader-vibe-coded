@@ -24,6 +24,8 @@ import { setGalacticChartSystem } from '../travel/galaxy.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 import { updateEventStatuses, checkRandomEventOccurrence } from '../events/special.ts';
 import { shuffleStatus } from '../events/status-shuffle.ts';
+import { randSeed } from '../math/random.ts';
+import { randomFloor, randomBool } from '../math/random.ts';
 
 // Action System Types
 export type GameAction = {
@@ -65,7 +67,12 @@ export type GameEngine = {
 
 // Core Game Engine Functions
 
-export function createGameEngine(initialState?: GameState): GameEngine {
+export function createGameEngine(initialState?: GameState, options?: { seed?: number }): GameEngine {
+  // Initialize deterministic random if seed provided
+  if (options?.seed) {
+    randSeed(options.seed, options.seed * 2);
+  }
+  
   let state = initialState || createInitialState();
   
   return {
@@ -1421,7 +1428,7 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
   const politics = getPoliticalSystem(targetSystem.politics);
   
   // Original encounter test: GetRandom(44 - (2 * Difficulty))
-  let encounterTest = Math.floor(Math.random() * (44 - (2 * state.difficulty)));
+  let encounterTest = randomFloor(44 - (2 * state.difficulty));
   
   // Encounters are half as likely if you're in a flea (ship type 0)
   if (state.ship.type === 0) {
@@ -1432,7 +1439,7 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
   const policeStrength = getPoliceStrength(state, targetSystem.politics);
   
   // First check for very rare encounters (5 in 1000 chance)
-  if (Math.floor(Math.random() * 1000) < CHANCEOFVERYRAREENCOUNTER) {
+  if (randomFloor(1000) < CHANCEOFVERYRAREENCOUNTER) {
     const veryRareResult = checkVeryRareEncounter(state);
     if (veryRareResult.hasEncounter) {
       return veryRareResult;
@@ -1441,7 +1448,7 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
   
   // Special case: Wild at Kravat system creates extra police encounters
   if (state.wildStatus === 1 && state.warpSystem === 50) { // KRAVATSYSTEM = 50
-    const rareEncounter = Math.floor(Math.random() * 100);
+    const rareEncounter = randomFloor(100);
     let policeThreshold = 0;
     
     if (state.difficulty <= 0) { // EASY
@@ -1474,7 +1481,7 @@ function checkEncounterThisTick(state: GameState, currentTick: number): { hasEnc
   }
   
   // Special case: Mantis encounters when carrying artifact
-  if (state.artifactOnBoard && Math.floor(Math.random() * 20) <= 3) {
+  if (state.artifactOnBoard && randomFloor(20) <= 3) {
     // Generate Mantis encounter (simplified)
     return { hasEncounter: true, encounterType: EncounterType.PIRATEATTACK }; // Treat as pirate attack for now
   }
@@ -1514,7 +1521,7 @@ function determinePirateEncounterType(state: GameState): number {
   const opponentType = 1; // Assume average pirate ship (would be determined by GenerateOpponent in Palm OS)
   
   // If opponent type >= 7 OR random check fails, pirates attack
-  if (opponentType >= 7 || Math.floor(Math.random() * ELITESCORE) > (state.reputationScore * 4) / (1 + opponentType)) {
+  if (opponentType >= 7 || randomFloor(ELITESCORE) > (state.reputationScore * 4) / (1 + opponentType)) {
     return EncounterType.PIRATEATTACK; // 10
   } else {
     return EncounterType.PIRATEFLEE; // 11  
@@ -1543,14 +1550,14 @@ function determinePoliceEncounterType(state: GameState): number {
     return EncounterType.POLICEINSPECTION; // 0
   } else if (state.policeRecordScore < LAWFULSCORE) {
     // Clean record - 10% chance of inspection on Normal difficulty
-    if (Math.floor(Math.random() * (12 - state.difficulty)) < 1) {
+    if (randomFloor(12 - state.difficulty) < 1) {
       return EncounterType.POLICEINSPECTION; // 0
     } else {
       return EncounterType.POLICEIGNORE; // 1
     }
   } else {
     // Lawful trader - 2.5% chance of inspection
-    if (Math.floor(Math.random() * 40) === 0) {
+    if (randomFloor(40) === 0) {
       return EncounterType.POLICEINSPECTION; // 0
     } else {
       return EncounterType.POLICEIGNORE; // 1
@@ -1568,17 +1575,17 @@ function determineTraderEncounterType(state: GameState): number {
   // If you're a criminal, traders tend to flee if you have reputation
   if (state.policeRecordScore <= CRIMINALSCORE) {
     const opponentType = 1; // Assume average trader ship
-    if (Math.floor(Math.random() * ELITESCORE) <= (state.reputationScore * 10) / (1 + opponentType)) {
+    if (randomFloor(ELITESCORE) <= (state.reputationScore * 10) / (1 + opponentType)) {
       encounterType = EncounterType.TRADERFLEE; // 21
     }
   }
   
   // Check for trade in orbit (10% chance)
   const CHANCEOFTRADEINORBIT = 100; // 100 out of 1000 = 10%
-  if (encounterType === EncounterType.TRADERIGNORE && Math.floor(Math.random() * 1000) < CHANCEOFTRADEINORBIT) {
+  if (encounterType === EncounterType.TRADERIGNORE && randomFloor(1000) < CHANCEOFTRADEINORBIT) {
     // Simplified trade check - in Palm OS this checks HasTradeableItems()
     // For now, randomly choose between sell and buy
-    if (Math.random() < 0.5) {
+    if (randomBool(0.5)) {
       encounterType = EncounterType.TRADERSELL; // 24
     } else {
       encounterType = EncounterType.TRADERBUY; // 25
@@ -1623,7 +1630,7 @@ function checkVeryRareEncounter(state: GameState): { hasEncounter: boolean; enco
   }
   
   // Pick random available encounter
-  const selectedEncounter = availableEncounters[Math.floor(Math.random() * availableEncounters.length)];
+  const selectedEncounter = availableEncounters[randomFloor(availableEncounters.length)];
   
   // Mark this encounter as done
   state.veryRareEncounter |= selectedEncounter.flag;

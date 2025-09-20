@@ -10,6 +10,7 @@ import {
   SKILLBONUS, 
   CLOAKBONUS 
 } from '../types/ship.ts';
+import { randomFloor, randomChoice } from '../../math/random.ts';
 
 export class SkillSystem {
 
@@ -126,7 +127,7 @@ export class SkillSystem {
 
     let skillIncreased = false;
     while (!skillIncreased) {
-      const skillType = Math.floor(Math.random() * 4);
+      const skillType = randomFloor(4);
       
       switch (skillType) {
         case 0: // Pilot
@@ -170,7 +171,7 @@ export class SkillSystem {
     
     if (skillsAboveAmount.length === 0) return;
     
-    const skillToDecrease = skillsAboveAmount[Math.floor(Math.random() * skillsAboveAmount.length)];
+    const skillToDecrease = randomChoice(skillsAboveAmount);
     
     switch (skillToDecrease) {
       case 'pilot':
@@ -245,7 +246,7 @@ export class SkillSystem {
    * Generate random skill value (2-11 range)
    */
   randomSkill(): number {
-    return 1 + Math.floor(Math.random() * 5) + Math.floor(Math.random() * 6);
+    return 1 + randomFloor(5) + randomFloor(6);
   }
 
   /**

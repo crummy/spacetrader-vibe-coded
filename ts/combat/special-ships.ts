@@ -5,6 +5,7 @@ import type { State } from '../types.ts';
 import { GameMode } from '../types.ts';
 import { EncounterType } from './engine.ts';
 import { EXTRABAYS } from '../economy/trading.ts';
+import { randomBool } from '../math/random.ts';
 
 // Hull upgrade constant from Palm OS spacetrader.h
 const UPGRADEDHULL = 50;
@@ -68,7 +69,7 @@ export function drinkBottle(state: State): { success: boolean; message: string; 
   }
   
   // Random chance for good vs bad effects (50/50 in original)
-  const goodEffect = Math.random() < 0.5;
+  const goodEffect = randomBool(0.5);
   
   const newState = {
     ...state,

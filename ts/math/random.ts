@@ -153,3 +153,31 @@ export function generateSequence(count: number, maxVal?: number): number[] {
   }
   return result;
 }
+
+/**
+ * Math.random() compatible function using seeded generator
+ * Returns a floating-point number between 0 (inclusive) and 1 (exclusive)
+ * This provides a drop-in replacement for Math.random()
+ */
+export function random(): number {
+  // Convert 32-bit integer to [0, 1) range
+  return (rand() >>> 0) / 0x100000000;
+}
+
+/**
+ * Math.floor(Math.random() * max) compatible function
+ * Common pattern for generating integers from 0 to max-1
+ */
+export function randomFloor(max: number): number {
+  return getRandom(max);
+}
+
+/**
+ * Generate floating-point number in range [min, max)
+ */
+export function randomFloat(min: number = 0, max: number = 1): number {
+  if (min >= max) {
+    throw new Error(`Invalid range: min(${min}) >= max(${max})`);
+  }
+  return min + random() * (max - min);
+}

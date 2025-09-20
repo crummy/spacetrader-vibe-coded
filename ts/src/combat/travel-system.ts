@@ -12,6 +12,7 @@ import {
   SHIP_DATA 
 } from '../types/ship.js';
 import { SkillSystem } from './skill-system.js';
+import { randomFloor, randomBool, random, randomChoice } from '../../math/random.ts';
 
 export class TravelSystem {
   private skillSystem = new SkillSystem();
@@ -20,7 +21,7 @@ export class TravelSystem {
    * Calculate hull repair during travel based on engineer skill
    */
   calculateHullRepair(engineerSkill: number): number {
-    return Math.floor(Math.random() * engineerSkill) >> 1;
+    return randomFloor(engineerSkill) >> 1;
   }
 
   /**
@@ -58,7 +59,7 @@ export class TravelSystem {
     
     for (let i = 0; i < clicks; i++) {
       // Tribbles roughly double every few days
-      if (tribbles > 0 && Math.random() < 0.1) { // 10% chance per click
+      if (tribbles > 0 && randomBool(0.1)) { // 10% chance per click
         tribbles = Math.floor(tribbles * 1.1);
       }
     }
@@ -155,10 +156,10 @@ export class TravelSystem {
 
     // 25% means guaranteed, otherwise use probability
     if (fabricRipState.fabricRipProbability === 25 || 
-        Math.random() * 100 < fabricRipState.fabricRipProbability) {
+        random() * 100 < fabricRipState.fabricRipProbability) {
       // Transport to random system
       const systems = ['ACAMAR', 'ADAHN', 'ALDEA', 'ANDEVIAN', 'ANTEDI']; // Sample systems
-      return systems[Math.floor(Math.random() * systems.length)];
+      return randomChoice(systems);
     }
 
     return originalSystem;
