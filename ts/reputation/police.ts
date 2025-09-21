@@ -28,6 +28,8 @@ export const DESTROYED_TRADER_PENALTY = -3;
 export const CAUGHT_WITH_WILD_PENALTY = -4;
 export const INSPECTOR_BRIBE_PENALTY = -1;
 export const INSURANCE_FRAUD_PENALTY = -1;
+export const PLUNDER_TRADER_PENALTY = -2;    // PLUNDERTRADERSCORE
+export const PLUNDER_PIRATE_PENALTY = -1;     // PLUNDERPIRATESCORE
 
 /**
  * Police Record interface matching Palm OS POLICERECORD struct

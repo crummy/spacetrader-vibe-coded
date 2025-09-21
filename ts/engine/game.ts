@@ -23,6 +23,7 @@ import { getMercenaryForHire, getAvailableCrewQuarters, calculateHiringPrice, ge
 import { setGalacticChartSystem } from '../travel/galaxy.ts';
 import { getNearbySystemsInfo, getGalacticChartInfo, getBestPriceSystemsForItem, formatSystemInfo } from '../travel/system-info.ts';
 import { updateEventStatuses, checkRandomEventOccurrence } from '../events/special.ts';
+import { CLEAN_SCORE, DUBIOUS_SCORE } from '../reputation/police.ts';
 import { shuffleStatus } from '../events/status-shuffle.ts';
 import { randSeed } from '../math/random.ts';
 import { randomFloor, randomBool } from '../math/random.ts';
@@ -755,8 +756,8 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
       state.alreadyPaidForNewspaper = true;
     }
     
-    // Generate news content using Palm OS compliant system
-    const { generateNewspaper } = await import('../news/newspaper-palm.ts');
+    // Generate news content using enhanced Palm OS compliant system
+    const { generateEnhancedNewspaper } = await import('../news/newspaper-palm.ts');
     
     let newsContent = '';
     if (actualCost > 0) {
@@ -765,7 +766,7 @@ async function executeReadNewsAction(state: GameState): Promise<ActionResult> {
       newsContent += `Re-reading (already paid)\n\n`;
     }
     
-    newsContent += generateNewspaper(state);
+    newsContent += generateEnhancedNewspaper(state);
     
     return {
       success: true,
@@ -1359,11 +1360,26 @@ const ALREADYBOTTLEGOOD = 32;
 // Game Loop Management
 
 export function advanceTime(state: GameState, days: number): void {
+  const startingDays = state.days;
   state.days += days;
   
-  // Handle daily interest on debt
+  // Handle daily interest on debt and insurance no-claim bonus
   for (let i = 0; i < days; i++) {
     payInterest(state);
+    
+    // Increment no-claim bonus when insurance is active (matches Palm OS DoWarp logic)
+    if (state.insurance) {
+      state.noClaim++;
+    }
+    
+    // Space Monster hull regeneration (Palm OS Traveler.c lines 577-579)
+    regenerateSpaceMonsterHull(state);
+  }
+  
+  // Police record improvement logic (from Palm OS Traveler.c lines 580-589)
+  // Process each day individually to match Palm OS daily processing
+  for (let day = startingDays + 1; day <= state.days; day++) {
+    improvePoliceRecordForDay(state, day);
   }
   
   // Update event statuses and check for news events
@@ -1387,6 +1403,53 @@ function payInterest(state: GameState): void {
     const interest = Math.floor(state.debt * 0.1); // 10% daily interest
     state.debt += interest;
   }
+}
+
+/**
+ * Improve police record over time based on Palm OS logic (Traveler.c lines 580-589)
+ * Process improvement for a specific day
+ */
+function improvePoliceRecordForDay(state: GameState, day: number): void {
+  // Good police records (above CLEAN_SCORE=0) improve by 1 point every 3 days
+  if (day % 3 === 0) {
+    if (state.policeRecordScore > CLEAN_SCORE) {
+      state.policeRecordScore--;
+    }
+  }
+  
+  // Criminal records (below DUBIOUS_SCORE=-5) improve by 1 point:
+  // - Daily on Easy/Normal difficulty  
+  // - Every X days on harder difficulties (where X = difficulty level)
+  if (state.policeRecordScore < DUBIOUS_SCORE) {
+    if (state.difficulty <= 2) { // Difficulty.Normal = 2
+      state.policeRecordScore++;
+    } else if (day % state.difficulty === 0) {
+      state.policeRecordScore++;
+    }
+  }
+}
+
+/**
+ * Space Monster hull regeneration (Palm OS Traveler.c lines 577-579)
+ * Monster hull regenerates 5% daily up to maximum hull strength
+ */
+function regenerateSpaceMonsterHull(state: GameState): void {
+  // Only regenerate if monster has spawned (hull > 0)
+  if (state.monsterHull <= 0) {
+    return;
+  }
+  
+  // Increase hull by 5% (multiply by 1.05)
+  const regeneratedHull = Math.floor(state.monsterHull * 1.05);
+  
+  // Cap at maximum hull strength for Space Monster ship type (index 10)
+  // From shipTypes.ts: Space Monster has hullStrength: 500
+  const SPACE_MONSTER_TYPE_INDEX = 10;
+  const spaceMonsterType = getShipType(SPACE_MONSTER_TYPE_INDEX);
+  const maxHull = spaceMonsterType.hullStrength;
+  
+  // Set to regenerated hull or maximum, whichever is lower
+  state.monsterHull = Math.min(regeneratedHull, maxHull);
 }
 
 export function checkRandomEncounters(state: GameState): { hasEncounter: boolean; encounterType?: number } {

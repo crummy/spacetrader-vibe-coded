@@ -375,6 +375,15 @@ export interface State {
   // Current game mode (our addition for managing UI state)
   currentMode: GameMode;
   
+  // Plunder state (for combat plundering interface)
+  plunderState?: {
+    isActive: boolean;
+    opponentCargo: MutableTradeItemArray;
+    selectedItem: number;
+    availableSpace: number;
+    totalPlundered: number;
+  };
+  
   // Debug configuration (optional, for development)
   debug?: DebugConfig;
 }

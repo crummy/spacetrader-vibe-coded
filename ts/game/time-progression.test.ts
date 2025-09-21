@@ -176,15 +176,31 @@ test('time progression - aging effects on equipment', () => {
   // Future: test equipment failure rates and repair needs
 });
 
-test('time progression - police record decay over time', () => {
+test('time progression - police record improvement over time', async () => {
+  const { advanceTime } = await import('../engine/game.ts');
+  
+  // Test criminal record improvement on Easy difficulty
   const state = createInitialState();
   state.policeRecordScore = -50; // Criminal record
+  state.difficulty = 1; // Easy
   
-  // In the original game, criminal records could improve slightly over time
-  // This would be tested when time-based record improvement is implemented
-  assert.equal(state.policeRecordScore, -50);
+  // Advance 5 days - criminal records improve daily on Easy difficulty
+  advanceTime(state, 5);
   
-  // Future: test gradual police record improvement for good behavior
+  assert.equal(state.policeRecordScore, -45, 'Criminal records should improve daily on Easy difficulty');
+  
+  // Test good record improvement every 3 days
+  const goodState = createInitialState();
+  goodState.policeRecordScore = 10; // Good record
+  
+  advanceTime(goodState, 3); // Day 3, should improve
+  assert.equal(goodState.policeRecordScore, 9, 'Good records should improve every 3 days');
+  
+  advanceTime(goodState, 2); // Days 4-5, no change  
+  assert.equal(goodState.policeRecordScore, 9, 'Good records should not improve between 3-day cycles');
+  
+  advanceTime(goodState, 1); // Day 6, should improve again
+  assert.equal(goodState.policeRecordScore, 8, 'Good records should improve again on next 3-day cycle');
 });
 
 test('time progression - reputation persistence', () => {

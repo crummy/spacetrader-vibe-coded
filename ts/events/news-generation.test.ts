@@ -69,8 +69,8 @@ test('news generation - news appears in newspaper after events', async () => {
   
   assert.ok(newsResult.success, 'Reading news should succeed');
   assert.ok(newsResult.message.includes('Tribune') || newsResult.message.includes('News') || newsResult.message.includes('Herald'), 'Should show newspaper masthead');
-  assert.ok(newsResult.message.includes('Space Monster Killed'), 'Should show space monster news');
-  assert.ok(newsResult.message.includes('Dragonfly Destroyed'), 'Should show dragonfly news');
+  assert.ok(newsResult.message.includes('Space Monster') || newsResult.message.includes('Hero Slays'), 'Should show space monster news');
+  assert.ok(newsResult.message.includes('Dragonfly') || newsResult.message.includes('Spectacular Display'), 'Should show dragonfly news');
 });
 
 test('news generation - no news shows default message', async () => {
@@ -204,7 +204,7 @@ test('news generation - integration with full game engine', async () => {
   });
   
   assert.ok(result.success, 'Should successfully read news through game engine');
-  assert.ok(result.message.includes('Space Monster Killed'), 'Should show news event in game engine');
+  assert.ok(result.message.includes('Space Monster') || result.message.includes('Hero Slays'), 'Should show news event in game engine');
   assert.ok(result.stateChanged, 'Should mark state as changed');
 });
 
@@ -241,5 +241,5 @@ test('news generation - events persist across system changes', async () => {
   });
   
   assert.ok(newsResult.success, 'Should still be able to read news');
-  assert.ok(newsResult.message.includes('Space Monster Killed'), 'News should persist across systems');
+  assert.ok(newsResult.message.includes('Space Monster') || newsResult.message.includes('Hero Slays'), 'News should persist across systems');
 });

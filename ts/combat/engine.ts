@@ -9,6 +9,7 @@ import { getShipType } from '../data/shipTypes.ts';
 import { getWeapons, getShields } from '../data/equipment.ts';
 import { createEmptyShip } from '../state.ts';
 import { random, randomBool, randomChoice, randomFloor } from '../math/random.ts';
+import { canPlunder, initializePlunderState, finishPlundering, getPlunderableItems } from './plunder.ts';
 
 // Combat Action Types
 export type CombatAction = 'attack' | 'flee' | 'surrender' | 'bribe' | 'submit' | 'ignore' | 'trade' | 'board' | 'meet' | 'drink' | 'yield' | 'plunder';
@@ -120,8 +121,51 @@ export function startEncounter(state: GameState, encounterType: number): { succe
   return { success: true };
 }
 
+// Handle plunder action - check if plundering is possible and show interface
+function handlePlunderAction(state: GameState): { message: string; showPlunderInterface: boolean } {
+  // Check if plundering is possible
+  const plunderCheck = canPlunder(state);
+  if (!plunderCheck.canPlunder) {
+    return {
+      message: plunderCheck.reason || 'Cannot plunder this opponent.',
+      showPlunderInterface: false
+    };
+  }
+  
+  // Get available items for plundering
+  const plunderableItems = getPlunderableItems(state.opponent);
+  if (plunderableItems.length === 0) {
+    return {
+      message: 'Opponent ship has no cargo to plunder.',
+      showPlunderInterface: false
+    };
+  }
+  
+  // Initialize plunder state
+  state.plunderState = initializePlunderState(state);
+  
+  // Build summary of available items
+  const itemSummary = plunderableItems
+    .slice(0, 3) // Show first 3 items
+    .map(item => `${item.quantity} ${item.itemName}`)
+    .join(', ');
+  
+  const moreItems = plunderableItems.length > 3 ? ` and ${plunderableItems.length - 3} more items` : '';
+  
+  return {
+    message: `Opponent cargo contains: ${itemSummary}${moreItems}. Select items to plunder.`,
+    showPlunderInterface: true
+  };
+}
+
 export function endEncounter(state: GameState): void {
   state.encounterType = -1; // No encounter
+  
+  // Clear plunder state if it exists
+  if (state.plunderState) {
+    state.plunderState = undefined;
+  }
+  
   // Mode will be determined by travel continuation:
   // - OnPlanet if at destination or no travel in progress
   // - InCombat if another encounter occurs during travel
@@ -432,9 +476,11 @@ export function resolveCombatRound(state: GameState, playerAction: CombatAction)
     message = 'You surrender. The encounter ends.';
   } else if (playerAction === 'plunder') {
     // Plunder defeated opponent (when they surrender)
-    // TODO: Implement plundering mechanics
-    endEncounter(state);
-    message = 'You plunder the defeated ship.';
+    const plunderResult = handlePlunderAction(state);
+    message = plunderResult.message;
+    if (!plunderResult.showPlunderInterface) {
+      endEncounter(state);
+    }
   } else if (playerAction === 'board') {
     // Handle boarding actions for special ships like Marie Celeste
     if (state.encounterType === EncounterType.MARIECELESTEENCOUNTER) {
