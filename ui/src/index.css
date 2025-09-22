@@ -171,6 +171,6 @@
   }
   
   .game-screen {
-    @apply min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4;
+    @apply min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4;
   }
 }

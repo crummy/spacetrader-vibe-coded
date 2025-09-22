@@ -3,6 +3,7 @@ import { PalmInterface } from './components/PalmInterface.tsx';
 import { EncounterScreen } from './components/EncounterScreen.tsx';
 import { NewGameScreen, type NewGameConfig } from './components/NewGameScreen.tsx';
 import { GameOverScreen } from './components/GameOverScreen.tsx';
+import { AboutModal } from './components/AboutModal.tsx';
 import { createGameEngine } from '@game-engine';
 import { createInitialState } from '@game-state';
 import type { State, Difficulty } from '@game-types';
@@ -15,6 +16,7 @@ function App() {
   const [gameState, setGameState] = useState<State | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSave, setHasSave] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const availableActions = useMemo(() => {
     return engine?.getAvailableActions() || [];
@@ -161,6 +163,21 @@ function App() {
             </div>
           </div>
         </div>
+        
+        {/* About link */}
+        <div className="text-center mt-2">
+          <button 
+            onClick={() => setShowAbout(true)}
+            className="text-xs text-gray-500 hover:text-gray-400 underline"
+          >
+            About
+          </button>
+        </div>
+        
+        {/* About Modal */}
+        {showAbout && (
+          <AboutModal onClose={() => setShowAbout(false)} />
+        )}
       </div>
     );
   }
@@ -179,6 +196,21 @@ function App() {
             />
           </div>
         </div>
+        
+        {/* About link */}
+        <div className="text-center mt-2">
+          <button 
+            onClick={() => setShowAbout(true)}
+            className="text-xs text-gray-500 hover:text-gray-400 underline"
+          >
+            About
+          </button>
+        </div>
+        
+        {/* About Modal */}
+        {showAbout && (
+          <AboutModal onClose={() => setShowAbout(false)} />
+        )}
       </div>
     );
   }
@@ -196,6 +228,22 @@ function App() {
           />
         </div>
       </div>
+      
+      {/* About link */}
+      <div className="text-center mt-2">
+        <button 
+          onClick={() => setShowAbout(true)}
+          className="text-xs text-gray-500 hover:text-gray-400 underline"
+        >
+          About
+        </button>
+      </div>
+      
+      {/* About Modal */}
+      {showAbout && (
+        <AboutModal onClose={() => setShowAbout(false)} />
+      )}
+      
       {isLoading && (
         <div className="fixed inset-0 bg-space-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="text-neon-cyan text-sm animate-pulse">PROCESSING...</div>
