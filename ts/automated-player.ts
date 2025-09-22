@@ -121,7 +121,6 @@ export class AutomatedPlayer {
   private prioritizeActions(actions: any[]): any[] {
     const priorities: { [key: string]: number } = {
       // Survival priorities (highest)
-      'dock_at_planet': 10,
       'repair_ship': 9,
       'refuel_ship': 9,
       'combat_flee': 8,

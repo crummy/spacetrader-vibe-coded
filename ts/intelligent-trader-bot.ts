@@ -25,6 +25,8 @@ import { enableActionLogging, enableAllDebug, disableDebug, applyEnvDebugConfig 
 import { checkGameEndConditions, type EndGameResult } from './game/endings.ts';
 import { getAllSystemPrices } from './economy/pricing.ts';
 import { getShipTypeName } from './data/shipTypes.ts';
+import { getSystemsWithinRange } from './travel/galaxy.ts';
+import { getCurrentFuel } from './travel/warp.ts';
 
 interface TradingSession {
   startTime: number;
@@ -163,18 +165,9 @@ export class IntelligentTraderBot {
       if (this.session.gameOver) return;
     }
     
-    // Now dock if we're in space
+    // If we're already on planet, no action needed
     if (this.engine.state.currentMode === GameMode.OnPlanet) {
-      const dockAction = await this.engine.executeAction({
-        type: 'dock_at_planet',
-        parameters: {}
-      });
-      
-      this.session.totalActions++;
-      
-      if (this.verbose && !dockAction.success) {
-        console.log('⚠️ Failed to dock at planet:', dockAction.message);
-      }
+      return; // Already on planet, ready for trading
     }
     
     // Debug: Log current game mode if still not on planet (but not if game is over)
@@ -246,8 +239,9 @@ export class IntelligentTraderBot {
     
     if (arbitrageOpportunities.length === 0) {
       if (this.verbose) {
-        console.log('⚠️ No profitable arbitrage opportunities found');
+        console.log('⚠️ No profitable arbitrage opportunities found - exploring random system');
       }
+      await this.travelToRandomNearbySystem();
       return;
     }
 
@@ -263,8 +257,9 @@ export class IntelligentTraderBot {
 
     if (affordableOpportunities.length === 0) {
       if (this.verbose) {
-        console.log('⚠️ No affordable arbitrage opportunities');
+        console.log('⚠️ No affordable arbitrage opportunities - exploring random system');
       }
+      await this.travelToRandomNearbySystem();
       return;
     }
 
@@ -527,11 +522,25 @@ export class IntelligentTraderBot {
    * Fall back to random travel when no intelligent target is available
    */
   private async travelToRandomNearbySystem(): Promise<void> {
-    // Get available warp actions from the engine
-    const availableActions = this.engine.getAvailableActions();
-    const warpActions = availableActions.filter((action: any) => action.type === 'warp_to_system');
+    // Calculate current fuel range
+    const currentFuel = getCurrentFuel(this.engine.state.ship);
     
-    if (warpActions.length === 0) {
+    if (currentFuel === 0) {
+      if (this.verbose) {
+        console.log('⚠️ No fuel - need to refuel first');
+      }
+      await this.refuelIfNeeded();
+      return;
+    }
+
+    // Get all systems within current fuel range
+    const systemsInRange = getSystemsWithinRange(this.engine.state, currentFuel);
+    
+    // Remove current system from the list
+    const currentSystem = this.engine.state.currentSystem;
+    const possibleDestinations = systemsInRange.filter(system => system !== currentSystem);
+    
+    if (possibleDestinations.length === 0) {
       if (this.verbose) {
         console.log('⚠️ No systems within range - need to refuel first');
       }
@@ -539,22 +548,11 @@ export class IntelligentTraderBot {
       return;
     }
 
-    // Pick a random destination from available warp actions
-    const warpAction = warpActions[Math.floor(Math.random() * warpActions.length)];
-    const possibleSystems = warpAction.parameters?.possibleSystems;
-    
-    if (!possibleSystems || possibleSystems.length === 0) {
-      if (this.verbose) {
-        console.log('⚠️ No possible systems in warp action');
-      }
-      return;
-    }
-
-    // Pick a random system from the possible systems
-    const targetSystem = possibleSystems[Math.floor(Math.random() * possibleSystems.length)];
+    // Pick a random system from the possible destinations
+    const targetSystem = possibleDestinations[Math.floor(Math.random() * possibleDestinations.length)];
 
     if (this.verbose) {
-      console.log(`🚀 Random travel to ${getSolarSystemName(targetSystem)}`);
+      console.log(`🚀 Random travel to ${getSolarSystemName(targetSystem)} (fuel: ${currentFuel}, systems in range: ${possibleDestinations.length})`);
     }
 
     // Execute warp
@@ -598,6 +596,9 @@ export class IntelligentTraderBot {
    */
   private getEncounterTypeName(encounterType: number): string {
     const encounterNames: { [key: number]: string } = {
+      // Special states
+      [-1]: 'Encounter Resolved',
+      
       // Police encounters (0-9)
       0: 'Police Inspector',
       1: 'Police (Ignoring)',
@@ -688,6 +689,7 @@ export class IntelligentTraderBot {
       
       // Get available actions to check what's possible
       const availableActions = this.engine.getAvailableActions();
+      const canContinue = availableActions.some((a: any) => a.type === 'combat_continue' && a.available);
       const canSubmit = availableActions.some((a: any) => a.type === 'combat_submit' && a.available);
       const canTrade = availableActions.some((a: any) => a.type === 'combat_trade' && a.available);
       const canFlee = availableActions.some((a: any) => a.type === 'combat_flee' && a.available);
@@ -696,12 +698,17 @@ export class IntelligentTraderBot {
       
       if (this.verbose) {
         console.log(`📋 Combat analysis: attacking=${isAttacking}, healthAdvantage=${playerHull > opponentHull}, contraband=${hasContraband}`);
-        console.log(`📋 Available actions: submit=${canSubmit}, trade=${canTrade}, flee=${canFlee}, attack=${canAttack}, ignore=${canIgnore}`);
+        console.log(`📋 Available actions: continue=${canContinue}, submit=${canSubmit}, trade=${canTrade}, flee=${canFlee}, attack=${canAttack}, ignore=${canIgnore}`);
       }
       
       // New strategic combat logic:
+      // 0. If encounter is resolved (continue action available), continue
+      if (canContinue) {
+        action = 'combat_continue';
+        actionDescription = 'continuing after encounter resolution';
+      }
       // 1. If enemy is attacking and we have greater health, attack
-      if (isAttacking && playerHull > opponentHull && canAttack) {
+      else if (isAttacking && playerHull > opponentHull && canAttack) {
         action = 'combat_attack';
         actionDescription = 'attacking (health advantage)';
       }
