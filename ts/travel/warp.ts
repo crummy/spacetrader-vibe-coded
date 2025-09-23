@@ -291,6 +291,9 @@ export function performWarp(state: GameState, toSystem: number, viaSingularity: 
     }
   }
   
+  // Set wormhole arrival flag (from Palm OS Traveler.c:550 and 556)
+  state.arrivedViaWormhole = isWormhole || viaSingularity;
+  
   // Reset shield strength to full
   resetShields(state.ship);
   

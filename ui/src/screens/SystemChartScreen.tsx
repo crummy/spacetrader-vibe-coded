@@ -3,8 +3,9 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getShipType } from '@game-data/shipTypes.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
-import { calculateDistance, getCurrentFuel, getWormholeDestination, getWormholeDestinations } from '../../../ts/travel/warp.ts';
+import { calculateDistance, getCurrentFuel, getWormholeDestination, getWormholeDestinations, calculateWarpCost, isWormholeTravel } from '../../../ts/travel/warp.ts';
 import { DestinationScreen } from './DestinationScreen.tsx';
+import { WormholeConfirmModal } from '../components/WormholeConfirmModal.tsx';
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
 
@@ -27,6 +28,7 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
   const [selectedSystem, setSelectedSystem] = useState<number | null>(null);
   const [hoveredSystem, setHoveredSystem] = useState<number | null>(null);
   const [showDestination, setShowDestination] = useState(false);
+  const [showWormholeConfirm, setShowWormholeConfirm] = useState(false);
   
   const shipType = getShipType(actualState.ship.type);
   const currentSystem = actualState.solarSystem[actualState.currentSystem];
@@ -145,12 +147,25 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
     setZoom(1);
   }, []);
 
-  const handleWarpToSystem = async () => {
+  const handleWarpToSystem = useCallback(async () => {
     if (selectedSystem === null || !actualExecuteAction) return;
     
     console.log('Attempting to warp to system:', selectedSystem, getSolarSystemName(selectedSystem));
     console.log('Current system:', actualState.currentSystem);
     console.log('Systems in range:', Array.from(systemsInRange));
+    
+    // Check if this is wormhole travel and requires confirmation
+    if (isWormholeTravel(actualState, actualState.currentSystem, selectedSystem)) {
+      setShowWormholeConfirm(true);
+      return;
+    }
+    
+    // Regular travel - proceed directly
+    await executeWarp();
+  }, [selectedSystem, actualExecuteAction, actualState, systemsInRange]);
+
+  const executeWarp = useCallback(async () => {
+    if (selectedSystem === null || !actualExecuteAction) return;
     
     try {
       const result = await actualExecuteAction({
@@ -168,7 +183,7 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
       console.error('Warp failed:', error);
       alert('Error during warp');
     }
-  };
+  }, [selectedSystem, actualExecuteAction]);
 
   const selectedSystemData = selectedSystem !== null ? actualState.solarSystem[selectedSystem] : null;
 
@@ -396,6 +411,19 @@ export function SystemChartScreen({ onNavigate, onBack, state, onAction }: Syste
             );
           })()}
         </div>
+      )}
+
+      {/* Wormhole Confirmation Modal */}
+      {showWormholeConfirm && selectedSystem !== null && (
+        <WormholeConfirmModal
+          targetSystemIndex={selectedSystem}
+          cost={calculateWarpCost(actualState, actualState.currentSystem, selectedSystem, true)}
+          onConfirm={async () => {
+            setShowWormholeConfirm(false);
+            await executeWarp();
+          }}
+          onCancel={() => setShowWormholeConfirm(false)}
+        />
       )}
     </div>
   );

@@ -174,17 +174,11 @@ export function SystemInfoScreen({ state, onAction, onNavigate, onBack }: System
           </div>
         </div>
 
-        {/* Trade Information */}
-        {politics.wanted !== undefined && (
-          <div className="compact-panel" data-testid="trade-information">
-            <div className="compact-title">Trade Information</div>
+        {/* Trade Restrictions */}
+        {(!politics.drugsOK || !politics.firearmsOK) && (
+          <div className="compact-panel" data-testid="trade-restrictions">
+            <div className="compact-title">Trade Restrictions</div>
             <div className="text-xs space-y-1">
-              <div data-testid="wanted-trade-good">
-                <span className="text-neon-cyan">Wanted Trade Good:</span>
-                <span className="text-palm-gray ml-1">
-                  {politics.wanted === -1 ? 'None' : getTradeItemName(politics.wanted)}
-                </span>
-              </div>
               {!politics.drugsOK && (
                 <div className="text-red-400" data-testid="drugs-illegal">⚠ Drugs are illegal here</div>
               )}

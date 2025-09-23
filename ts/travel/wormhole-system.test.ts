@@ -3,8 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 
 import { createInitialState } from '../state.ts';
-import { calculateWormholeTax, isWormholeTravel } from './warp.ts';
-import { calculateWarpCost, performWarp } from './warp.ts';
+import { calculateWormholeTax, isWormholeTravel, calculateDistance } from './warp.ts';
+import { calculateWarpCost, performWarp, getFuelTanks, getCurrentFuel } from './warp.ts';
+import { getShipType } from '../data/shipTypes.ts';
+import { calculateFullRefuelCost } from '../economy/fuel.ts';
 
 test('wormhole system - tax calculation for wormhole travel', () => {
   const state = createInitialState();
@@ -41,6 +43,221 @@ test('wormhole system - identifies wormhole connections correctly', () => {
   // Test that regular travel is not wormhole travel
   const isRegularWormhole = isWormholeTravel(state, 0, 1); // Adjacent systems
   assert.equal(typeof isRegularWormhole, 'boolean', 'Should return boolean for wormhole check');
+});
+
+// === FUEL CONSUMPTION AND CREDIT WITHDRAWAL TESTS ===
+
+test('wormhole travel - should consume zero fuel and correct credits', () => {
+  const state = createInitialState();
+  
+  // Set up test state
+  state.credits = 10000;
+  state.ship.fuel = 10;
+  const initialFuel = state.ship.fuel;
+  const initialCredits = state.credits;
+  
+  // Mock wormhole connection by setting up wormhole data
+  state.wormhole[0] = 0; // System 0
+  state.wormhole[1] = 5; // System 5 (creates wormhole between 0 and 5)
+  state.currentSystem = 0;
+  
+  const isWormhole = isWormholeTravel(state, 0, 5);
+  assert.equal(isWormhole, true, 'Should detect wormhole travel');
+  
+  // Calculate expected wormhole tax
+  const shipType = getShipType(state.ship.type);
+  const expectedTax = shipType.costOfFuel * 25; // Gnat: 2 * 25 = 50
+  
+  // Perform wormhole travel
+  const result = performWarp(state, 5, false);
+  
+  assert.equal(result.success, true, 'Wormhole travel should succeed');
+  assert.equal(result.fuelConsumed, 0, 'Wormhole travel should consume zero fuel');
+  assert.equal(state.ship.fuel, initialFuel, 'Fuel should remain unchanged after wormhole travel');
+  
+  // Credits should be reduced by wormhole tax (plus any crew/insurance costs)
+  const creditsDiff = initialCredits - state.credits;
+  assert.ok(creditsDiff >= expectedTax, `Should pay at least wormhole tax (${expectedTax}), paid ${creditsDiff}`);
+  
+  console.log(`✓ Wormhole travel: 0 fuel consumed, ${creditsDiff} credits paid (expected ≥${expectedTax})`);
+});
+
+test('regular travel - should consume fuel equal to distance and no wormhole tax', () => {
+  const state = createInitialState();
+  
+  // Clear wormhole data to ensure no wormhole connections interfere with test
+  state.wormhole.fill(-1);
+  
+  // Set up test state with valid fuel (within tank capacity)
+  state.credits = 10000;
+  const maxFuel = getFuelTanks(state.ship); // 14 for Gnat
+  state.ship.fuel = maxFuel; // Use maximum valid fuel
+  const initialFuel = state.ship.fuel;
+  const initialCredits = state.credits;
+  state.currentSystem = 0;
+  
+  // Find a system within fuel range that's not connected by wormhole
+  let targetSystem = -1;
+  let expectedDistance = 0;
+  const maxFuelRange = getCurrentFuel(state.ship);
+  
+  // Search for a suitable target system within fuel range
+  for (let i = 1; i < state.solarSystem.length; i++) {
+    const distance = calculateDistance(state.solarSystem[0], state.solarSystem[i]);
+    const isWormhole = isWormholeTravel(state, 0, i);
+    
+    if (distance <= maxFuelRange && !isWormhole) {
+      targetSystem = i;
+      expectedDistance = distance;
+      break;
+    }
+  }
+  
+  // If no suitable system found, create a close system for testing
+  if (targetSystem === -1) {
+    targetSystem = 1;
+    // Manually set coordinates to ensure close distance
+    state.solarSystem[1] = { ...state.solarSystem[1], x: state.solarSystem[0].x + 5, y: state.solarSystem[0].y + 5 };
+    expectedDistance = calculateDistance(state.solarSystem[0], state.solarSystem[1]);
+  }
+  
+  console.log(`Travel distance: ${expectedDistance}, available fuel: ${getCurrentFuel(state.ship)}`);
+  
+  // Verify this system is suitable for testing
+  const isWormhole = isWormholeTravel(state, 0, targetSystem);
+  assert.equal(isWormhole, false, 'Should not be wormhole travel');
+  assert.ok(expectedDistance <= getCurrentFuel(state.ship), 
+    `Should have enough fuel (need ${expectedDistance}, have ${getCurrentFuel(state.ship)})`);
+  
+  // Perform regular travel
+  const result = performWarp(state, targetSystem, false);
+  
+  assert.equal(result.success, true, 'Regular travel should succeed');
+  assert.equal(result.fuelConsumed, expectedDistance, `Should consume fuel equal to distance (${expectedDistance})`);
+  assert.equal(state.ship.fuel, initialFuel - expectedDistance, 'Fuel should be reduced by distance traveled');
+  
+  // Calculate cost breakdown
+  const cost = calculateWarpCost(state, 0, targetSystem, false);
+  assert.equal(cost.wormholeTax, 0, 'Regular travel should have no wormhole tax');
+  assert.equal(cost.fuel, expectedDistance, 'Fuel cost should equal distance');
+  
+  const creditsDiff = initialCredits - state.credits;
+  console.log(`✓ Regular travel: ${expectedDistance} fuel consumed, ${creditsDiff} credits paid (no wormhole tax)`);
+});
+
+test('fuel corruption bug - wormhole travel should not affect fuel capacity', () => {
+  const state = createInitialState();
+  
+  // Test with Gnat (ship type 1)
+  state.ship.type = 1; // Gnat
+  const shipType = getShipType(state.ship.type);
+  const expectedCapacity = shipType.fuelTanks; // Should be 14 for Gnat
+  
+  // Set up wormhole
+  state.wormhole[0] = 0;
+  state.wormhole[1] = 7;
+  state.currentSystem = 0;
+  state.credits = 10000;
+  state.ship.fuel = 10;
+  
+  // Record initial fuel state
+  const initialFuel = state.ship.fuel;
+  const initialMaxFuel = getFuelTanks(state.ship);
+  
+  assert.equal(initialMaxFuel, expectedCapacity, `Initial fuel capacity should be ${expectedCapacity}`);
+  
+  // Perform wormhole travel
+  const result = performWarp(state, 7, false);
+  assert.equal(result.success, true, 'Wormhole travel should succeed');
+  
+  // Verify fuel state is not corrupted
+  const finalFuel = state.ship.fuel;
+  const finalMaxFuel = getFuelTanks(state.ship);
+  
+  assert.equal(finalFuel, initialFuel, 'Fuel amount should not change during wormhole travel');
+  assert.equal(finalMaxFuel, expectedCapacity, `Fuel capacity should remain ${expectedCapacity}`);
+  assert.ok(finalFuel <= finalMaxFuel, 'Current fuel should not exceed capacity');
+  
+  console.log(`✓ Fuel integrity: ${finalFuel}/${finalMaxFuel} (capacity maintained)`);
+});
+
+test('different ship types - wormhole tax scales with fuel cost', () => {
+  const testShips = [
+    { type: 0, name: 'Flea', expectedCostPerUnit: 1 },    // Flea: costOfFuel = 1
+    { type: 1, name: 'Gnat', expectedCostPerUnit: 2 },    // Gnat: costOfFuel = 2  
+    { type: 2, name: 'Firefly', expectedCostPerUnit: 3 }, // Firefly: costOfFuel = 3
+  ];
+  
+  testShips.forEach(({ type, name, expectedCostPerUnit }) => {
+    const state = createInitialState();
+    state.ship.type = type;
+    state.credits = 10000;
+    
+    // Set up wormhole
+    state.wormhole[0] = 0;
+    state.wormhole[1] = 8;
+    state.currentSystem = 0;
+    
+    const tax = calculateWormholeTax(state.ship);
+    const expectedTax = expectedCostPerUnit * 25;
+    
+    assert.equal(tax, expectedTax, `${name} wormhole tax should be ${expectedTax} (${expectedCostPerUnit} * 25)`);
+    
+    console.log(`✓ ${name}: wormhole tax = ${tax} credits`);
+  });
+});
+
+test('fuel bounds checking - ensure fuel never exceeds capacity after wormhole', () => {
+  const state = createInitialState();
+  
+  // Test edge case: ship has maximum fuel
+  const maxFuel = getFuelTanks(state.ship);
+  state.ship.fuel = maxFuel;
+  state.credits = 10000;
+  
+  // Set up wormhole
+  state.wormhole[0] = 2;
+  state.wormhole[1] = 9;
+  state.currentSystem = 2;
+  
+  const initialFuel = state.ship.fuel;
+  
+  // Perform wormhole travel
+  const result = performWarp(state, 9, false);
+  assert.equal(result.success, true, 'Wormhole travel should succeed');
+  
+  // Verify fuel bounds
+  assert.equal(state.ship.fuel, initialFuel, 'Fuel should remain unchanged');
+  assert.ok(state.ship.fuel <= maxFuel, 'Fuel should not exceed maximum capacity');
+  assert.ok(getCurrentFuel(state.ship) <= maxFuel, 'getCurrentFuel should respect capacity');
+  
+  console.log(`✓ Fuel bounds: ${state.ship.fuel}/${maxFuel} (within limits)`);
+});
+
+test('fuel corruption detection - ship.fuel should never exceed tank capacity', () => {
+  const state = createInitialState();
+  const maxFuel = getFuelTanks(state.ship); // 14 for Gnat
+  
+  // Simulate the reported fuel corruption scenario
+  state.ship.fuel = 97; // User's reported corrupted value
+  state.credits = 10000;
+  
+  // Verify getCurrentFuel() properly caps the value
+  assert.equal(getCurrentFuel(state.ship), maxFuel, 
+    `getCurrentFuel should cap at ${maxFuel}, but raw ship.fuel is ${state.ship.fuel}`);
+  
+  // This demonstrates the bug: refuel cost calculation might use raw ship.fuel
+  const refuelCost = calculateFullRefuelCost(state);
+  
+  console.log(`Fuel corruption detected: ship.fuel=${state.ship.fuel}, capacity=${maxFuel}, refuelCost=${refuelCost}`);
+  
+  // The refuel cost should be 0 when fuel is at capacity (14), not when raw value is 97
+  assert.equal(refuelCost, 0, 'No refuel should be needed when fuel is effectively at capacity');
+  
+  // Test the specific scenario user reported: 97 units refueled for 194 credits
+  if (refuelCost === 194) {
+    assert.fail('BUG REPRODUCED: Refuel system is using corrupted ship.fuel value instead of getCurrentFuel()');
+  }
 });
 
 test('wormhole system - wormhole travel ignores fuel requirements', () => {

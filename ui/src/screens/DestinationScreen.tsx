@@ -2,12 +2,13 @@
 import React, { useState, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine.ts';
 import { getSolarSystemName } from '@game-data/systems.ts';
-import { calculateDistance, getCurrentFuel, getWormholeDestinations } from '../../../ts/travel/warp.ts';
+import { calculateDistance, getCurrentFuel, getWormholeDestinations, calculateWarpCost, isWormholeTravel } from '../../../ts/travel/warp.ts';
 import { getTradeItemName } from '@game-data/tradeItems.ts';
 import { MAXTRADEITEM } from '@game-types';
 import { calculateStandardPrice, getStablePricesForDisplay } from '../../../ts/economy/pricing.ts';
 import { getPoliticalSystem } from '../../../ts/data/politics.ts';
 import { getFilledCargoBays, getTotalCargoBays } from '../../../ts/economy/trading.ts';
+import { WormholeConfirmModal } from '../components/WormholeConfirmModal.tsx';
 import type { ScreenProps } from '../types.ts';
 import type { SolarSystem } from '@game-types';
 
@@ -27,6 +28,7 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
   const [selectedSystemIndex, setSelectedSystemIndex] = useState(initialSystemIndex);
   const [showRelativePrices, setShowRelativePrices] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showWormholeConfirm, setShowWormholeConfirm] = useState(false);
   
   // Update galactic chart system when destination screen opens
   React.useEffect(() => {
@@ -117,6 +119,20 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
     if (!actualExecuteAction) return;
     
     console.log('Attempting to warp to system:', selectedSystemIndex, getSolarSystemName(selectedSystemIndex));
+    
+    // Check if this is wormhole travel and requires confirmation
+    const currentSystem = actualState.currentSystem;
+    if (isWormholeTravel(actualState, currentSystem, selectedSystemIndex)) {
+      setShowWormholeConfirm(true);
+      return;
+    }
+    
+    // Regular travel - proceed directly
+    await executeWarp();
+  }, [selectedSystemIndex, actualExecuteAction, actualState]);
+
+  const executeWarp = useCallback(async () => {
+    if (!actualExecuteAction) return;
     
     try {
       const result = await actualExecuteAction({
@@ -330,6 +346,19 @@ export function DestinationScreen({ onNavigate, onBack, state, onAction, initial
           🚀 Warp to {getSolarSystemName(selectedSystemIndex)}
         </button>
       </div>
+
+      {/* Wormhole Confirmation Modal */}
+      {showWormholeConfirm && (
+        <WormholeConfirmModal
+          targetSystemIndex={selectedSystemIndex}
+          cost={calculateWarpCost(actualState, actualState.currentSystem, selectedSystemIndex, true)}
+          onConfirm={async () => {
+            setShowWormholeConfirm(false);
+            await executeWarp();
+          }}
+          onCancel={() => setShowWormholeConfirm(false)}
+        />
+      )}
 
       {/* Error Modal */}
       {errorMessage && (

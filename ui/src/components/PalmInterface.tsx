@@ -13,6 +13,7 @@ import { SystemInfoScreen } from '../screens/SystemInfoScreen';
 import { SystemChartScreen } from '../screens/SystemChartScreen';
 import { GameMenu } from './GameMenu';
 import { EncounterScreen } from './EncounterScreen';
+import { ArrivalModal } from './ArrivalModal';
 import { useEffect } from 'react';
 import { getSolarSystemName } from '@game-data/systems.ts';
 import { GameMode } from '../../../ts/types.ts';
@@ -29,7 +30,9 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
   const [activeTab, setActiveTab] = useState<MainTab>('buy-cargo');
   const [showGameMenu, setShowGameMenu] = useState(false);
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
-  const [arrivalMessage, setArrivalMessage] = useState('');
+  const [showArrivalModal, setShowArrivalModal] = useState(false);
+  const [arrivalSystemIndex, setArrivalSystemIndex] = useState(0);
+  const [isLongTrip, setIsLongTrip] = useState(false);
 
   // Show save indicator briefly when state changes (indicating auto-save)
   useEffect(() => {
@@ -40,12 +43,17 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
     }
   }, [state.days, state.credits]); // Trigger when key game state changes
 
-  // Show arrival message when player arrives at a new system
+  // Show arrival modal when player arrives at a new system
   useEffect(() => {
     if (state && state.message && state.message.includes('Arrived safely at')) {
-      setArrivalMessage(state.message);
-      const timer = setTimeout(() => setArrivalMessage(''), 3000);
-      return () => clearTimeout(timer);
+      // Palm OS logic: StartClicks > 20 determines if it's a long trip
+      // As a heuristic, we'll consider wormhole travel as typically "short trips" 
+      // and regular long-distance travel as "long trips"
+      const longTrip = !state.arrivedViaWormhole; // Wormhole = short trip, regular = long trip
+      
+      setArrivalSystemIndex(state.currentSystem);
+      setIsLongTrip(longTrip);
+      setShowArrivalModal(true);
     }
   }, [state?.message]);
 
@@ -106,9 +114,7 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
           onClick={() => setActiveTab('system-info')}
           className="retro-title text-sm hover:text-neon-green cursor-pointer bg-transparent border-none"
         >
-          {arrivalMessage ? (
-            <span className="text-neon-cyan animate-pulse">✨ {arrivalMessage}</span>
-          ) : state.currentMode === GameMode.InCombat ? (
+          {state.currentMode === GameMode.InCombat ? (
             <span className="text-neon-red">Encounter</span>
           ) : (
             getSolarSystemName(state.currentSystem)
@@ -181,6 +187,15 @@ export function PalmInterface({ state, onAction, availableActions, onNewGame }: 
             ))}
           </div>
         </div>
+      )}
+
+      {/* Arrival Modal */}
+      {showArrivalModal && (
+        <ArrivalModal
+          systemIndex={arrivalSystemIndex}
+          isLongTrip={isLongTrip}
+          onContinue={() => setShowArrivalModal(false)}
+        />
       )}
     </div>
   );

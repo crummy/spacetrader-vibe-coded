@@ -9,7 +9,7 @@ import { GameMode } from '../types.ts';
 import { buyCargo, sellCargo } from '../economy/trading.ts';
 import { calculateStandardPrice, calculateBuyPrice, calculateSellPrice, getCurrentSystemPrices } from '../economy/pricing.ts';
 import { refuelToFull, getFuelStatus } from '../economy/fuel.ts';
-import { performWarp, canWarpTo, calculateWarpCost, calculateDistance } from '../travel/warp.ts';
+import { performWarp, canWarpTo, calculateWarpCost, calculateDistance, isWormholeTravel } from '../travel/warp.ts';
 import { startEncounter, endEncounter, resolveCombatRound, getAvailableActions as getCombatActions, canPerformAction as canPerformCombatAction } from '../combat/engine.ts';
 import { getSolarSystemName } from '../data/systems.ts';
 import { getPoliticalSystem } from '../data/politics.ts';
@@ -489,16 +489,29 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
     const systemName = getSolarSystemName(targetSystem);
     let message = `Traveling to ${systemName}...`;
     
-    // Consume fuel and credits now that validation passed
-    const distance = calculateDistance(state.solarSystem[originalSystem], state.solarSystem[targetSystem]);
-    state.ship.fuel -= distance;
-    message += ` (fuel used: ${distance})`;
+    // Check if this is wormhole travel
+    const isWormhole = isWormholeTravel(state, originalSystem, targetSystem);
     
-    const cost = calculateWarpCost(state, originalSystem, targetSystem, false);
+    // Consume fuel and credits now that validation passed
+    let fuelUsed = 0;
+    if (!isWormhole) {
+      // Only consume fuel for regular travel, not wormhole
+      const distance = calculateDistance(state.solarSystem[originalSystem], state.solarSystem[targetSystem]);
+      state.ship.fuel -= distance;
+      fuelUsed = distance;
+      message += ` (fuel used: ${distance})`;
+    } else {
+      message += ` (wormhole travel: no fuel used)`;
+    }
+    
+    const cost = calculateWarpCost(state, originalSystem, targetSystem, isWormhole);
     state.credits -= cost.total;
     if (cost.total > 0) {
       message += ` (cost: ${cost.total})`;
     }
+    
+    // Set wormhole arrival flag for later use (will be finalized in performWarp)
+    const wasWormhole = isWormhole;
     
     // Check for encounters during first tick of travel
     state.clicks--; // Decrement first click
@@ -540,6 +553,9 @@ async function executeWarpAction(state: GameState, parameters: any): Promise<Act
     } else {
       // No encounter - complete the warp and arrive (resources already consumed)
       const result = performWarp(state, targetSystem, true); // Use viaSingularity=true to skip resource consumption
+      // Manually set the correct arrivedViaWormhole flag since viaSingularity overrides it
+      state.arrivedViaWormhole = wasWormhole;
+      
       if (result.success) {
         state.currentMode = GameMode.OnPlanet;
         

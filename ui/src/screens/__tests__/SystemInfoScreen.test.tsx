@@ -172,11 +172,11 @@ describe('SystemInfoScreen', () => {
     })
   })
 
-  describe('Trade information display', () => {
-    it('should show wanted trade goods when available', () => {
+  describe('Trade restrictions display', () => {
+    it('should show trade restrictions when drugs or firearms are illegal', () => {
       const state = setupTestState(0)
-      // Set a wanted trade good
-      state.solarSystem[0].politics = 2 // Use a system that has wanted goods
+      // Set politics to a system that restricts trade
+      state.solarSystem[0].politics = 2 // Communist State - may have restrictions
       
       render(<SystemInfoScreen 
         state={state} 
@@ -185,29 +185,17 @@ describe('SystemInfoScreen', () => {
         onBack={vi.fn()} 
       />)
       
-      expect(screen.getByText('Trade Information')).toBeInTheDocument()
-      expect(screen.getByText('Wanted Trade Good:')).toBeInTheDocument()
-    })
-
-    it('should show drug warning when drugs are illegal', () => {
-      const state = setupTestState(0)
-      
-      render(<SystemInfoScreen 
-        state={state} 
-        onAction={mockExecuteAction}
-        onNavigate={vi.fn()} 
-        onBack={vi.fn()} 
-      />)
-      
-      // Check if trade information section exists
-      const tradeInfo = screen.queryByTestId('trade-information')
-      if (tradeInfo) {
+      // Check if trade restrictions section exists when restrictions are present
+      const tradeRestrictions = screen.queryByTestId('trade-restrictions')
+      if (tradeRestrictions) {
+        expect(screen.getByText('Trade Restrictions')).toBeInTheDocument()
+        
         // Look for warning messages using test ids
         const drugWarning = screen.queryByTestId('drugs-illegal')
         const firearmsWarning = screen.queryByTestId('firearms-illegal')
         
-        // If trade info exists, at least check that we can find it
-        expect(tradeInfo).toBeInTheDocument()
+        // At least one restriction should be present
+        expect(drugWarning || firearmsWarning).toBeTruthy()
       }
     })
   })

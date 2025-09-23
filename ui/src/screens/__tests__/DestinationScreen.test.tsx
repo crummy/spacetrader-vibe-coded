@@ -258,7 +258,14 @@ describe('DestinationScreen', () => {
         message: errorMessage 
       })
       
-      render(<DestinationScreen {...defaultProps} />)
+      // Use state without wormholes to avoid wormhole confirmation
+      const stateWithoutWormholes = createTestStateWithResources(20, 1000)
+      for (let i = 0; i < 6; i++) {
+        stateWithoutWormholes.wormhole[i] = -1
+      }
+      const props = { ...defaultProps, state: stateWithoutWormholes }
+      
+      render(<DestinationScreen {...props} />)
       
       const warpButton = screen.getByTestId('warp-button')
       await user.click(warpButton)
@@ -298,14 +305,19 @@ describe('DestinationScreen', () => {
   describe('Insufficient Resources Scenarios', () => {
     it('should handle insufficient fuel scenario', async () => {
       const user = userEvent.setup()
-      testGameState = createTestStateWithResources(0, 1000) // No fuel
+      const stateWithoutWormholes = createTestStateWithResources(0, 1000) // No fuel
+      // Clear wormholes to avoid wormhole confirmation
+      for (let i = 0; i < 6; i++) {
+        stateWithoutWormholes.wormhole[i] = -1
+      }
       
       mockExecuteAction.mockResolvedValue({ 
         success: false, 
         message: 'Not enough fuel to reach destination' 
       })
       
-      render(<DestinationScreen {...defaultProps} />)
+      const props = { ...defaultProps, state: stateWithoutWormholes }
+      render(<DestinationScreen {...props} />)
       
       const warpButton = screen.getByTestId('warp-button')
       await user.click(warpButton)
@@ -317,14 +329,19 @@ describe('DestinationScreen', () => {
 
     it('should handle insufficient credits scenario', async () => {
       const user = userEvent.setup()
-      testGameState = createTestStateWithResources(20, 0) // No credits
+      const stateWithoutWormholes = createTestStateWithResources(20, 0) // No credits
+      // Clear wormholes to avoid wormhole confirmation
+      for (let i = 0; i < 6; i++) {
+        stateWithoutWormholes.wormhole[i] = -1
+      }
       
       mockExecuteAction.mockResolvedValue({ 
         success: false, 
         message: 'Not enough credits to pay for warp' 
       })
       
-      render(<DestinationScreen {...defaultProps} />)
+      const props = { ...defaultProps, state: stateWithoutWormholes }
+      render(<DestinationScreen {...props} />)
       
       const warpButton = screen.getByTestId('warp-button')
       await user.click(warpButton)
@@ -397,11 +414,22 @@ describe('DestinationScreen', () => {
   })
 
   describe('Error Handling', () => {
+    // Create a state without wormholes for error testing
+    const stateWithoutWormholes = (() => {
+      const state = createTestStateWithResources(20, 1000)
+      // Clear all wormholes to avoid wormhole confirmation interfering with error tests
+      for (let i = 0; i < 6; i++) {
+        state.wormhole[i] = -1
+      }
+      return state
+    })()
+
     it('should handle warp action throwing an exception', async () => {
       const user = userEvent.setup()
       mockExecuteAction.mockRejectedValue(new Error('Network error'))
       
-      render(<DestinationScreen {...defaultProps} />)
+      const props = { ...defaultProps, state: stateWithoutWormholes }
+      render(<DestinationScreen {...props} />)
       
       const warpButton = screen.getByTestId('warp-button')
       await user.click(warpButton)
@@ -417,7 +445,8 @@ describe('DestinationScreen', () => {
       const user = userEvent.setup()
       mockExecuteAction.mockRejectedValue('String error')
       
-      render(<DestinationScreen {...defaultProps} />)
+      const props = { ...defaultProps, state: stateWithoutWormholes }
+      render(<DestinationScreen {...props} />)
       
       const warpButton = screen.getByTestId('warp-button')
       await user.click(warpButton)
