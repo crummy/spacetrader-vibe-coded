@@ -2,6 +2,8 @@
 
 A faithful TypeScript port of the classic Palm OS space trading game **Space Trader 1.2.2** by Pieter Spronck. This project recreates the complete gameplay experience with pixel-perfect Palm Pilot styling, comprehensive test coverage, and modern web technologies.
 
+## 🎮 **[► PLAY NOW ◄](https://www.malcolmcrum.com/spacetrader-vibe-coded)**
+
 ![Space Trader](https://img.shields.io/badge/Space%20Trader-Palm%20OS%20Port-green?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue?style=flat-square)
 ![Tests](https://img.shields.io/badge/Tests-1,434%20passing-brightgreen?style=flat-square)
@@ -186,9 +188,9 @@ This project is licensed under the GPL-2.0 License, matching the original Space 
 
 ## 🔗 Links
 
+- **[🎮 Play Space Trader](https://www.malcolmcrum.com/spacetrader-vibe-coded)** - Live demo
 - [Original Space Trader](http://www.spronck.net/spacetrader/) by Pieter Spronck
 - [Palm OS Source Code](./palm/) (included in this repository)
-- [Live Demo](https://your-deployment-url.com) *(coming soon)*
 
 ---
 
